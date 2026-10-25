@@ -57,3 +57,5 @@ gem "dotenv", "~> 3.2", groups: %i[development test]
 
 gem "factory_bot_rails", "~> 6.5", group: :test
 gem "webmock", "~> 3.34", group: :test
+
+gem "csv", "~> 3.3"

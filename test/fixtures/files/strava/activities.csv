@@ -1,0 +1,7 @@
+Activity ID,Activity Date,Activity Name,Activity Type,Activity Description,Elapsed Time,Distance,Max Heart Rate,Relative Effort,Commute,Activity Private Note,Activity Gear,Filename,Athlete Weight,Bike Weight,Elapsed Time,Moving Time,Distance,Max Speed,Average Speed,Elevation Gain,Elevation Loss,Elevation Low,Elevation High,Max Grade,Average Grade,Average Heart Rate,Max Heart Rate,Relative Effort,Commute,Calories,Timer Time,Mystery Column
+9001,"Oct 23, 2026, 4:22:13 PM","Evening, ""fast"" run",Run,"Felt good,
+legs ok",3100,10.05,178,,false,,,activities/9001.fit.gz,,,3100.0,3000.0,10050.5,,,120.5,118.0,,,,,151.6,178.0,,false,640.4,3050.0,x
+9002,"Oct 24, 2026, 6:00:00 AM",Hill repeats,Trail Run,,2000,5.00,,,false,,,activities/9002.gpx,,,2000.0,1900.0,5000.0,,,300.0,295.0,,,,,160.0,175.0,,false,420.0,,x
+9003,"Oct 25, 2026, 7:00:00 PM",Zwift jog,Virtual Run,,1600,4.00,,,false,,,,,,1600.0,1500.0,4000.0,,,,,,,,,,,,false,,,x
+9004,"Oct 22, 2026, 5:00:00 PM",Commute ride,Ride,,1800,12.00,,,false,,,,,,1800.0,1700.0,12000.0,,,,,,,,,,,,false,,,x
+9005,"Oct 21, 2026, 8:00:00 AM",Stroll,Run,,60,0.05,,,false,,,,,,60.0,55.0,50.0,,,,,,,,,,,,false,,,x
