@@ -1,0 +1,4 @@
+[
+  {"activityId": 1000001, "startDateTimeLocal": "2015-03-03T15:31:00+01:00", "distance": 8.0, "duration": 2400, "isRace": 0, "isTreadmill": 1, "hasDetails": true, "hasDetailsGPS": false, "calories": 600, "startLatitude": null, "startLongitude": null},
+  {"activityId": 1000002, "startDateTimeLocal": "2015-03-05T07:10:00+01:00", "distance": 5.25, "duration": 1500, "isRace": 1, "isTreadmill": 0, "hasDetails": true, "hasDetailsGPS": true, "calories": 400, "startLatitude": 10.12, "startLongitude": 20.34}
+]
