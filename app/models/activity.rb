@@ -1,5 +1,5 @@
 class Activity < ApplicationRecord
-  include GarminSync, StravaImport
+  include GarminSync, StravaImport, Performance
 
   def self.today
     newest = order(:started_at).last
