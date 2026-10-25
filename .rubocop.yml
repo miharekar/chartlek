@@ -1,8 +1,148 @@
-# Omakase Ruby styling for Rails
-inherit_gem: { rubocop-rails-omakase: rubocop.yml }
+inherit_gem:
+  rubocop-rails-omakase: rubocop.yml
 
-# Overwrite or add rules to create your own house style
-#
-# # Use `[a, [b, c]]` not `[ a, [ b, c ] ]`
-# Layout/SpaceInsideArrayLiteralBrackets:
-#   Enabled: false
+plugins:
+  - rubocop-performance
+  - rubocop-rails
+AllCops:
+  StringLiteralsFrozenByDefault: true
+  NewCops: enable
+  DisabledByDefault: false
+  TargetRubyVersion: 4.0
+  Exclude:
+    - db/schema.rb
+    - db/migrate/*
+    - bin/*
+Bundler/OrderedGems:
+  Enabled: true
+Layout/ClassStructure:
+  Enabled: true
+  Categories:
+    module_inclusion:
+      - include
+      - prepend
+      - extend
+    associations:
+      - belongs_to
+      - has_one
+      - has_many
+      - has_and_belongs_to_many
+      - has_one_attached
+      - has_many_attached
+    validations:
+      - validates
+      - validate
+      - validates_with
+    callbacks:
+      - before_validation
+      - before_save
+      - before_create
+      - before_destroy
+      - after_initialize
+      - after_create
+      - after_save
+      - after_destroy
+      - after_commit
+      - after_create_commit
+      - after_update_commit
+      - after_save_commit
+      - after_destroy_commit
+      - around_create
+    other_macros:
+      - acts_as_paranoid
+      - audited
+      - devise
+      - has_paper_trail
+      - serialize
+    scopes:
+      - default_scope
+      - scope
+    controller_actions:
+      - before_action
+      - skip_before_action
+    controller_rescue:
+      - rescue_from
+  ExpectedOrder:
+    - module_inclusion
+    - constants
+    - enums
+    - associations
+    - validations
+    - callbacks
+    - other_macros
+    - scopes
+    - controller_macros
+    - controller_actions
+    - controller_action_caching
+    - controller_rescue
+    - class_methods
+    - initializer
+    - public_methods
+    - protected_methods
+    - private_methods
+Layout/EmptyLineAfterGuardClause:
+  Enabled: true
+Layout/EmptyLines:
+  Enabled: true
+Layout/ExtraSpacing:
+  Enabled: true
+Layout/FirstHashElementIndentation:
+  EnforcedStyle: consistent
+Layout/IndentationConsistency:
+  Enabled: true
+  EnforcedStyle: normal
+Layout/IndentationWidth:
+  Enabled: true
+Layout/LineLength:
+  Enabled: false
+Layout/MultilineMethodCallIndentation:
+  EnforcedStyle: indented
+Layout/SpaceInsideArrayLiteralBrackets:
+  EnforcedStyle: no_space
+Layout/SpaceInsideHashLiteralBraces:
+  EnforcedStyle: no_space
+Layout/SpaceInsidePercentLiteralDelimiters:
+  Enabled: true
+Metrics/AbcSize:
+  Enabled: false
+Metrics/BlockLength:
+  Enabled: false
+Metrics/ClassLength:
+  Enabled: false
+Metrics/CyclomaticComplexity:
+  Enabled: false
+Metrics/MethodLength:
+  Enabled: false
+Metrics/PerceivedComplexity:
+  Enabled: false
+Naming/AccessorMethodName:
+  Enabled: false
+Naming/VariableNumber:
+  EnforcedStyle: snake_case
+Performance:
+  Enabled: true
+Rails:
+  Enabled: true
+Rails/I18nLocaleTexts:
+  Enabled: false
+Style/Alias:
+  EnforcedStyle: prefer_alias_method
+Style/Documentation:
+  Enabled: false
+Style/FrozenStringLiteralComment:
+  EnforcedStyle: never
+Style/HashSyntax:
+  EnforcedShorthandSyntax: always
+  EnforcedStyle: ruby19
+Style/IfUnlessModifier:
+  Enabled: true
+Style/NumericLiterals:
+  Enabled: false
+Style/Send:
+  Enabled: true
+Style/StringLiteralsInInterpolation:
+  EnforcedStyle: double_quotes
+Style/SymbolArray:
+  Enabled: true
+Style/WordArray:
+  Enabled: true
