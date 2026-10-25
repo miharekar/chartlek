@@ -8,7 +8,11 @@ class Activity::GarminSyncTest < ActiveSupport::TestCase
   setup do
     stub_token
     stub_settings
+    @original_weather_sleeper = OpenMeteo::Client.sleeper
+    OpenMeteo::Client.sleeper = ->(seconds) { }
   end
+
+  teardown { OpenMeteo::Client.sleeper = @original_weather_sleeper }
 
   def zip(name, content)
     Zip::OutputStream.write_buffer { |zip| zip.put_next_entry(name) && zip.write(content) }.string
@@ -594,5 +598,31 @@ class Activity::GarminSyncTest < ActiveSupport::TestCase
 
     assert_nil Profile.instance.sync_error
     assert_nil Activity.sole.track
+  end
+
+  test "sync fetches weather for runs between 6 and 60 days old" do
+    day = ->(days) { Time.current.utc.beginning_of_day - days.days + 9.hours }
+    date = ->(days) { day.call(days).to_date.iso8601 }
+    {5 => {}, 7 => {}, 59 => {}, 61 => {}}.each_key { create(:activity, local_started_at: day.call(it), start_lat: 46.05, start_lng: 14.5) }
+    create(:activity, local_started_at: day.call(8), start_lat: 46.05, start_lng: 14.5, weather: {"temperature" => 1})
+    create(:activity, local_started_at: day.call(9), start_lat: 46.05, start_lng: 14.5, indoor: true)
+    create(:activity, local_started_at: day.call(10))
+    archive = stub_request(:get, OpenMeteo::Client::ARCHIVE_URL).with(query: hash_including({})).to_return(body: {hourly: {time: []}, daily: {sunrise: [], sunset: []}}.to_json)
+    stub_page(0, [])
+
+    Activity.sync_now
+
+    assert_requested archive, times: 2
+    [7, 59].each { assert_requested :get, OpenMeteo::Client::ARCHIVE_URL, query: hash_including(start_date: date.call(it)) }
+  end
+
+  test "a failed weather fetch does not fail the sync" do
+    create(:activity, local_started_at: 10.days.ago, start_lat: 46.05, start_lng: 14.5)
+    stub_request(:get, OpenMeteo::Client::ARCHIVE_URL).with(query: hash_including({})).to_return(status: 400)
+    stub_page(0, [])
+
+    Activity.sync_now
+
+    assert_nil Profile.instance.sync_error
   end
 end

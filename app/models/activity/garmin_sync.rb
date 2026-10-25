@@ -6,6 +6,7 @@ module Activity::GarminSync
   RUNNING_TYPES = %w[running trail_running treadmill_running indoor_running virtual_run track_running street_running ultra_run obstacle_run]
   INDOOR_TYPES = %w[treadmill_running indoor_running virtual_run]
   UTC = ActiveSupport::TimeZone["UTC"]
+  WEATHER_WINDOW = 60.days..6.days
   PROCESSING_ATTRIBUTES = %w[started_at timer_s distance_m]
 
   class_methods do
@@ -25,6 +26,7 @@ module Activity::GarminSync
           client = Garmin::Client.new
           profile.update!(settings: client.profile_settings)
           seen = sync_garmin_pages(client, full:, exhaustive: full || profile.resuming_sync?, changes:, &progress)
+          sync_garmin_weather
           changes.concat(delete_unseen_garmin_activities(seen)) if full && seen.any?
         rescue Garmin::Client::InvalidKey
           profile.finish_sync(error: Profile::INVALID_KEY_ERROR)
@@ -115,6 +117,16 @@ module Activity::GarminSync
       end
     rescue => error
       logger.warn("Garmin original skipped for #{activity.external_id}: #{error.class}: #{error.message.truncate(200)}")
+    end
+
+    def sync_garmin_weather
+      client = OpenMeteo::Client.new
+
+      weatherable.where(weather: nil, local_started_at: WEATHER_WINDOW.begin.ago..WEATHER_WINDOW.end.ago).find_each do |activity|
+        activity.fetch_weather(client)
+      rescue => error
+        logger.warn("Weather skipped for #{activity.external_id}: #{error.class}: #{error.message.truncate(200)}")
+      end
     end
 
     def delete_unseen_garmin_activities(seen)
