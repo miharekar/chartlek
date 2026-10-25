@@ -1,0 +1,14 @@
+<section class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900/50" data-controller="period-bars" data-period-bars-data-value="<%= overview.bars.to_json %>">
+  <h2 class="flex items-center gap-1.5 font-semibold">
+    <select class="field-sizing-content cursor-pointer rounded bg-transparent font-semibold text-lime-700 dark:text-[#9CFF44]" data-action="period-bars#metric" aria-label="Metric">
+      <option value="distance" class="text-zinc-900">Distance</option>
+      <option value="elevation" class="text-zinc-900">Elevation gained</option>
+      <option value="avg_distance" class="text-zinc-900">Avg distance</option>
+      <option value="avg_pace" class="text-zinc-900">Avg pace</option>
+      <option value="avg_spi" class="text-zinc-900">Avg SPI</option>
+    </select>
+    per <%= overview.period.granularity %>
+    <%= overview_info "Each bar sums or averages your runs in that #{overview.period.granularity}. Pick another metric in the title. Click a bar to drill in." %>
+  </h2>
+  <div class="mt-3 h-64" data-period-bars-target="chart"></div>
+</section>

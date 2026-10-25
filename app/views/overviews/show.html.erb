@@ -1,0 +1,24 @@
+<% period = @overview.period %>
+<div class="flex flex-wrap items-center justify-between gap-4">
+  <h1 class="text-2xl font-semibold"><%= overview_period_title(period) %></h1>
+</div>
+
+<%= render "selector", overview: @overview %>
+
+<% if @overview.empty? %>
+  <%= render "empty", period: period %>
+<% else %>
+  <div class="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+    <%= render "stats", overview: @overview %>
+  </div>
+
+  <div class="mt-4 grid gap-4 lg:grid-cols-2">
+    <%= render "distance_bars", overview: @overview %>
+    <%= render "trailing", overview: @overview %>
+    <%= render "pace_scatter", overview: @overview %>
+    <%= render "streaks", overview: @overview %>
+  </div>
+
+  <%= render "heatmap", overview: @overview %>
+  <%= render "records", overview: @overview %>
+<% end %>

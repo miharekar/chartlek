@@ -1,1 +1,27 @@
 @import "tailwindcss";
+
+@theme {
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+}
+
+:root {
+  --chart-accent: #4d9a0b;
+  --chart-accent-highlight: #2f6f05;
+  --chart-accent-low: #d3eeb3;
+  --chart-highlight: #d97706;
+  --chart-muted: #a1a1aa;
+  --chart-grid: #e4e4e7;
+  --chart-axis: #71717a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --chart-accent: #6acd12;
+    --chart-accent-highlight: #9cff44;
+    --chart-accent-low: #254806;
+    --chart-highlight: #fbbf24;
+    --chart-muted: #71717a;
+    --chart-grid: #27272a;
+    --chart-axis: #a1a1aa;
+  }
+}

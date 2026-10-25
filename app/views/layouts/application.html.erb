@@ -23,8 +23,16 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body>
-    <main class="container mx-auto mt-28 px-5 flex">
+  <body class="bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 font-sans antialiased">
+    <nav class="border-b border-zinc-200 dark:border-zinc-800">
+      <div class="max-w-7xl mx-auto px-5 h-14 flex items-center gap-8">
+        <%= link_to "Smashback", "/overview", class: "text-lg font-semibold text-lime-700 dark:text-[#9CFF44]" %>
+        <div class="flex items-center gap-6 text-sm">
+          <%= nav_link_to "Overview", "/overview" %>
+        </div>
+      </div>
+    </nav>
+    <main class="max-w-7xl mx-auto px-5 py-8">
       <%= yield %>
     </main>
   </body>

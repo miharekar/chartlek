@@ -1,0 +1,34 @@
+<% period = overview.period %>
+<% years = overview.years(period.year) %>
+<% older = overview_older_years(years) %>
+<nav class="mt-4 flex flex-wrap items-center gap-1" aria-label="Period">
+  <%= overview_pill "All time", overview_path, period.all_time? ? :selected : :idle %>
+  <% overview_visible_years(years).each do |year| %>
+    <%= overview_pill year, overview_period_path(year), period.year == year ? :selected : :idle %>
+  <% end %>
+  <% if older.any? %>
+    <details class="relative" <%= "open" if older.include?(period.year) %>>
+      <summary class="<%= OverviewsHelper::PILL %> cursor-pointer list-none text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800">Older ▾</summary>
+      <div class="absolute left-0 z-10 mt-1 flex w-64 flex-wrap gap-1 rounded-lg border border-zinc-200 bg-white p-2 shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+        <% older.each do |year| %>
+          <%= overview_pill year, overview_period_path(year), period.year == year ? :selected : :idle %>
+        <% end %>
+      </div>
+    </details>
+  <% end %>
+</nav>
+<% if period.year %>
+  <% active_months = overview.months_with_runs(period.year) %>
+  <nav class="mt-2 flex flex-wrap items-center gap-1" aria-label="Month">
+    <% (1..12).each do |month| %>
+      <% state = if period.month == month
+        :selected
+      elsif active_months.include?(month)
+        :idle
+      else
+        :disabled
+      end %>
+      <%= overview_pill Date::ABBR_MONTHNAMES[month], (period.month == month ? overview_period_path(period.year) : overview_period_path(period.year, month)), state %>
+    <% end %>
+  </nav>
+<% end %>
