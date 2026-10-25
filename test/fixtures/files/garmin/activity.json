@@ -1,0 +1,23 @@
+{
+  "activityId": 9000001,
+  "activityName": "Test Town Running",
+  "startTimeLocal": "2024-03-05 07:30:15",
+  "startTimeGMT": "2024-03-05 06:30:15",
+  "activityType": {"typeId": 1, "typeKey": "running", "parentTypeId": 17},
+  "eventType": {"typeId": 9, "typeKey": "uncategorized"},
+  "distance": 10234.5,
+  "duration": 3001.4,
+  "elapsedDuration": 3100.9,
+  "movingDuration": 2990.2,
+  "elevationGain": 85.0,
+  "elevationLoss": 80.5,
+  "startLatitude": 10.0,
+  "startLongitude": 20.0,
+  "calories": 702.0,
+  "averageHR": 151.4,
+  "maxHR": 176.6,
+  "averageRunningCadenceInStepsPerMinute": 170.5,
+  "maxRunningCadenceInStepsPerMinute": 190.0,
+  "vO2MaxValue": 52.0,
+  "locationName": "Test Town"
+}

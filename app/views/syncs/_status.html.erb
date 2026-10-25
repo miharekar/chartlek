@@ -1,0 +1,12 @@
+<span id="sync_status" class="flex items-center gap-3">
+  <% if profile.syncing? %>
+    <span>Syncing…</span>
+  <% elsif profile.synced_at %>
+    <span title="<%= profile.synced_at.to_fs(:db) %> UTC">Synced <%= time_ago_in_words(profile.synced_at) %> ago</span>
+  <% else %>
+    <span>Never synced</span>
+  <% end %>
+  <% if profile.sync_error.present? && !profile.invalid_key? %>
+    <span class="text-red-600 dark:text-red-400" title="<%= profile.sync_error %>">Sync failed</span>
+  <% end %>
+</span>

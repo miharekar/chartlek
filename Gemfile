@@ -52,3 +52,8 @@ group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"
 end
+
+gem "dotenv", "~> 3.2", groups: %i[development test]
+
+gem "factory_bot_rails", "~> 6.5", group: :test
+gem "webmock", "~> 3.34", group: :test
