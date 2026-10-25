@@ -51,6 +51,9 @@ end
 group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"
+
+  gem "herb"
+  gem "reactionview"
 end
 
 gem "dotenv", "~> 3.2", groups: %i[development test]

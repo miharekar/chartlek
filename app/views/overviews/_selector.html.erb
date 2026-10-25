@@ -7,14 +7,14 @@
     <%= overview_pill year, overview_period_path(year), period.year == year ? :selected : :idle %>
   <% end %>
   <% if older.any? %>
-    <details class="relative" <%= "open" if older.include?(period.year) %>>
+    <%= tag.details class: "relative", open: older.include?(period.year) do %>
       <summary class="<%= OverviewsHelper::PILL %> cursor-pointer list-none text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800">Older ▾</summary>
       <div class="absolute left-0 z-10 mt-1 flex w-64 flex-wrap gap-1 rounded-lg border border-zinc-200 bg-white p-2 shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
         <% older.each do |year| %>
           <%= overview_pill year, overview_period_path(year), period.year == year ? :selected : :idle %>
         <% end %>
       </div>
-    </details>
+    <% end %>
   <% end %>
 </nav>
 <% if period.year %>

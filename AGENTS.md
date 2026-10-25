@@ -19,7 +19,7 @@ Respond like smart caveman. Cut all filler, keep technical substance.
 
 ```bash
 bin/setup              # install gems, prepare DB, clear logs/tmp, start bin/dev unless --skip-server
-bin/dev                # Rails server on PORT (3000 default) and Tailwind watcher
+bin/dev                # Rails server on PORT (3000 default), Tailwind watcher and Herb dev server
 bin/rails activities:sync    # incremental Garmin sync, foreground
 bin/rails activities:resync  # full resync, deletes Garmin runs missing upstream
 bin/rails strava:fetch       # gap fill from the Strava API (browser authorization)
@@ -143,4 +143,5 @@ See `STYLE.md` for the canonical style rules. Key points for agents:
 ### Views and CSS
 
 - Use Tailwind utility classes. Respect existing component patterns.
+- For view edits, run `herb analyze .` and `npx @herb-tools/linter app/views --simple --no-color`.
 - Avoid time-dependent computed values inside cached fragments; prefer persisted fields.
