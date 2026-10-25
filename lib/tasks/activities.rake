@@ -39,4 +39,15 @@ namespace :activities do
     puts "Processed #{total - failures.size} of #{total} runs"
     failures.each { |id, reason| puts "Failed #{id} (#{reason})" }
   end
+
+  desc "Download and process the Garmin original of every run that lacks one"
+  task download: :environment do
+    report = Activity.download_originals do |progress|
+      puts "#{progress[:done]}/#{progress[:total]}" if (progress[:done] % 50).zero?
+    end
+
+    puts "Attached #{report[:attached]}, processed #{report[:processed]}"
+    puts "Formats: #{report[:formats].map { |format, count| "#{format} #{count}" }.join(", ")}"
+    report[:failed].each { |id, reason| puts "Failed #{id} (#{reason})" }
+  end
 end

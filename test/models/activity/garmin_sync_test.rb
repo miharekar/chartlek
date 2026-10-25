@@ -10,6 +10,26 @@ class Activity::GarminSyncTest < ActiveSupport::TestCase
     stub_settings
   end
 
+  def zip(name, content)
+    Zip::OutputStream.write_buffer { |zip| zip.put_next_entry(name) && zip.write(content) }.string
+  end
+
+  def fit_zip
+    zip("1_ACTIVITY.fit", file_fixture("tracks/run.fit").binread)
+  end
+
+  def fit_summary(**overrides)
+    garmin_summary({startTimeGMT: "2024-03-05 06:30:00", startTimeLocal: "2024-03-05 07:30:00", distance: 1560.0, duration: 390.0, elapsedDuration: 490.0}.merge(overrides))
+  end
+
+  def garmin_run(**attributes)
+    create(:activity, started_at: Time.utc(2024, 3, 5, 6, 30), distance_m: 1560.0, timer_s: 390.0, elapsed_s: 490.0, **attributes)
+  end
+
+  def attach_fit(activity)
+    activity.original.attach(io: StringIO.new(fit_zip), filename: "#{activity.external_id}.zip", content_type: "application/zip")
+  end
+
   test "sync_later enqueues the job" do
     assert_enqueued_with(job: Activity::SyncJob) { Activity.sync_later }
   end
@@ -232,6 +252,7 @@ class Activity::GarminSyncTest < ActiveSupport::TestCase
     WebMock.reset!
     stub_token
     stub_settings
+    stub_download_missing
     stub_page(0, garmin_summaries(100))
     stub_page(100, garmin_summaries(40, first_id: 9200000))
 
@@ -399,5 +420,179 @@ class Activity::GarminSyncTest < ActiveSupport::TestCase
     Activity.sync_now { pages << it }
 
     assert_equal [{start: 0, fetched: 100, synced: 100}, {start: 100, fetched: 1, synced: 1}], pages
+  end
+
+  test "download attaches and processes originals and tallies formats" do
+    run = garmin_run
+    stub_download(run.external_id, fit_zip)
+
+    report = Activity.download_originals
+
+    assert_equal({attached: 1, processed: 1, formats: {"fit" => 1}, failed: {}}, report)
+    assert_equal "#{run.external_id}.zip", run.reload.original.filename.to_s
+    assert_equal "application/zip", run.original.content_type
+    assert run.track
+  end
+
+  test "download skips runs that already have an original" do
+    run = garmin_run
+    attach_fit(run)
+    other = garmin_run(source: "strava")
+
+    report = Activity.download_originals
+
+    assert_equal 0, report[:attached]
+    assert_not_requested :get, /download-service/
+    assert_not other.reload.original.attached?
+  end
+
+  test "download reports a failed download and carries on" do
+    broken = garmin_run(started_at: Time.utc(2024, 3, 4, 6, 30))
+    run = garmin_run
+    stub_download(run.external_id, fit_zip)
+
+    report = Activity.download_originals
+
+    assert_equal 1, report[:processed]
+    assert_match(/Garmin::Client::Error/, report[:failed][broken.id])
+    assert_not broken.reload.original.attached?
+  end
+
+  test "download keeps the attachment when parsing fails" do
+    run = garmin_run
+    stub_download(run.external_id, zip("1_ACTIVITY.fit", "not a fit file"))
+
+    report = Activity.download_originals
+
+    assert_equal 1, report[:attached]
+    assert_equal 0, report[:processed]
+    assert_predicate report[:failed][run.id], :present?
+    assert run.reload.original.attached?
+    assert_nil run.track
+  end
+
+  test "sync downloads and processes the original of a new run" do
+    stub_page(0, [fit_summary])
+    download = stub_download("9000001", fit_zip)
+
+    Activity.sync_now
+
+    assert_requested download, times: 1
+    run = Activity.sole
+    assert run.original.attached?
+    assert run.track
+  end
+
+  test "sync reprocesses a run whose processing inputs changed" do
+    run = garmin_run(external_id: "9000001", timer_s: 380.0, distance_m: 1500.0)
+    attach_fit(run)
+    run.process_original
+    run.update!(splits: nil)
+    stub_page(0, [fit_summary])
+
+    Activity.sync_now
+
+    assert_not_requested :get, /download-service/
+    assert_predicate run.reload.splits, :present?
+  end
+
+  test "sync leaves a run alone when only unrelated fields changed" do
+    run = garmin_run(external_id: "9000001", name: "Old")
+    attach_fit(run)
+    run.process_original
+    run.update!(splits: nil)
+    stub_page(0, [fit_summary])
+
+    Activity.sync_now
+
+    assert_equal "Test Town Running", run.reload.name
+    assert_nil run.splits
+  end
+
+  test "sync downloads the missing original of an existing run" do
+    run = garmin_run(external_id: "9000001")
+    stub_page(0, [fit_summary])
+    download = stub_download("9000001", fit_zip)
+
+    Activity.sync_now
+
+    assert_requested download, times: 1
+    assert run.reload.original.attached?
+    assert run.track
+  end
+
+  test "a later sync retries a failed download" do
+    stub_page(0, [fit_summary])
+    stub_download_missing
+    Activity.sync_now
+    assert_not Activity.sole.original.attached?
+
+    WebMock.reset!
+    stub_token
+    stub_settings
+    stub_page(0, [fit_summary])
+    stub_download("9000001", fit_zip)
+    Activity.sync_now
+
+    assert Activity.sole.original.attached?
+    assert Activity.sole.track
+  end
+
+  test "sync processes a run that has an original but no track" do
+    run = garmin_run(external_id: "9000001")
+    attach_fit(run)
+    stub_page(0, [fit_summary])
+
+    Activity.sync_now
+
+    assert_not_requested :get, /download-service/
+    assert run.reload.track
+  end
+
+  test "sync skips unchanged runs that have an original and a track" do
+    stub_page(0, [fit_summary])
+    stub_download("9000001", fit_zip)
+    Activity.sync_now
+    Activity.sole.update!(splits: nil)
+    stub_page(0, [fit_summary])
+
+    Activity.sync_now
+
+    assert_requested :get, /download-service/, times: 1
+    assert_nil Activity.sole.splits
+  end
+
+  test "a sync that keeps working keeps counting as running" do
+    stub_page(0, garmin_summaries(100))
+    stub_page(100, garmin_summaries(1, first_id: 9200000))
+    running = []
+
+    Activity.sync_now do |page|
+      travel 20.minutes if page[:start].zero?
+      running << Profile.instance.syncing? if page[:start] == 100
+    end
+    travel_back
+
+    assert_equal [true], running
+  end
+
+  test "a failed download does not fail the sync" do
+    stub_page(0, [fit_summary])
+
+    Activity.sync_now
+
+    assert_nil Profile.instance.sync_error
+    assert_predicate Profile.instance.synced_at, :present?
+    assert_not Activity.sole.original.attached?
+  end
+
+  test "a failed parse does not fail the sync" do
+    stub_page(0, [fit_summary])
+    stub_download("9000001", zip("1_ACTIVITY.fit", "not a fit file"))
+
+    Activity.sync_now
+
+    assert_nil Profile.instance.sync_error
+    assert_nil Activity.sole.track
   end
 end

@@ -9,6 +9,7 @@ module GarminApiStubs
       @original_sleeper = Garmin::Client.sleeper
       @sleeps = []
       Garmin::Client.sleeper = ->(seconds) { @sleeps << seconds }
+      stub_download_missing
     end
 
     teardown { Garmin::Client.sleeper = @original_sleeper }
@@ -24,6 +25,14 @@ module GarminApiStubs
 
   def stub_settings
     stub_request(:get, "#{BASE_URL}/userprofile-service/userprofile/settings").to_return(status: 200, body: file_fixture("garmin/settings.json").read)
+  end
+
+  def stub_download(activity_id, body, status: 200)
+    stub_request(:get, "#{BASE_URL}/download-service/files/activity/#{activity_id}").to_return(status:, body:)
+  end
+
+  def stub_download_missing
+    stub_request(:get, %r{#{BASE_URL}/download-service/files/activity/}).to_return(status: 404)
   end
 
   def garmin_summary(overrides = {})

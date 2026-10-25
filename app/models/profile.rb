@@ -23,6 +23,10 @@ class Profile < ApplicationRecord
     @resuming_sync.present?
   end
 
+  def sync_progress
+    update!(sync_started_at: Time.current)
+  end
+
   def finish_sync(error: nil)
     if error
       update!(sync_started_at: nil, sync_error: error)

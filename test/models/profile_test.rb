@@ -14,6 +14,17 @@ class ProfileTest < ActiveSupport::TestCase
     assert_not Profile.instance.start_sync
   end
 
+  test "sync_progress refreshes the running state" do
+    @profile.start_sync
+    travel 14.minutes
+
+    @profile.sync_progress
+    travel 14.minutes
+
+    assert Profile.instance.syncing?
+    travel_back
+  end
+
   test "start_sync takes over a stale sync and clears the error" do
     @profile.update!(sync_started_at: 16.minutes.ago, sync_error: "boom")
 

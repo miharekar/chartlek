@@ -30,6 +30,20 @@ class Garmin::ClientTest < ActiveSupport::TestCase
     assert_requested page
   end
 
+  test "downloads the raw activity file" do
+    stub_token
+    stub_download(9100001, "PK\x03\x04zip-bytes".b)
+
+    assert_equal "PK\x03\x04zip-bytes".b, @client.download(9100001)
+  end
+
+  test "raises when the activity file is missing" do
+    stub_token
+    stub_download(9100002, "", status: 404)
+
+    assert_raises(Garmin::Client::Error) { @client.download(9100002) }
+  end
+
   test "caches the token until an hour before expiry" do
     Rails.cache = ActiveSupport::Cache::MemoryStore.new
     token = stub_token

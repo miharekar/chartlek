@@ -8,6 +8,7 @@ class Garmin::Client
   TOKEN_PATH = "/personalapitoken-service/personal-api/personal-api-key/token"
   ACTIVITIES_PATH = "/activitylist-service/activities/search/activities"
   SETTINGS_PATH = "/userprofile-service/userprofile/settings"
+  DOWNLOAD_PATH = "/download-service/files/activity"
   MIN_INTERVAL = 1.0
   MAX_ATTEMPTS = 5
   TOKEN_MARGIN = 1.hour
@@ -28,6 +29,10 @@ class Garmin::Client
 
   def profile_settings
     get(SETTINGS_PATH)
+  end
+
+  def download(activity_id)
+    authorized_response(URI("#{BASE_URL}#{DOWNLOAD_PATH}/#{activity_id}")).body
   end
 
   def inspect
