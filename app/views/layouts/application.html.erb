@@ -9,6 +9,7 @@
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
+    <% turbo_refreshes_with method: :replace, scroll: :preserve %>
     <%= yield :head %>
 
     <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
@@ -24,14 +25,23 @@
   </head>
 
   <body class="bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 font-sans antialiased">
+    <%= turbo_stream_from :garmin_sync %>
     <nav class="border-b border-zinc-200 dark:border-zinc-800">
       <div class="max-w-7xl mx-auto px-5 h-14 flex items-center gap-8">
         <%= link_to "Smashback", "/overview", class: "text-lg font-semibold text-lime-700 dark:text-[#9CFF44]" %>
         <div class="flex items-center gap-6 text-sm">
           <%= nav_link_to "Overview", "/overview" %>
         </div>
+        <div class="ml-auto flex items-center gap-4">
+          <%= yield :nav_right %>
+          <div class="flex items-center gap-3 text-sm text-zinc-500 dark:text-zinc-400">
+            <%= render "syncs/status", profile: sync_profile %>
+            <%= button_to "Sync now", sync_path, class: "rounded-md border border-zinc-300 dark:border-zinc-700 px-2.5 py-1 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 cursor-pointer" %>
+          </div>
+        </div>
       </div>
     </nav>
+    <%= render "syncs/invalid_key_banner" if sync_profile.invalid_key? %>
     <main class="max-w-7xl mx-auto px-5 py-8">
       <%= yield %>
     </main>

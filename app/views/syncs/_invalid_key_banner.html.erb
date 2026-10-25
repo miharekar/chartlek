@@ -1,0 +1,9 @@
+<div class="border-b border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
+  <div class="max-w-7xl mx-auto px-5 py-3 text-sm">
+    <p class="font-medium">Your Garmin key is invalid or has expired.</p>
+    <p class="mt-1">
+      Create a new key at <%= link_to "connect.garmin.com/app/settings/personalApiToken", "https://connect.garmin.com/app/settings/personalApiToken", class: "underline", target: "_blank", rel: "noopener" %>,
+      put it in <code>.env</code> as <code>GARMIN_API_TOKEN</code>, then restart the server.
+    </p>
+  </div>
+</div>
