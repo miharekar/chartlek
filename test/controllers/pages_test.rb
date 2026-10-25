@@ -8,7 +8,7 @@ class PagesTest < ActionDispatch::IntegrationTest
   end
 
   test "pages render" do
-    %w[/overview /overview/2024 /overview/2024/3 /overview/2024/03 /overview/2024/09 /overview/2024/12].each do |path|
+    %w[/overview /overview/2024 /overview/2024/3 /overview/2024/03 /overview/2024/09 /overview/2024/12 /pace_trend].each do |path|
       get path
 
       assert_response :success, path
