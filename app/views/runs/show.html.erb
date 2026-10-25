@@ -1,0 +1,11 @@
+<%= render "header", run: @run %>
+<%= render "tiles", run: @run %>
+<% if @run.track %>
+  <% if @run.splits.present? %>
+    <%= render "speed", run: @run, track: @run.track %>
+  <% end %>
+  <%= render "profiles", track: @run.track %>
+<% end %>
+<%= render "notables", run: @run %>
+<%= render "fastest", run: @run %>
+<%= render "analyze", run: @run %>

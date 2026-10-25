@@ -66,7 +66,7 @@ class PaceTrend
       km: (run.distance_m / 1000).round(3),
       s: run.timer_s.round(1),
       top: top_ids.include?(run.id),
-      url: run.external_url
+      url: Rails.application.routes.url_helpers.run_path(run)
     }
   end
 

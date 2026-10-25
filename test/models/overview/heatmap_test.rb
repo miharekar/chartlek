@@ -4,7 +4,7 @@ class Overview::HeatmapTest < ActiveSupport::TestCase
   TODAY = Date.new(2024, 3, 20)
 
   def run_on(time, km)
-    build(:activity, local_started_at: Time.utc(*time), started_at: Time.utc(*time), distance_m: km * 1000, timer_s: km * 300)
+    build(:activity, id: (@next_id = (@next_id || 0) + 1), local_started_at: Time.utc(*time), started_at: Time.utc(*time), distance_m: km * 1000, timer_s: km * 300)
   end
 
   def heatmap(runs, **options)
@@ -52,7 +52,8 @@ class Overview::HeatmapTest < ActiveSupport::TestCase
   end
 
   test "year view is a day calendar" do
-    data = heatmap([run_on([2024, 1, 2, 7], 12)], year: 2024)
+    run = run_on([2024, 1, 2, 7], 12)
+    data = heatmap([run], year: 2024)
     day = data[:cells].find { it[:tip].first == "2 Jan 2024" }
 
     assert_equal %w[Mon Tue Wed Thu Fri Sat Sun], data[:rows]
@@ -60,7 +61,7 @@ class Overview::HeatmapTest < ActiveSupport::TestCase
     assert_equal 0, day[:col]
     assert_equal 3, day[:level]
     assert_equal "12.0 km", day[:tip].last
-    assert day[:external]
+    assert_equal "/runs/#{run.id}", day[:href]
     assert_equal 80, data[:cells].size
     assert_equal "No run", data[:cells].first[:tip].last
     assert_equal "Jan", data[:columns].first[:label]

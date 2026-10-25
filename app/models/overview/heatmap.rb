@@ -53,8 +53,7 @@ class Overview::Heatmap
       level: self.class.level(km, WEEKLY_THRESHOLDS),
       alt: self.class.level(km, alt),
       tip: ["Week of #{date_text(monday)}", distance_text(km)],
-      href: (Rails.application.routes.url_helpers.overview_period_path(middle.year, middle.month) if km.positive?),
-      external: false
+      href: (Rails.application.routes.url_helpers.overview_period_path(middle.year, middle.month) if km.positive?)
     }
   end
 
@@ -104,8 +103,7 @@ class Overview::Heatmap
       col: (date.beginning_of_week - first_monday).to_i / 7,
       level: self.class.level(km, DAILY_THRESHOLDS),
       tip: [date_text(date), (runs.any? ? distance_text(km) : "No run")],
-      href: runs.first&.external_url,
-      external: true,
+      href: (Rails.application.routes.url_helpers.run_path(runs.first) if runs.any?),
       text: (date.day.to_s if @period.kind == :month)
     }
   end

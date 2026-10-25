@@ -1,0 +1,113 @@
+<% card = "rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900/50" %>
+<% label = "text-sm font-medium text-zinc-500 dark:text-zinc-400" %>
+<% big = "mt-1 text-4xl font-semibold tabular-nums" %>
+<% unit = "ml-1 text-sm font-normal text-zinc-500 dark:text-zinc-400" %>
+<% small = "mt-1 text-sm tabular-nums text-zinc-600 dark:text-zinc-300" %>
+<% food = Food.for(run.calories) %>
+<% hr_extent = run_extent(run, "hr", run.max_hr) %>
+<% cadence_extent = run_extent(run, "cad", run.max_cadence) %>
+<div class="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+  <section class="<%= card %>">
+    <h2 class="<%= label %>">Distance</h2>
+    <p class="<%= big %>"><%= format("%.2f", run.distance_m / 1000) %><span class="<%= unit %>">km</span></p>
+  </section>
+
+  <section class="<%= card %>">
+    <h2 class="<%= label %>">Time</h2>
+    <p class="<%= big %>"><%= overview_duration(run.timer_s) %></p>
+    <p class="<%= small %>">
+      <% if run.elapsed_s %>elapsed <%= overview_duration(run.elapsed_s) %><% end %>
+      <% if run.moving_s %>· moving <%= overview_duration(run.moving_s) %><% end %>
+    </p>
+  </section>
+
+  <section class="<%= card %>">
+    <h2 class="<%= label %>">Average pace</h2>
+    <p class="<%= big %>"><%= overview_pace(run.pace) %><span class="<%= unit %>">/km</span></p>
+    <p class="<%= small %>"><%= format("%.2f", run.distance_m / run.timer_s * 3.6) %> km/h</p>
+  </section>
+
+  <section class="<%= card %>">
+    <h2 class="<%= label %>">Calories</h2>
+    <% if run.calories %>
+      <p class="<%= big %>"><%= number_with_delimiter(run.calories) %><span class="<%= unit %>">kcal</span></p>
+      <% if food %><p class="<%= small %>">≈ <%= food %></p><% end %>
+    <% else %>
+      <p class="<%= big %> text-zinc-400">–</p>
+    <% end %>
+  </section>
+
+  <section class="<%= card %>">
+    <h2 class="<%= label %>">Average HR</h2>
+    <% if run.avg_hr %>
+      <p class="<%= big %>"><%= run.avg_hr %><span class="<%= unit %>">bpm</span></p>
+      <% if hr_extent %><p class="<%= small %>"><%= hr_extent %></p><% end %>
+    <% else %>
+      <p class="<%= big %> text-zinc-400">–</p>
+    <% end %>
+  </section>
+
+  <section class="<%= card %>">
+    <h2 class="<%= label %>">Average cadence</h2>
+    <% if run.avg_cadence %>
+      <p class="<%= big %>"><%= run.avg_cadence.round %><span class="<%= unit %>">spm</span></p>
+      <% if cadence_extent %><p class="<%= small %>"><%= cadence_extent %></p><% end %>
+    <% else %>
+      <p class="<%= big %> text-zinc-400">–</p>
+    <% end %>
+  </section>
+
+  <section class="<%= card %>">
+    <h2 class="<%= label %>">Elevation</h2>
+    <% if run.elevation_gain_m %>
+      <p class="<%= big %>">+<%= run.elevation_gain_m.round %><span class="<%= unit %>">m</span></p>
+      <% if run.elevation_loss_m %><p class="<%= small %>">−<%= run.elevation_loss_m.round %> m</p><% end %>
+    <% else %>
+      <p class="<%= big %> text-zinc-400">–</p>
+    <% end %>
+  </section>
+
+  <section class="<%= card %>">
+    <h2 class="<%= label %>">SPI · VDOT</h2>
+    <p class="<%= big %>"><%= run.spi ? run.spi.round : "–" %><span class="<%= unit %>">SPI</span></p>
+    <p class="<%= small %>"><%= run.vdot ? "VDOT #{run.vdot.round(1)}" : "–" %></p>
+  </section>
+
+  <% if run.pace_variability %>
+    <section class="<%= card %>">
+      <h2 class="<%= label %>">Pace variability</h2>
+      <div class="mt-1 flex items-center gap-3">
+        <p class="<%= big %>"><%= run.pace_variability.round(1) %><span class="<%= unit %>">%</span></p>
+        <div class="ml-auto"><%= run_variability_glyph(run.pace_variability) %></div>
+      </div>
+    </section>
+  <% end %>
+
+  <% rank = run.longest_rank %>
+  <section class="<%= card %>">
+    <h2 class="<%= label %>"><%= rank.ordinalize %> longest run</h2>
+    <p class="<%= small %>">of <%= number_with_delimiter(run.run_count) %> runs</p>
+    <%= run_rank_strip(rank, run.run_count) %>
+  </section>
+
+  <% similar_rank = run.similar_rank %>
+  <section class="<%= card %>">
+    <h2 class="<%= label %>"><%= similar_rank.ordinalize %> fastest for a similar distance</h2>
+    <p class="<%= small %>">of <%= number_with_delimiter(run.similar_count) %> runs within ±10%</p>
+    <%= run_rank_strip(similar_rank, run.similar_count) %>
+  </section>
+
+  <% if run.finish_times %>
+    <section class="<%= card %> col-span-2">
+      <h2 class="<%= label %>">Estimated finish times at SPI <%= run.spi.round %></h2>
+      <dl class="mt-2 grid grid-cols-4 gap-2 text-center tabular-nums">
+        <% run.finish_times.each do |name, seconds| %>
+          <div>
+            <dt class="text-xs text-zinc-500 dark:text-zinc-400"><%= name %></dt>
+            <dd class="text-lg font-semibold"><%= overview_duration(seconds) %></dd>
+          </div>
+        <% end %>
+      </dl>
+    </section>
+  <% end %>
+</div>

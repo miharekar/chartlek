@@ -1,0 +1,63 @@
+require "test_helper"
+
+class RunChartsTest < ActionDispatch::IntegrationTest
+  def run_with(data, **attrs)
+    run = create(:activity, **attrs)
+    Track.create!(activity: run, data:) if data
+    run
+  end
+
+  def full
+    {"t" => [0, 30, 60, 90], "d" => [0, 100, 200, 250], "lat" => [46.0, 46.001, nil, 46.003], "lng" => [14.0, 14.001, nil, 14.003], "alt" => [300, 301, 302, 303], "hr" => [140, 150, 160, 170], "cad" => [170, 172, 174, 176]}
+  end
+
+  test "show renders speed and profiles for a full track" do
+    run = run_with(full, splits: [{"distance" => 250.0, "time" => 90.0, "pace" => 360.0, "hr" => 155, "cad" => 173, "gain" => 3.0, "loss" => 0.0}])
+
+    get run_path(run)
+
+    assert_response :success
+    assert_select "[data-controller=run-speed]"
+    assert_select "select[aria-label='Bar size']"
+    assert_select "[data-controller=run-profiles]"
+  end
+
+  test "show renders an indoor track" do
+    run = run_with({"t" => [0, 30, 60], "d" => [0, 100, 200], "hr" => [140, 150, 160]}, indoor: true, splits: [{"distance" => 200.0, "time" => 60.0, "pace" => 300.0}])
+
+    get run_path(run)
+
+    assert_response :success
+    assert_select "[data-controller=run-speed]"
+    assert_select "[data-controller=run-profiles]"
+  end
+
+  test "show omits the speed chart when splits are nil, as for a rebuilt distance" do
+    run = run_with(full)
+
+    get run_path(run)
+
+    assert_response :success
+    assert_select "[data-controller=run-speed]", false
+    assert_select "[data-controller=run-profiles]"
+  end
+
+  test "show omits the profiles when no series exists" do
+    run = run_with({"t" => [0, 30, 60], "d" => [0, 100, 200]}, splits: [{"distance" => 200.0, "time" => 60.0, "pace" => 300.0}])
+
+    get run_path(run)
+
+    assert_select "[data-controller=run-speed]"
+    assert_select "[data-controller=run-profiles]", false
+  end
+
+  test "show renders no chart sections without a track" do
+    run = run_with(nil)
+
+    get run_path(run)
+
+    assert_response :success
+    assert_select "[data-controller=run-speed]", false
+    assert_select "[data-controller=run-profiles]", false
+  end
+end

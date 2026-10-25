@@ -29,15 +29,14 @@ class Overview::Bars
       avg_distance: (runs.any? ? (distance_km / runs.size).round(2) : nil),
       avg_pace: (runs.any? ? (runs.sum(&:timer_s) / distance_km).round(1) : nil),
       avg_spi: (spis.any? ? (spis.sum / spis.size).round(1) : nil),
-      href: href(from, runs),
-      external: @period.granularity == :day
+      href: href(from, runs)
     }
   end
 
   def href(from, runs)
     if runs.any?
       if @period.granularity == :day
-        runs.first.external_url
+        Rails.application.routes.url_helpers.run_path(runs.first)
       else
         Rails.application.routes.url_helpers.overview_period_path(link_date(from).year, link_date(from).month)
       end

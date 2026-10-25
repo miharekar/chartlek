@@ -154,7 +154,6 @@ export default class extends Controller {
   open(cellData) {
     if (!cellData.href) return
     hideTooltip()
-    if (cellData.external) window.open(cellData.href, "_blank", "noopener")
-    else window.Turbo.visit(cellData.href)
+    window.Turbo.visit(cellData.href)
   }
 }

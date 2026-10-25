@@ -50,11 +50,11 @@ class PrProgress
   def run_row(activity)
     bucket = PersonalRecords.bucket_for(activity)
 
-    [activity.id, epoch_ms(activity.local_started_at), (activity.distance_m / 1000).round(3), activity.pace.round(1), activity.spi&.round(1), bucket && bucket_index(bucket.name), bucket&.time_s&.round(2), activity.name, activity.race ? 1 : 0, activity.external_url, activity.vdot&.round(2)]
+    [activity.id, epoch_ms(activity.local_started_at), (activity.distance_m / 1000).round(3), activity.pace.round(1), activity.spi&.round(1), bucket && bucket_index(bucket.name), bucket&.time_s&.round(2), activity.name, activity.race ? 1 : 0, Rails.application.routes.url_helpers.run_path(activity), activity.vdot&.round(2)]
   end
 
   def frontier_entry(record)
-    {bucket: bucket_index(record.name), time: record.time_s.round(2), pace: record.pace.round(2), date: epoch_ms(record.activity.local_started_at), race: record.race, name: record.activity.name, url: record.activity.external_url}
+    {bucket: bucket_index(record.name), time: record.time_s.round(2), pace: record.pace.round(2), date: epoch_ms(record.activity.local_started_at), race: record.race, name: record.activity.name, url: Rails.application.routes.url_helpers.run_path(record.activity)}
   end
 
   def bucket_index(name)

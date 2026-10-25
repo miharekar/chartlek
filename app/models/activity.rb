@@ -1,5 +1,5 @@
 class Activity < ApplicationRecord
-  include GarminSync, StravaImport, SmashrunImport, Performance, Weather, TrackProcessing
+  include GarminSync, StravaImport, SmashrunImport, Performance, Browsing, Weather, TrackProcessing
 
   has_one_attached :original, dependent: :purge
   has_one :track, dependent: :destroy

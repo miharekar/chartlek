@@ -14,17 +14,19 @@
           <th class="<%= th %>">Time</th>
           <th class="<%= th %>">Runs</th>
           <th class="px-3 py-2"></th>
+          <th class="px-3 py-2"></th>
         </tr>
       </thead>
       <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/60">
         <% records.each do |record| %>
           <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40">
-            <td class="px-3 py-2 font-medium"><%= link_to record.name, record.activity.external_url, target: "_blank", rel: "noopener", class: "hover:text-lime-700 dark:hover:text-[#9CFF44]" %></td>
-            <td class="px-3 py-2 text-zinc-600 dark:text-zinc-300"><%= link_to overview_date(record.activity.local_started_at), record.activity.external_url, target: "_blank", rel: "noopener", class: "hover:underline" %></td>
+            <td class="px-3 py-2 font-medium"><%= link_to record.name, run_path(record.activity), class: "hover:text-lime-700 dark:hover:text-[#9CFF44]" %></td>
+            <td class="px-3 py-2 text-zinc-600 dark:text-zinc-300"><%= link_to overview_date(record.activity.local_started_at), run_path(record.activity), class: "hover:underline" %></td>
             <td class="px-3 py-2 text-right"><%= overview_pace(record.pace) %> <span class="text-xs text-zinc-500">/km</span></td>
             <td class="px-3 py-2 text-right"><%= format("%.2f", record.speed_kmh) %></td>
             <td class="px-3 py-2 text-right font-medium"><%= overview_duration(record.time_s) %></td>
             <td class="px-3 py-2 text-right text-zinc-500"><%= number_with_delimiter(record.count) %></td>
+            <td class="px-3 py-2"><%= run_sparkline(record.activity.pace_profile) %></td>
             <td class="px-3 py-2"><% if record.race %><span class="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">race</span><% end %></td>
           </tr>
         <% end %>

@@ -24,7 +24,7 @@ class PrProgressTest < ActiveSupport::TestCase
     assert_equal 10.4, rows[1]["distance"]
     assert_equal 300, rows[1]["pace"]
     assert_equal 1, rows[1]["race"]
-    assert_equal late.external_url, rows[1]["url"]
+    assert_equal "/runs/#{late.id}", rows[1]["url"]
     assert_equal "Late", rows[1]["name"]
     assert_equal late.vdot.round(2), rows[1]["vdot"]
   end
@@ -40,7 +40,7 @@ class PrProgressTest < ActiveSupport::TestCase
     assert_equal 2700, frontier.last[:time]
     assert_equal 270, frontier.last[:pace]
     assert frontier.last[:race]
-    assert_equal pr.external_url, frontier.last[:url]
+    assert_equal "/runs/#{pr.id}", frontier.last[:url]
     assert_equal Time.utc(2024, 1, 1, 8).to_i * 1000, frontier.last[:date]
   end
 

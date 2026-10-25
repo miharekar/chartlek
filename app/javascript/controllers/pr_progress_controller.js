@@ -360,7 +360,7 @@ export default class extends Controller {
       this.referenceTarget.textContent = `No run with an SPI in the last ${this.days || "selected"} days.`
       return
     }
-    this.referenceTarget.innerHTML = `${formatDate(reference.time)} · ${escapeHtml(reference.name || "Run")} · ${formatDistance(reference.distance)} km at ${formatPace(reference.pace)} /km · SPI ${Math.round(reference.spi)} <a href="${escapeHtml(reference.url)}" target="_blank" rel="noopener" class="underline">open</a> · click any run to use it instead`
+    this.referenceTarget.innerHTML = `${formatDate(reference.time)} · ${escapeHtml(reference.name || "Run")} · ${formatDistance(reference.distance)} km at ${formatPace(reference.pace)} /km · SPI ${Math.round(reference.spi)} <a href="${escapeHtml(reference.url)}" class="underline">open</a> · click any run to use it instead`
   }
 
   renderRange() {
@@ -394,6 +394,6 @@ export default class extends Controller {
   }
 
   cell(time, date, url) {
-    return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener" class="hover:underline">${formatDuration(time)}</a> <span class="${MUTED}">${formatDate(date)}</span>`
+    return `<a href="${escapeHtml(url)}" class="hover:underline">${formatDuration(time)}</a> <span class="${MUTED}">${formatDate(date)}</span>`
   }
 }

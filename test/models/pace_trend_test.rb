@@ -61,7 +61,7 @@ class PaceTrendTest < ActiveSupport::TestCase
     assert_equal 10.0, row[:km]
     assert_equal 3000.0, row[:s]
     assert row[:top]
-    assert_equal run.external_url, row[:url]
+    assert_equal "/runs/#{run.id}", row[:url]
     assert_equal %w[5K 10K Half Marathon], payload[:tables].pluck(:label)
     assert_equal Vdot.time_table(42_195), payload[:tables].last[:table]
   end

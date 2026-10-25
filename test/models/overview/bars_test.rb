@@ -4,7 +4,7 @@ class Overview::BarsTest < ActiveSupport::TestCase
   TODAY = Date.new(2024, 3, 20)
 
   def run_on(time, **attrs)
-    build(:activity, local_started_at: Time.utc(*time), started_at: Time.utc(*time), **attrs)
+    build(:activity, id: (@next_id = (@next_id || 0) + 1), local_started_at: Time.utc(*time), started_at: Time.utc(*time), **attrs)
   end
 
   def buckets(runs, **options)
@@ -41,7 +41,6 @@ class Overview::BarsTest < ActiveSupport::TestCase
     assert_in_delta 300, february[:avg_pace], 1e-9
     assert_in_delta 450, february[:avg_spi], 1e-9
     assert_equal "/overview/2024/2", february[:href]
-    assert_not february[:external]
   end
 
   test "spi average ignores runs without one" do
@@ -79,8 +78,7 @@ class Overview::BarsTest < ActiveSupport::TestCase
 
     assert_equal 29, days.size
     assert_equal 1, days[4][:runs]
-    assert_equal runs.first.external_url, days[4][:href]
-    assert days[4][:external]
+    assert_equal "/runs/#{runs.first.id}", days[4][:href]
     assert_nil days[0][:href]
   end
 
@@ -90,6 +88,6 @@ class Overview::BarsTest < ActiveSupport::TestCase
     day = buckets([evening, morning], year: 2024, month: 3)[2]
 
     assert_equal 2, day[:runs]
-    assert_equal morning.external_url, day[:href]
+    assert_equal "/runs/#{morning.id}", day[:href]
   end
 end

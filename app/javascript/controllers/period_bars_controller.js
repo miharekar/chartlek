@@ -147,7 +147,6 @@ export default class extends Controller {
   open(bucket) {
     if (!bucket.href) return
     hideTooltip()
-    if (bucket.external) window.open(bucket.href, "_blank", "noopener")
-    else window.Turbo.visit(bucket.href)
+    window.Turbo.visit(bucket.href)
   }
 }

@@ -156,7 +156,7 @@ export default class extends Controller {
         hideTooltip()
       })
       .on("click", () => {
-        if (current) window.open(current.href, "_blank", "noopener")
+        if (current) window.Turbo.visit(current.href)
       })
   }
 

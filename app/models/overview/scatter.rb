@@ -9,7 +9,7 @@ class Overview::Scatter
 
   private
   def row(activity)
-    {t: activity.local_started_at.to_i * 1000, name: activity.name, km: (activity.distance_m / 1000).round(2), pace: activity.pace.round(1), hr: activity.avg_hr, spi: activity.spi&.round(1), href: activity.external_url}
+    {t: activity.local_started_at.to_i * 1000, name: activity.name, km: (activity.distance_m / 1000).round(2), pace: activity.pace.round(1), hr: activity.avg_hr, spi: activity.spi&.round(1), href: Rails.application.routes.url_helpers.run_path(activity)}
   end
 
   def average

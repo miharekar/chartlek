@@ -204,7 +204,7 @@ export default class extends Controller {
 
   #open(event) {
     const run = this.#nearest(event)
-    if (run) window.open(run.url, "_blank", "noopener")
+    if (run) window.Turbo.visit(run.url)
   }
 
   #tooltipHtml(run) {

@@ -15,7 +15,7 @@
   <h2 class="<%= label %>">Longest run</h2>
   <p class="<%= big %>"><%= overview_distance(longest.distance_m / 1000) %><span class="<%= unit %>">km</span></p>
   <p class="mt-1 text-sm tabular-nums text-zinc-600 dark:text-zinc-300">
-    <%= link_to overview_date(longest.local_started_at), longest.external_url, target: "_blank", rel: "noopener", class: "underline decoration-zinc-300 hover:text-lime-700 dark:decoration-zinc-600 dark:hover:text-[#9CFF44]" %>
+    <%= link_to overview_date(longest.local_started_at), run_path(longest), class: "underline decoration-zinc-300 hover:text-lime-700 dark:decoration-zinc-600 dark:hover:text-[#9CFF44]" %>
     <span class="text-zinc-500"><%= longest.name %></span>
   </p>
 </section>
