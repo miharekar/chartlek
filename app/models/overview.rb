@@ -6,7 +6,7 @@ class Overview
   attr_reader :period, :activities
 
   def self.for(year: nil, month: nil)
-    new(Activity.select(Activity.column_names - %w[summary]), year:, month:)
+    new(Activity.select(Activity.column_names - %w[summary splits]), year:, month:)
   end
 
   def initialize(all, year: nil, month: nil, today: nil)

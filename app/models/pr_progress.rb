@@ -11,7 +11,7 @@ class PrProgress
   end
 
   def self.for_all
-    new(Activity.select(Activity.column_names - %w[summary]))
+    new(Activity.select(Activity.column_names - %w[summary splits]))
   end
 
   def initialize(activities, today: nil)

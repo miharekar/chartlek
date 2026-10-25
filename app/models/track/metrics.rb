@@ -1,0 +1,90 @@
+class Track::Metrics
+  SPLIT_M = 1000.0
+  SEGMENTS = 20
+  WINDOW_S = 10
+  ELEVATION_THRESHOLD_M = 1.0
+
+  def initialize(recording)
+    @rows = recording.rows
+    @t = @rows.pluck(:t)
+    @d = @rows.pluck(:d)
+  end
+
+  def splits(size = SPLIT_M)
+    (0.0...@d.last).step(size).filter_map { split(it, [it + size, @d.last].min) }
+  end
+
+  def pace_profile
+    length = @d.last / SEGMENTS
+
+    Array.new(SEGMENTS) { pace(it * length, (it + 1) * length).round(1) }
+  end
+
+  def pace_variability
+    windows = (@t.last / WINDOW_S).floor
+    covered = Array.new(windows) { interpolate(@t, @d, (it + 1) * WINDOW_S) - interpolate(@t, @d, it * WINDOW_S) }
+    mean = covered.sum / windows if windows > 1
+
+    (covered.sum { (it - mean).abs } / windows / mean * 100).round(1) if mean&.positive?
+  end
+
+  private
+  def split(from, to)
+    if to - from >= 1
+      first = @d.bsearch_index { it > from }
+      samples = @rows[first...(@d.bsearch_index { it > to } || @rows.size)]
+      altitudes = @rows[(first - 1)...(first + samples.size)].filter_map { it[:alt] }
+      gain, loss = elevation_change(altitudes)
+
+      {
+        distance: (to - from).round(1),
+        time: (interpolate(@d, @t, to) - interpolate(@d, @t, from)).round(1),
+        pace: pace(from, to).round(1),
+        hr: average(samples, :hr)&.round,
+        cad: average(samples, :cad)&.round,
+        gain: gain&.round(1),
+        loss: loss&.round(1)
+      }
+    end
+  end
+
+  def elevation_change(altitudes)
+    if altitudes.size > 1
+      turning = altitudes.first
+      gain = loss = 0.0
+
+      altitudes.each do |altitude|
+        if altitude - turning > ELEVATION_THRESHOLD_M
+          gain += altitude - turning
+          turning = altitude
+        elsif turning - altitude > ELEVATION_THRESHOLD_M
+          loss += turning - altitude
+          turning = altitude
+        end
+      end
+
+      [gain, loss]
+    end
+  end
+
+  def pace(from, to)
+    (interpolate(@d, @t, to) - interpolate(@d, @t, from)) / ((to - from) / 1000.0)
+  end
+
+  def average(samples, key)
+    values = samples.filter_map { it[key] }
+    values.sum.fdiv(values.size) if values.any?
+  end
+
+  def interpolate(xs, ys, x)
+    index = xs.bsearch_index { it >= x }
+
+    if index.nil?
+      ys.last
+    elsif index.zero?
+      ys.first
+    else
+      ys[index - 1] + (x - xs[index - 1]) / (xs[index] - xs[index - 1]) * (ys[index] - ys[index - 1])
+    end
+  end
+end

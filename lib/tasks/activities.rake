@@ -21,4 +21,22 @@ namespace :activities do
   task resync: :environment do
     run_sync.call(true)
   end
+
+  desc "Rebuild tracks and metrics from every stored original"
+  task reprocess: :environment do
+    activities = Activity.joins(:original_attachment)
+    total = activities.count
+    failures = {}
+
+    activities.find_each.with_index(1) do |activity, index|
+      activity.process_original
+    rescue => error
+      failures[activity.id] = "#{activity.source} #{activity.external_id}: #{error.message.truncate(200)}"
+    ensure
+      puts "#{index}/#{total}" if (index % 50).zero?
+    end
+
+    puts "Processed #{total - failures.size} of #{total} runs"
+    failures.each { |id, reason| puts "Failed #{id} (#{reason})" }
+  end
 end

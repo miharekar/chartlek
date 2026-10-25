@@ -62,3 +62,6 @@ gem "factory_bot_rails", "~> 6.5", group: :test
 gem "webmock", "~> 3.34", group: :test
 
 gem "csv", "~> 3.3"
+
+gem "fit4ruby", github: "miharekar/fit4ruby"
+gem "rubyzip", "~> 3.0"
