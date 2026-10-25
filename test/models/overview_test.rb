@@ -36,11 +36,17 @@ class OverviewTest < ActiveSupport::TestCase
     o = overview(sample)
 
     assert_equal 7, o.weekdays.size
-    assert_equal "Saturday", o.most_often.name
-    assert_equal 2, o.most_often.count
-    assert_in_delta 12.5, o.most_often.average_km, 1e-9
-    assert_equal 0, o.least_often.count
+    assert_equal 0, o.least_often.days
     assert_equal 0.0, o.least_often.average_km
+  end
+
+  test "weekday stats count distinct days" do
+    runs = sample + [run_on([2024, 3, 16, 9, 0], distance_m: 5000, timer_s: 1500)]
+    o = overview(runs)
+
+    assert_equal "Saturday", o.most_often.name
+    assert_equal 2, o.most_often.days
+    assert_in_delta 15.0, o.most_often.average_km, 1e-9
   end
 
   test "days per week uses distinct days over the period" do

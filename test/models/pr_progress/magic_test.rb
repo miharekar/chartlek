@@ -11,7 +11,7 @@ class PrProgress::MagicTest < ActiveSupport::TestCase
 
   test "rounds down to the next minute up to 5 km" do
     assert_equal 1440, target("5 km", 5000, 1463).target_s
-    assert_equal 120, target("1 mi", 1609.344, 150).target_s
+    assert_equal 120, target("3 km", 3000, 150).target_s
   end
 
   test "an exact step goes one step lower" do
@@ -22,7 +22,7 @@ class PrProgress::MagicTest < ActiveSupport::TestCase
   test "uses 5 minute steps above 5 km up to and including the half marathon" do
     assert_equal 5700, target("Half marathon", 21_097.5, 5850).target_s
     assert_equal 2400, target("10 km", 10_000, 2565).target_s
-    assert_equal 1500, target("4 mi", 6437.376, 1520).target_s
+    assert_equal 1500, target("10 km", 10_000, 1520).target_s
   end
 
   test "uses 15 minute steps beyond the half marathon" do
@@ -32,7 +32,7 @@ class PrProgress::MagicTest < ActiveSupport::TestCase
 
   test "step boundaries" do
     assert_equal 1500, target("5 km", 5000, 1560).target_s
-    assert_equal 1500, target("4 mi", 6437.376, 1501).target_s
+    assert_equal 1500, target("10 km", 10_000, 1501).target_s
   end
 
   test "computes the gap in seconds and percent" do
@@ -44,11 +44,11 @@ class PrProgress::MagicTest < ActiveSupport::TestCase
   end
 
   test "skips a PR faster than one step" do
-    assert_nil target("1 mi", 1609.344, 59)
+    assert_nil target("3 km", 3000, 59)
   end
 
   test "keeps the three smallest gaps in order" do
-    records = [record("1 mi", 1609.344, 330), record("3 km", 3000, 700), record("5 km", 5000, 1475), record("10 km", 10_000, 3010), record("Marathon", 42_195, 12_032)]
+    records = [record("3 km", 3000, 700), record("5 km", 5000, 1475), record("10 km", 10_000, 3010), record("Marathon", 42_195, 12_032)]
 
     targets = PrProgress::Magic.for(records)
 
@@ -57,9 +57,9 @@ class PrProgress::MagicTest < ActiveSupport::TestCase
   end
 
   test "ties keep benchmark order" do
-    records = [record("5 km", 5000, 1470), record("3 km", 3000, 735), record("1 mi", 1609.344, 330)]
+    records = [record("5 km", 5000, 1470), record("3 km", 3000, 735), record("15 km", 15_000, 5000)]
 
-    assert_equal ["5 km", "3 km", "1 mi"], PrProgress::Magic.for(records).map(&:name)
+    assert_equal ["5 km", "3 km", "15 km"], PrProgress::Magic.for(records).map(&:name)
   end
 
   test "limits to three" do

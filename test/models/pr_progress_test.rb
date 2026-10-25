@@ -18,7 +18,7 @@ class PrProgressTest < ActiveSupport::TestCase
     assert_equal [early.id, late.id], rows.pluck("id")
     assert_nil rows[0]["bucket"]
     assert_nil rows[0]["best"]
-    assert_equal 5, rows[1]["bucket"]
+    assert_equal 2, rows[1]["bucket"]
     assert_in_delta 3000, rows[1]["best"], 0.01
     assert_equal Time.utc(2024, 6, 1, 8).to_i * 1000, rows[1]["time"]
     assert_equal 10.4, rows[1]["distance"]
@@ -36,7 +36,7 @@ class PrProgressTest < ActiveSupport::TestCase
 
     frontier = PrProgress.new(Activity.all, today: @today).data[:frontier]
 
-    assert_equal [2, 5], frontier.pluck(:bucket)
+    assert_equal [1, 2], frontier.pluck(:bucket)
     assert_equal 2700, frontier.last[:time]
     assert_equal 270, frontier.last[:pace]
     assert frontier.last[:race]
@@ -50,8 +50,8 @@ class PrProgressTest < ActiveSupport::TestCase
     benchmarks = PrProgress.new(Activity.all, today: @today).data[:benchmarks]
 
     assert_equal PersonalRecords::BENCHMARKS.map(&:first), benchmarks.pluck(:name)
-    assert_equal Spi.time_table(10_000), benchmarks[5][:table]
-    assert_equal Vdot.time_table(10_000), benchmarks[5][:vdot_table]
+    assert_equal Spi.time_table(10_000), benchmarks[2][:table]
+    assert_equal Vdot.time_table(10_000), benchmarks[2][:vdot_table]
   end
 
   test "reference is the highest SPI run in the period" do
@@ -103,6 +103,6 @@ class PrProgressTest < ActiveSupport::TestCase
 
     magic = PrProgress.new(Activity.all, today: @today).data[:magic]
 
-    assert_equal [{bucket: 11, target: 11_700, percent: 2.76}], magic
+    assert_equal [{bucket: 7, target: 11_700, percent: 2.76}], magic
   end
 end

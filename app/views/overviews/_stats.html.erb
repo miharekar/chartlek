@@ -24,7 +24,7 @@
   <section class="<%= card %> col-span-2">
     <h2 class="<%= label %>"><%= title %></h2>
     <p class="mt-1 text-3xl font-semibold"><%= weekday.name %></p>
-    <p class="mt-1 text-sm tabular-nums text-zinc-600 dark:text-zinc-300"><%= pluralize(weekday.count, "run") %> · avg <%= overview_distance(weekday.average_km) %> km</p>
+    <p class="mt-1 text-sm tabular-nums text-zinc-600 dark:text-zinc-300"><%= pluralize(number_with_delimiter(weekday.days), "day") %> · avg <%= overview_distance(weekday.average_km) %> km</p>
   </section>
 <% end %>
 

@@ -2,7 +2,7 @@ require "test_helper"
 
 class PersonalRecordsTest < ActiveSupport::TestCase
   test "benchmarks are in order" do
-    assert_equal ["1 mi", "3 km", "5 km", "4 mi", "5 mi", "10 km", "15 km", "10 mi", "20 km", "Half marathon", "40 km", "Marathon", "50 km", "100 km"], PersonalRecords::BENCHMARKS.map(&:first)
+    assert_equal ["3 km", "5 km", "10 km", "15 km", "20 km", "Half marathon", "40 km", "Marathon", "50 km", "100 km"], PersonalRecords::BENCHMARKS.map(&:first)
   end
 
   test "bucket_for covers each benchmark from its distance up to but excluding 1 km beyond it" do
@@ -86,9 +86,9 @@ class PersonalRecordsTest < ActiveSupport::TestCase
   test "returns entries in benchmark order" do
     marathon = build(:activity, distance_m: 42_300, timer_s: 12_000)
     five_k = build(:activity, distance_m: 5100, timer_s: 1500)
-    mile = build(:activity, distance_m: 1700, timer_s: 400)
+    three_k = build(:activity, distance_m: 3100, timer_s: 800)
 
-    assert_equal ["1 mi", "5 km", "Marathon"], PersonalRecords.for([marathon, five_k, mile]).map(&:name)
+    assert_equal ["3 km", "5 km", "Marathon"], PersonalRecords.for([marathon, five_k, three_k]).map(&:name)
   end
 
   test "works on a relation" do

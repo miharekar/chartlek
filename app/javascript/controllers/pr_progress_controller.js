@@ -18,7 +18,6 @@ const MARGIN = { top: 12, right: 28, bottom: 40, left: 56 }
 const DOT_RADIUS = 8
 const MARKER_RADIUS = 14
 const X_LABELS = [
-  [1.609344, "1 mi"],
   [3, "3 km"],
   [5, "5 km"],
   [10, "10 km"],
