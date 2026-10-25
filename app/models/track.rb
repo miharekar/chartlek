@@ -9,6 +9,10 @@ class Track < ApplicationRecord
     Metrics.new(Recording.new(rows)).splits(size)
   end
 
+  def route
+    data.fetch("lng", []).zip(data.fetch("lat", [])).reject { it.include?(nil) }
+  end
+
   private
   def rows
     keys = data.keys.map(&:to_sym)

@@ -25,4 +25,9 @@ class TrackTest < ActiveSupport::TestCase
   test "bars take a size" do
     assert_equal [200.0], track("t" => [0, 60], "d" => [0, 200]).bars(200).pluck(:distance)
   end
+
+  test "route skips points without coordinates" do
+    assert_equal [[2.0, 1.0], [6.0, 5.0]], track("lat" => [1.0, nil, 5.0], "lng" => [2.0, nil, 6.0]).route
+    assert_equal [], track("t" => [0, 1]).route
+  end
 end
