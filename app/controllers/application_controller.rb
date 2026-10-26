@@ -7,9 +7,13 @@ class ApplicationController < ActionController::Base
 
   before_action :sync_if_due, if: -> { request.get? && request.format.html? }
 
-  helper_method :sync_profile
+  helper_method :sync_profile, :current_theme
 
   private
+  def current_theme
+    cookies[:theme].presence_in(ThemesController::THEMES) || "system"
+  end
+
   def sync_profile
     @sync_profile ||= Profile.instance
   end

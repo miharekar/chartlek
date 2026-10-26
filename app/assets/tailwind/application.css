@@ -1,10 +1,23 @@
 @import "tailwindcss";
 
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    &:where([data-theme="system"], [data-theme="system"] *) {
+      @slot;
+    }
+  }
+}
+
 @theme {
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
 }
 
 :root {
+  color-scheme: light dark;
   --chart-accent: #4d9a0b;
   --chart-accent-highlight: #2f6f05;
   --chart-accent-low: #d3eeb3;
@@ -14,8 +27,23 @@
   --chart-axis: #71717a;
 }
 
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+    --chart-accent: #6acd12;
+    --chart-accent-highlight: #9cff44;
+    --chart-accent-low: #254806;
+    --chart-highlight: #fbbf24;
+    --chart-muted: #71717a;
+    --chart-grid: #27272a;
+    --chart-axis: #a1a1aa;
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root[data-theme="system"] {
     --chart-accent: #6acd12;
     --chart-accent-highlight: #9cff44;
     --chart-accent-low: #254806;

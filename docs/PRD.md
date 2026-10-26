@@ -18,7 +18,7 @@ Why: Smashrun (smashrun.com/miharekar) is effectively abandonware, but its chart
 - **G1:** Rebuild every Smashrun overview chart and the Pro analytics: Pace Trends, PR Progress, Training Bands, Progress Towards Goal, Pro Map, and the run page.
 - **G2:** Use the Garmin Connect Personal API as the primary source and cache everything in SQLite. The UI never waits on Garmin.
 - **G3:** Fill the years before Garmin from the Strava API; take their tracks, and any Smashrun-only runs, from the Smashrun API.
-- **G4:** Make the UI fast and modern: Tailwind, light and dark theme following the system, and D3 charts as Stimulus controllers.
+- **G4:** Make the UI fast and modern: Tailwind, a System / Light / Dark theme switch, and D3 charts as Stimulus controllers.
 - **G5:** Show Garmin wellness trends (resting HR, VO2max, HRV, weight, sleep, Body Battery/stress) next to running performance.
 
 ### Non-goals
@@ -45,14 +45,14 @@ These are explicitly out of scope:
 | Garmin access | [Garmin Connect Personal API](https://developer.garmin.com/gc-developer-program/personal/personal-api/). The key is in `.env` as `GARMIN_API_TOKEN`. |
 | History gaps | Strava API (archive as fallback) for runs before Garmin, plus Smashrun for their tracks and the one Smashrun-only run. |
 | FIT parser | `fit4ruby` from your fork `miharekar/fit4ruby`. `fit_kit` doesn't build on Ruby 4.0.9. The fork prefixes its BinData struct field names, so it works with bindata 2.4.10 and newer (CVE-2021-32823); bindata 2.3.1 made `type` a reserved name. An initializer quiets its logger and no-ops `Fit4Ruby::Activity#check`, its post-read validation, which rejects every 2024+ file and at least one older one. About 2,000 records/s. |
-| Map | Mapbox GL JS for every map (run map now, Pro Map in Phase 3), loaded through Importmap (vendored UMD build, CSS vendored), with the `mapbox/light-v11` and `mapbox/dark-v11` styles following the system theme. The public `MAPBOX_TOKEN` from `.env` is rendered into the page. |
+| Map | Mapbox GL JS for every map (run map now, Pro Map in Phase 3), loaded through Importmap (vendored UMD build, CSS vendored), with the `mapbox/light-v11` and `mapbox/dark-v11` styles following the chosen theme (the OS under System). The public `MAPBOX_TOKEN` from `.env` is rendered into the page. |
 | Activity types | All running subtypes: road, trail, track, treadmill, indoor, virtual, ultra. Treadmill, indoor and virtual runs are flagged so they can be filtered out. |
 | v1 scope | Overview dashboard, Pace Trends, PR Progress (with predictions and Magic PRs). |
 | Eventually | Everything except badges: run page, Pro Map, Training Bands, Goals, wellness. |
 | Extras | Notables, food equivalents, Garmin wellness data (resting HR, VO2max, HRV, weight, sleep, Body Battery/stress). |
 | Performance index | VDOT only. SPI (Smashrun's 1–1000 score on a 1974 world-record curve) was dropped: its number has no physical meaning, and on the owner's PRs VDOT predicted other distances more accurately (§6). |
 | Units | Metric only: km, min/km, m, °C, 24h clock, weeks start Monday. |
-| Look | Light and dark, following the system. |
+| Look | Light and dark. A System / Light / Dark switch in the nav; System follows the OS, and the choice lives in a long-lived cookie rendered on `<html>` by the server. |
 | Name | `smashback` |
 | Stack | `rails new` (Rails 8.1.4, Ruby 4.0.9 via mise), SQLite, Tailwind, Importmap, Hotwire, D3. Follows Visualizer's `STYLE.md` conventions. |
 
@@ -222,7 +222,7 @@ Phase 4 adds a secondary-axis overlay toggle for resting HR or VO2max.
     - **HR:** your Garmin HR zones.
     - **Grade:** −10% to +10%.
     - **Cadence:** cadence ranges.
-  - Map tiles follow the light/dark theme.
+  - Map tiles follow the chosen theme (the OS under System).
 - **Distribution bars** under the map, using Smashrun's click cycle: 1× selects only that bucket, 2× that bucket and above, 3× that bucket and below, 4× resets. The legend shows distance, duration, average pace, HR and cadence for the selection.
 - **Fastest segments:** 250 m, 400 m, 1 km, 5 km, 10 km, half, … up to the run's length, each with pace and VDOT. Clicking one isolates it on the map and updates the stats.
 - **Splits** per km for pace, elevation, HR or cadence, following the current metric. Clicking a split isolates it.
@@ -499,7 +499,7 @@ Garmin profile and HR zones (JSON), `synced_at`, `sync_error`.
   - The server renders chart data as JSON into Stimulus values, so Phase 1 needs no JSON endpoints.
   - Shared helpers live in `app/javascript/helpers/charts/`: pace and duration formatters, axes, tooltip, brush.
   - Charts redraw on `ResizeObserver`.
-  - Theme comes from CSS variables (`--chart-accent`, `--chart-muted`, `--chart-grid`, …), so a light/dark switch needs no redraw.
+  - Theme comes from CSS variables (`--chart-accent`, `--chart-muted`, `--chart-grid`, …), so a light/dark switch needs no redraw. The variables, Tailwind's `dark:` variant and `color-scheme` all key off `<html data-theme>`.
 
 ## 10. Design
 

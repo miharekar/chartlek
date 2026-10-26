@@ -9,6 +9,7 @@ Rails.application.routes.draw do
   resource :pace_trend, only: :show
   resource :pr_progress, only: :show
   resource :sync, only: :create
+  resource :theme, only: :update
   resource :strava_connection, only: %i[show create]
   get "strava/callback", to: "strava_connections#show", as: :strava_callback
 end

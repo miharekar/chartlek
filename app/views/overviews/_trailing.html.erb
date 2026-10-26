@@ -1,6 +1,6 @@
 <% trailing = overview.trailing %>
 <section class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900/50" data-controller="trailing-line" data-trailing-line-data-value="<%= trailing.to_json %>">
-  <h2 class="flex items-center gap-1.5 font-semibold">
+  <h2 class="flex flex-wrap items-center gap-1.5 font-semibold">
     Trailing <%= trailing[:days] %> day kilometers
     <%= overview_info "For every day, the total distance run in the #{trailing[:days]} days ending that day, including runs from before the selected period." %>
   </h2>

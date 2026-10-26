@@ -19,7 +19,9 @@ export default class extends Controller {
     this.map = new mapboxgl.Map({ container: this.element, style: this.#style(), scrollZoom: false, performanceMetricsCollection: false, bounds: this.#bounds(), fitBoundsOptions: { padding: PADDING } })
     this.map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right")
     this.map.on("style.load", () => this.#draw())
-    this.changeScheme = () => this.map.setStyle(this.#style(), { diff: false })
+    this.changeScheme = () => {
+      if (this.#following()) this.map.setStyle(this.#style(), { diff: false })
+    }
     this.scheme.addEventListener("change", this.changeScheme)
   }
 
@@ -31,7 +33,12 @@ export default class extends Controller {
   }
 
   #style() {
-    return this.scheme.matches ? STYLES.dark : STYLES.light
+    const theme = document.documentElement.dataset.theme
+    return theme === "dark" || (this.#following() && this.scheme.matches) ? STYLES.dark : STYLES.light
+  }
+
+  #following() {
+    return !["light", "dark"].includes(document.documentElement.dataset.theme)
   }
 
   #bounds() {
