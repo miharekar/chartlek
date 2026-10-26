@@ -1,5 +1,4 @@
 module OverviewsHelper
-  VISIBLE_YEARS = 8
   PILL = "rounded-md px-2.5 py-1 text-sm tabular-nums"
   PILL_STATES = {
     selected: "bg-lime-700 font-medium text-white dark:bg-[#6ACD12] dark:text-zinc-950",
@@ -55,14 +54,6 @@ module OverviewsHelper
     else
       link_to label, path, class: classes
     end
-  end
-
-  def overview_visible_years(years)
-    years.first(VISIBLE_YEARS)
-  end
-
-  def overview_older_years(years)
-    years.drop(VISIBLE_YEARS)
   end
 
   def overview_info(text)

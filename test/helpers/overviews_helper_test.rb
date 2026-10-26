@@ -25,13 +25,6 @@ class OverviewsHelperTest < ActionView::TestCase
     assert_equal "March 2023", overview_period_title(Overview::Period.new(year: 2023, month: 3, today:, first_date: today))
   end
 
-  test "older years are everything past the newest eight" do
-    years = (2010..2024).to_a.reverse
-
-    assert_equal 8, overview_visible_years(years).size
-    assert_equal [2016, 2015, 2014, 2013, 2012, 2011, 2010], overview_older_years(years)
-  end
-
   test "disabled pills are not links" do
     assert_includes overview_pill("Jan", "/x", :disabled), "<span"
     assert_includes overview_pill("Jan", "/x", :idle), 'href="/x"'

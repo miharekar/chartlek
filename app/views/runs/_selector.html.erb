@@ -1,20 +1,9 @@
 <% years = Activity.years_with_runs %>
 <% years = ([year] + years).compact.uniq.sort.reverse %>
-<% older = overview_older_years(years) %>
 <nav class="mt-4 flex flex-wrap items-center gap-1" aria-label="Period">
   <%= overview_pill "All", runs_path(year: "all"), year.nil? ? :selected : :idle %>
-  <% overview_visible_years(years).each do |candidate| %>
+  <% years.each do |candidate| %>
     <%= overview_pill candidate, runs_path(year: candidate), year == candidate ? :selected : :idle %>
-  <% end %>
-  <% if older.any? %>
-    <%= tag.details class: "relative", open: older.include?(year) do %>
-      <summary class="<%= OverviewsHelper::PILL %> cursor-pointer list-none text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800">Older ▾</summary>
-      <div class="absolute left-0 z-10 mt-1 flex w-64 flex-wrap gap-1 rounded-lg border border-zinc-200 bg-white p-2 shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
-        <% older.each do |candidate| %>
-          <%= overview_pill candidate, runs_path(year: candidate), year == candidate ? :selected : :idle %>
-        <% end %>
-      </div>
-    <% end %>
   <% end %>
 </nav>
 <% if year %>

@@ -94,7 +94,7 @@ These are explicitly out of scope:
 
 Routes: `/` → `/overview`, `/overview/:year`, `/overview/:year/:month`.
 
-The period selector offers **All time**, year pills (newest first, older years collapsed under "Older"), and month pills for the selected year (months without runs are disabled). The period applies to every widget.
+The period selector offers **All time**, a pill for every year (newest first), and month pills for the selected year (months without runs are disabled). The period applies to every widget.
 
 | # | Widget | Spec |
 |---|---|---|

@@ -22,6 +22,16 @@ class OverviewsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href='/overview/2024']"
   end
 
+  test "period selector lists every year without a dropdown" do
+    (2010..2024).each { |year| create(:activity, local_started_at: Time.utc(year, 5, 6, 7), started_at: Time.utc(year, 5, 6, 7)) }
+
+    get "/overview"
+
+    assert_select "nav[aria-label='Period'] a", text: "2010"
+    assert_select "nav[aria-label='Period'] a", text: "2024"
+    assert_select "details", false
+  end
+
   test "renders an empty state without data" do
     get "/overview"
 
