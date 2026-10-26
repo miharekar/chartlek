@@ -9,7 +9,7 @@ import { observeSize } from "helpers/resize"
 
 const MARGIN = { top: 20, right: 24, bottom: 4, left: 44 }
 const AXIS_HEIGHT = 20
-const CHART_HEIGHT = 96
+const CHART_HEIGHT = 180
 
 const CHARTS = [
   { key: "alt", label: "Elevation", unit: "m", fill: true },

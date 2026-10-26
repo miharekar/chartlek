@@ -199,11 +199,11 @@ Phase 4 adds a secondary-axis overlay toggle for resting HR or VO2max.
   - **Pace variability** (%), shown as Smashrun's circle glyph.
   - **Nth longest run** and **Nth fastest for a similar distance** (±10%), each with a mini rank chart.
   - **Estimated finish times** for 5K, 10K, half and marathon at this run's VDOT.
-- **Change in speed over route:**
-  - Bars per 100 m, toggleable to per-km splits.
+- **Route map:** immediately after the tiles, a Mapbox GL JS route line, 600 px tall on desktop and 320 px on phones. Requires a GPS route and public Mapbox token. The Pro Map comes in Phase 3, also on Mapbox GL JS.
+- **Change in speed over route:** follows the map, only for tracks with splits.
+  - Bars per 100 m, switchable to per-km splits using two keyboard-accessible buttons with a pressed state.
   - Brushing a range shows a summary of the selection: distance, time, pace, HR, cadence.
-- **Elevation, HR and cadence charts:** these share the x-axis (distance) and a synced hover.
-- **Route map:** a basic Mapbox GL JS route line. The Pro Map comes in Phase 3, also on Mapbox GL JS.
+- **Elevation, HR and cadence charts:** follow the speed chart, 180 px each, sharing the x-axis (distance) and a synced hover. Chart sections require a track.
 - **Notables** as of the run's date (§6).
 - **Fastest runs for this distance:** for the last 90, 180 and 365 days.
 - **Analyze Run View (training in the prior 90 days):**

@@ -25,7 +25,9 @@ class RunChartsTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "[data-controller=run-speed]"
-    assert_select "select[aria-label='Bar size']"
+    assert_select "[role=group][aria-label='Bar size'] button[value=bars][aria-pressed=true]", text: "per 100 m"
+    assert_select "[role=group][aria-label='Bar size'] button[value=splits][aria-pressed=false]", text: "per km"
+    assert_equal %w[run-map run-speed run-profiles], css_select("[data-controller]").map { it["data-controller"] }.select { %w[run-map run-speed run-profiles].include?(it) }
     assert_select "[data-controller=run-profiles]"
     assert_select "[data-controller=run-map][data-run-map-route-value=?]", "[[14.0,46.0],[14.001,46.001],[14.003,46.003]]"
     assert_select "[data-controller=run-map][data-run-map-token-value=?]", "pk.test"

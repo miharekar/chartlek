@@ -13,7 +13,7 @@ import { hideTooltip, moveTooltip, showTooltip } from "helpers/tooltip"
 const MARGIN = { top: 8, right: 24, bottom: 24, left: 44 }
 
 export default class extends Controller {
-  static targets = ["chart", "stats"]
+  static targets = ["chart", "stats", "unit"]
   static values = { bars: Array, splits: Array, unit: { type: String, default: "bars" } }
 
   connect() {
@@ -31,10 +31,11 @@ export default class extends Controller {
   }
 
   unit(event) {
-    this.unitValue = event.target.value
+    this.unitValue = event.currentTarget.value
   }
 
   unitValueChanged() {
+    this.unitTargets.forEach(button => button.setAttribute("aria-pressed", button.value === this.unitValue))
     if (this.size) this.draw()
   }
 
