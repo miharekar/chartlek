@@ -40,3 +40,26 @@ export function summarize(runs, selected) {
     share: total > 0 ? (km / total) * 100 : 0
   }
 }
+
+const DAY_MS = 86_400_000
+const dayStart = time => Math.floor(time / DAY_MS) * DAY_MS
+
+export function average(runs, metric) {
+  const known = runs.map(METRICS[metric]).filter(value => value != null)
+  return known.length ? known.reduce((sum, value) => sum + value, 0) / known.length : null
+}
+
+export function timelineTicks(from, to, race) {
+  const window = Math.round((dayStart(to) - from) / DAY_MS)
+  const ticks = []
+  for (let days = window; days > 0; days -= 30) ticks.push({ t: dayStart(to) - days * DAY_MS, label: `${days} days before` })
+  return [...ticks, { t: to, label: race ? "race day" : "run day" }]
+}
+
+export function daysBefore(currentTime, time) {
+  return Math.round((dayStart(currentTime) - dayStart(time)) / DAY_MS)
+}
+
+export function sameDayRuns(runs, run) {
+  return runs.filter(other => dayStart(other.t) === dayStart(run.t))
+}

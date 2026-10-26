@@ -236,6 +236,10 @@ Phase 4 adds a secondary-axis overlay toggle for resting HR or VO2max.
   - Brushing the histogram highlights the matching runs in the timeline.
   - Shows run count, distance, duration, and % of total training for the selection.
 - **Overview:** the PR sparklines (§5.2 #13) light up once tracks are parsed.
+  - This run is marked in amber: a marker at its value on the histogram for the chosen metric, and a bar at the right edge of the timeline. It is not part of the averages or the summary.
+  - A dashed line marks the mean of the other runs for the chosen metric (runs without it are skipped); it is hidden while a brush is active.
+  - The timeline axis reads "90 days before", "60 days before", "30 days before" and "run day" ("race day" for races). Runs on the same day are grouped in one tooltip titled "N days before", and clicking a bar hides the tooltip as it opens that run.
+  - A small legend names "This run", "Average" and "Previous runs".
 
 ### 5.6 Pro Map (Phase 3)
 

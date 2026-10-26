@@ -5,7 +5,7 @@ import { max } from "d3-array"
 import { scaleLinear, scaleUtc } from "d3-scale"
 import { select } from "d3-selection"
 import { formatDate, formatDistance, formatDuration, formatPace } from "helpers/formatters"
-import { histogram, selectRuns, summarize } from "helpers/analyze_run"
+import { METRICS, average, daysBefore, histogram, sameDayRuns, selectRuns, summarize, timelineTicks } from "helpers/analyze_run"
 import { observeSize } from "helpers/resize"
 import { parseTime } from "helpers/time"
 import { hideTooltip, moveTooltip, showTooltip, tooltipHtml } from "helpers/tooltip"
@@ -19,7 +19,7 @@ const LABELS = { km: "km", pace: "/km", hr: "bpm", vdot: "VDOT" }
 
 export default class extends Controller {
   static targets = ["histogram", "timeline", "summary"]
-  static values = { runs: Array, from: Number, to: Number, metric: { type: String, default: "km" } }
+  static values = { runs: Array, current: Object, from: Number, to: Number, metric: { type: String, default: "km" } }
 
   connect() {
     this.histogramSvg = select(this.histogramTarget).append("svg").attr("class", "block w-full").attr("height", HISTOGRAM_HEIGHT)
@@ -57,7 +57,9 @@ export default class extends Controller {
     const metric = this.metricValue
     const { width, bins } = this
     const flipped = metric === "pace"
-    const domain = bins.length ? [bins[0].x0, bins[bins.length - 1].x1] : [0, 1]
+    const own = METRICS[metric](this.currentValue)
+    const binDomain = bins.length ? [bins[0].x0, bins[bins.length - 1].x1] : [0, 1]
+    const domain = own == null ? binDomain : [Math.min(binDomain[0], own), Math.max(binDomain[1], own)]
     const x = scaleLinear()
       .domain(flipped ? [domain[1], domain[0]] : domain)
       .range([MARGIN.left, width - MARGIN.right])
@@ -100,6 +102,7 @@ export default class extends Controller {
     svg.append("text").attr("fill", "var(--chart-axis)").attr("font-size", 11).attr("x", MARGIN.left).attr("y", 9).text(LABELS[metric])
 
     if (!bins.length) return
+    this.drawMarkers(svg, x)
     const brush = brushX()
       .extent([
         [MARGIN.left, HISTOGRAM_TOP],
@@ -108,11 +111,31 @@ export default class extends Controller {
       .on("brush end", event => {
         if (!event.selection) this.selected = null
         else this.selected = selectRuns(this.bins, event.selection.map(x.invert).sort((a, b) => a - b))
+        this.averageLine?.attr("display", this.selected ? "none" : null)
         this.drawTimeline()
         this.renderSummary()
       })
     const group = svg.append("g").call(brush)
     group.select(".selection").attr("fill", "var(--chart-accent-highlight)").attr("fill-opacity", 0.25).attr("stroke", "var(--chart-accent-highlight)")
+  }
+
+  drawMarkers(svg, x) {
+    const bottom = HISTOGRAM_HEIGHT - MARGIN.bottom
+    const mean = average(this.runsValue, this.metricValue)
+    const own = METRICS[this.metricValue](this.currentValue)
+    const [low, high] = x.range()
+    const place = value => Math.max(low, Math.min(high, x(value)))
+    this.averageLine = null
+
+    if (mean != null) {
+      this.averageLine = svg.append("line").attr("x1", place(mean)).attr("x2", place(mean)).attr("y1", HISTOGRAM_TOP).attr("y2", bottom)
+        .attr("stroke", "var(--chart-axis)").attr("stroke-width", 1.5).attr("stroke-dasharray", "4 3").attr("pointer-events", "none")
+    }
+    if (own != null) {
+      svg.append("line").attr("x1", place(own)).attr("x2", place(own)).attr("y1", HISTOGRAM_TOP).attr("y2", bottom)
+        .attr("stroke", "var(--chart-highlight)").attr("stroke-width", 2).attr("pointer-events", "none")
+      svg.append("circle").attr("cx", place(own)).attr("cy", HISTOGRAM_TOP).attr("r", 3).attr("fill", "var(--chart-highlight)").attr("pointer-events", "none")
+    }
   }
 
   drawTimeline() {
@@ -121,22 +144,25 @@ export default class extends Controller {
       .domain([this.fromValue, this.toValue])
       .range([MARGIN.left, width - MARGIN.right])
     const y = scaleLinear()
-      .domain([0, max(this.runsValue, run => run.km) || 1])
+      .domain([0, Math.max(max(this.runsValue, run => run.km) || 1, this.currentValue.km || 0)])
       .range([TIMELINE_HEIGHT - MARGIN.bottom, MARGIN.top])
     const svg = this.timelineSvg.attr("width", width)
     svg.selectAll("*").remove()
 
+    const ticks = timelineTicks(this.fromValue, this.toValue, this.currentValue.race)
     const axis = svg
       .append("g")
       .attr("transform", `translate(0,${TIMELINE_HEIGHT - MARGIN.bottom})`)
       .call(
         axisBottom(x)
-          .ticks(Math.max(2, Math.floor(width / 90)))
+          .tickValues(ticks.map(tick => new Date(tick.t)))
+          .tickFormat((_, index) => ticks[index].label)
           .tickSizeOuter(0)
       )
     axis.select(".domain").attr("stroke", "var(--chart-grid)")
     axis.selectAll(".tick line").attr("stroke", "var(--chart-grid)")
     axis.selectAll("text").attr("fill", "var(--chart-axis)")
+    axis.selectAll(".tick text").attr("text-anchor", (_, index) => (index === 0 ? "start" : index === ticks.length - 1 ? "end" : "middle"))
 
     const fill = (_, index) => (!this.selected ? "var(--chart-accent)" : this.selected.has(index) ? "var(--chart-highlight)" : "var(--chart-muted)")
     svg
@@ -156,7 +182,23 @@ export default class extends Controller {
         moveTooltip(event)
       })
       .on("mouseleave", hideTooltip)
-      .on("click", (_, run) => window.Turbo.visit(run.url))
+      .on("click", (_, run) => {
+        hideTooltip()
+        window.Turbo.visit(run.url)
+      })
+
+    svg
+      .append("rect")
+      .attr("x", x(this.toValue) - 1.5)
+      .attr("width", 3)
+      .attr("y", y(this.currentValue.km))
+      .attr("height", y(0) - y(this.currentValue.km))
+      .attr("fill", "var(--chart-highlight)")
+      .on("mousemove", event => {
+        showTooltip(tooltipHtml("This run", [["Distance", `${formatDistance(this.currentValue.km)} km`]]), event)
+        moveTooltip(event)
+      })
+      .on("mouseleave", hideTooltip)
   }
 
   renderSummary() {
@@ -168,12 +210,24 @@ export default class extends Controller {
   }
 
   tooltipHtml(run) {
-    return tooltipHtml(formatDate(run.t), [
+    const title = this.dayTitle(run)
+    const sameDay = sameDayRuns(this.runsValue, run)
+    if (sameDay.length > 1) {
+      return tooltipHtml(title, sameDay.map(other => [`${formatDistance(other.km)} km`, `${formatPace(other.pace)} /km · ${formatDuration(other.s)}`]))
+    }
+
+    return tooltipHtml(title, [
       ["Distance", `${formatDistance(run.km)} km`],
       ["Pace", `${formatPace(run.pace)} /km`],
       ["Time", formatDuration(run.s)],
       ["HR", run.hr == null ? "–" : run.hr],
       ["VDOT", run.vdot == null ? "–" : run.vdot.toFixed(1)]
     ])
+  }
+
+  dayTitle(run) {
+    const days = daysBefore(this.toValue, run.t)
+    const when = days === 0 ? "Same day" : `${days} ${days === 1 ? "day" : "days"} before`
+    return `${when} · ${formatDate(run.t)}`
   }
 }

@@ -177,6 +177,12 @@ class Activity::BrowsingTest < ActiveSupport::TestCase
     assert_equal({t: Time.utc(2024, 3, 12, 6).to_i * 1000, km: 5.0, pace: 300.0, hr: 150, vdot: inside.vdot.round(2), s: 1500, url: "/runs/#{inside.id}"}, prior.first)
   end
 
+  test "a training point holds the run's own figures" do
+    run = run_at(Time.utc(2024, 6, 10, 18), distance_m: 5000, timer_s: 1500, avg_hr: nil, race: true)
+
+    assert_equal({km: 5.0, pace: 300.0, hr: nil, vdot: run.vdot.round(2), s: 1500}, run.training_point)
+  end
+
   test "prior training is empty for the first run" do
     assert_empty run_at(Time.utc(2024, 3, 1)).prior_training
   end

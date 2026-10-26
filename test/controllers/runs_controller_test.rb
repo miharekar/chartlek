@@ -271,4 +271,15 @@ class RunsControllerTest < ActionDispatch::IntegrationTest
     assert_select "section.lg\\:col-span-4", false
   end
 
+  test "the analyze chart gets this run's figures and a legend" do
+    run = run_at(Time.utc(2023, 5, 6, 7), distance_m: 8000, timer_s: 2400, race: true)
+    run_at(Time.utc(2023, 5, 1, 7))
+
+    get run_path(run)
+
+    assert_select "[data-controller=analyze-run][data-analyze-run-current-value*='\"race\":true']"
+    assert_select "[data-controller=analyze-run][data-analyze-run-current-value*='\"km\":8.0']"
+    assert_select "p", text: /This run.*Average.*Previous runs/m
+  end
+end
 end
