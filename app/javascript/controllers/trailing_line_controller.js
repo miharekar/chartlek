@@ -76,7 +76,8 @@ export default class extends Controller {
     const bisect = bisector(point => point.date).center
     chart
       .append("rect")
-      .attr("width", innerWidth)
+      .attr("x", -MARGIN.left)
+      .attr("width", width)
       .attr("height", innerHeight)
       .attr("fill", "transparent")
       .on("mousemove", event => {
