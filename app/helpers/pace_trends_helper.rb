@@ -11,7 +11,7 @@ module PaceTrendsHelper
   end
 
   def pace_trend_presets
-    tag.div class: "flex gap-1 rounded-lg bg-zinc-100 p-1 dark:bg-zinc-900", role: "group", aria: {label: "Window"} do
+    tag.div class: "flex w-fit max-w-full flex-wrap gap-1 rounded-lg bg-zinc-100 p-1 dark:bg-zinc-900", role: "group", aria: {label: "Window"} do
       safe_join(PRESETS.map { |label, key|
         tag.button label, type: "button", class: pr_progress_button_class, aria: {pressed: false}, data: {action: "pace-trends#preset", pace_trends_target: "preset", preset: key}
       })
