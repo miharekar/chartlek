@@ -102,9 +102,9 @@ module Activity::Browsing
     similar_distance.where("timer_s / distance_m * 1000 < ?", pace).count + 1
   end
 
-  def fastest_similar(days)
-    similar_distance
-      .where(local_started_at: (local_started_at - days.days)..local_started_at)
+  def fastest_similar(days = nil)
+    runs = days ? similar_distance.where(local_started_at: (local_started_at - days.days)..local_started_at) : similar_distance
+    runs
       .select(:id, :local_started_at, :name, :distance_m, :timer_s)
       .order(Arel.sql("timer_s / distance_m"), :id)
       .limit(FASTEST_LIMIT)

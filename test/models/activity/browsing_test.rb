@@ -65,6 +65,8 @@ class Activity::BrowsingTest < ActiveSupport::TestCase
     assert_equal 5, run.fastest_similar(90).size
     assert_not_includes run.fastest_similar(365).to_a, old
     assert_includes run.fastest_similar(365).to_a, run
+    assert_includes run.fastest_similar.to_a, old
+    assert_equal 5, run.fastest_similar.size
   end
 
   test "rank distributions include ties and the same all-time cohorts as ranks" do

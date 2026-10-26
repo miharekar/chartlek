@@ -227,7 +227,7 @@ Phase 4 adds a secondary-axis overlay toggle for resting HR or VO2max.
   - Brushing a range shows a summary of the selection: distance, time, pace, HR, cadence.
 - **Elevation, HR and cadence charts:** follow the speed chart, 180 px each, sharing the x-axis (distance) and a synced hover. Chart sections require a track.
 - **Notables** as of the run's date (§6).
-- **Fastest runs for this distance:** for the last 90, 180 and 365 days.
+- **Fastest runs for this distance:** for the last 90, 180 and 365 days and for all time (five rows each, the current run highlighted when it is listed).
 - **Analyze Run View (training in the prior 90 days):**
   - A histogram of the 90 days before the run, by distance, pace, HR or VDOT (selectable), above a timeline of those runs.
   - Brushing the histogram highlights the matching runs in the timeline.
