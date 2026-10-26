@@ -1,8 +1,8 @@
 <% route = track.route %>
 <% token = ENV["MAPBOX_TOKEN"].to_s %>
 <% if route.size > 1 && token.start_with?("pk.") %>
-  <section class="mt-4 rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900/50">
-    <h2 class="font-semibold">Route</h2>
+  <section class="mt-4 <%= WidgetsHelper::CARD %>">
+    <h2 class="<%= WidgetsHelper::CARD_TITLE %>">Route</h2>
     <div class="isolate mt-3 h-80 overflow-hidden rounded-lg sm:h-[600px]" data-controller="run-map" data-run-map-route-value="<%= route.to_json %>" data-run-map-token-value="<%= token %>"></div>
   </section>
 <% end %>

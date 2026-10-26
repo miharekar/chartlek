@@ -7,9 +7,8 @@
       <div>
         <h1 class="flex items-center gap-2 text-2xl font-semibold">
           PR Progress
-          <%= overview_info "Distance across on a log scale, pace up (faster is higher). The solid line is your all-time best at each benchmark distance. The dashed line is your best at each distance inside the window below. PRs you can beat predicts each distance from the best VDOT run of the last 30, 60 or 90 days, or any run you click. Magic PRs shows the next round time below each PR, with the three closest targets pulsing." %>
+          <%= overview_info "Every run by distance and pace. Distance across on a log scale, pace up (faster is higher). The solid line is your all-time best at each benchmark distance; what lies above it is still to be achieved. The dashed line is your best at each distance inside the window below. PRs you can beat predicts each distance from the best VDOT run of the last 30, 60 or 90 days, or any run you click. Magic PRs shows the next round time below each PR, with the three closest targets pulsing." %>
         </h1>
-        <p class="mt-1 text-sm text-zinc-500">Every run by distance and pace. The line shows your all-time bests; what lies above it is still to be achieved.</p>
       </div>
       <div class="flex gap-1 rounded-lg bg-zinc-100 p-1 dark:bg-zinc-900" role="group" aria-label="Mode">
         <button type="button" data-action="pr-progress#setMode" data-mode="progress" aria-pressed="false" class="<%= pr_progress_button_class %>">Progress</button>
@@ -18,7 +17,7 @@
       </div>
     </div>
 
-    <section class="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+    <section class="<%= WidgetsHelper::CARD %>">
       <div class="mb-3 flex min-h-8 flex-wrap items-center gap-x-4 gap-y-2 text-sm">
         <div class="hidden flex-wrap items-center gap-3" data-pr-progress-target="beat">
           <span class="text-zinc-500">Best run of the last</span>
@@ -29,15 +28,15 @@
           </div>
           <span class="text-zinc-500" data-pr-progress-target="reference"></span>
         </div>
-        <p class="hidden text-zinc-500" data-pr-progress-target="magic">Next round time below each PR. The three closest targets pulse.</p>
-        <div class="ml-auto flex flex-wrap items-center gap-4 text-xs text-zinc-500" data-pr-progress-target="legend"></div>
+        <p class="hidden <%= WidgetsHelper::HINT %>" data-pr-progress-target="magic">Next round time below each PR. The three closest targets pulse.</p>
+        <div class="ml-auto flex flex-wrap items-center gap-4 <%= WidgetsHelper::HINT %>" data-pr-progress-target="legend"></div>
       </div>
       <div data-pr-progress-target="chart" class="relative"></div>
     </section>
 
-    <section class="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+    <section class="<%= WidgetsHelper::CARD %>">
       <div class="mb-1 flex flex-wrap items-baseline justify-between gap-2">
-        <h2 class="flex items-center gap-1.5 text-sm font-medium">
+        <h2 class="flex items-center gap-1.5 <%= WidgetsHelper::CARD_TITLE %>">
           Window
           <%= overview_info "Drag to pick a period. The table compares your best at each distance in it with your all-time PR, and shows days since your last run at that distance and since your PR as it stood at the end of the window." %>
         </h2>
@@ -46,8 +45,10 @@
       <div data-pr-progress-target="timeline"></div>
     </section>
 
-    <section class="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
-      <table class="w-full text-sm tabular-nums" data-pr-progress-target="table"></table>
+    <section class="<%= WidgetsHelper::CARD %>">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm tabular-nums" data-pr-progress-target="table"></table>
+      </div>
     </section>
   <% end %>
 <% end %>

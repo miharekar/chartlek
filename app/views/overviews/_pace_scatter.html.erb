@@ -1,5 +1,5 @@
-<section class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900/50" data-controller="pace-scatter" data-pace-scatter-data-value="<%= overview.scatter.to_json %>">
-  <h2 class="flex flex-wrap items-center gap-1.5 font-semibold">
+<section class="<%= WidgetsHelper::CARD %>" data-controller="pace-scatter" data-pace-scatter-data-value="<%= overview.scatter.to_json %>">
+  <h2 class="flex flex-wrap items-center gap-1.5 <%= WidgetsHelper::CARD_TITLE %>">
     Runs
     <select class="field-sizing-content cursor-pointer rounded bg-transparent font-semibold text-lime-700 dark:text-[#9CFF44]" data-action="pace-scatter#metric" aria-label="Metric">
       <option value="pace" class="text-zinc-900">pace</option>
@@ -10,7 +10,7 @@
     <%= overview_info "Every run is a dot: distance across, pace (faster is higher), heart rate or VDOT up. Click a dot to open the run." %>
   </h2>
   <div class="mt-3 h-64" data-pace-scatter-target="chart"></div>
-  <div class="mt-2 flex justify-end gap-4 text-xs text-zinc-500 dark:text-zinc-400">
+  <div class="mt-2 flex justify-end gap-4 <%= WidgetsHelper::HINT %>">
     <span class="flex items-center gap-1.5">last run <svg width="12" height="12"><circle cx="6" cy="6" r="4.5" style="fill: var(--chart-highlight)" /></svg></span>
     <span class="flex items-center gap-1.5">average <svg width="14" height="14"><circle cx="7" cy="7" r="5" fill="none" stroke-width="2" style="stroke: var(--chart-accent-highlight)" /></svg></span>
   </div>

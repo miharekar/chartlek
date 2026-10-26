@@ -1,5 +1,5 @@
-<section class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900/50" data-controller="period-bars" data-period-bars-data-value="<%= overview.bars.to_json %>">
-  <h2 class="flex flex-wrap items-center gap-1.5 font-semibold">
+<section class="<%= WidgetsHelper::CARD %>" data-controller="period-bars" data-period-bars-data-value="<%= overview.bars.to_json %>">
+  <h2 class="flex flex-wrap items-center gap-1.5 <%= WidgetsHelper::CARD_TITLE %>">
     <select class="field-sizing-content cursor-pointer rounded bg-transparent font-semibold text-lime-700 dark:text-[#9CFF44]" data-action="period-bars#metric" aria-label="Metric">
       <option value="distance" class="text-zinc-900">Distance</option>
       <option value="elevation" class="text-zinc-900">Elevation gained</option>

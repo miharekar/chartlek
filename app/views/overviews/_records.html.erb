@@ -1,8 +1,8 @@
 <% records = overview.records %>
 <% if records.any? %>
 <% th = "px-3 py-2 text-right font-medium" %>
-<section class="mt-4 rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900/50">
-  <h2 class="font-semibold">Personal records</h2>
+<section class="mt-4 <%= WidgetsHelper::CARD %>">
+  <h2 class="<%= WidgetsHelper::CARD_TITLE %>">Personal records</h2>
   <div class="mt-3 overflow-x-auto">
     <table class="w-full text-sm tabular-nums">
       <thead class="text-zinc-500 dark:text-zinc-400">
@@ -33,6 +33,6 @@
       </tbody>
     </table>
   </div>
-  <p class="mt-3 text-xs text-zinc-500 dark:text-zinc-400">All distances are rounded down and times are interpolated.</p>
+  <p class="mt-3 <%= WidgetsHelper::HINT %>">All distances are rounded down and times are interpolated.</p>
 </section>
 <% end %>
