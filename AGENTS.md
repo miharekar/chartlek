@@ -215,6 +215,6 @@ See `STYLE.md` for the canonical style rules. Key points for agents:
 ### Views and CSS
 
 - Use Tailwind utility classes. Respect existing component patterns.
-- For view edits, run `herb analyze .` and `npx @herb-tools/linter app/views --simple --no-color`.
 - Card and type classes come from `WidgetsHelper` (`CARD`, `CARD_TITLE`, `TILE_LABEL`, `TILE_VALUE`, `TILE_UNIT`, `TILE_SUB`, `HINT`, `ACCENT`); never redefine them inline. Every card uses `CARD` (margins stay at the call site) and every card or nested chart title `CARD_TITLE`. Tiles use one value size (`TILE_VALUE`, the lime `ACCENT` only on the headline numbers). `HINT` is the one caption style (type and colour only; each call site sets its own top margin); long explanations go in the ⓘ, and a hint stays only when it tells how to interact with the chart.
+- For view edits, run `herb analyze .` and `npx @herb-tools/linter app/views --simple --no-color`.
 - Avoid time-dependent computed values inside cached fragments; prefer persisted fields.
