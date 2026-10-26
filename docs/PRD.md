@@ -197,7 +197,7 @@ Phase 4 adds a secondary-axis overlay toggle for resting HR or VO2max.
   - Average HR (min–max), average cadence (min–max), elevation gain and loss.
   - VDOT, with the explanation in an ⓘ.
   - **Pace variability** (%), shown as Smashrun's circle glyph.
-  - **Nth longest run** and **Nth fastest for a similar distance** (±10%), each with a mini rank chart.
+  - **Nth longest run** and **Nth fastest for a similar distance** (±10%), each with a histogram: distance in km across all runs, or pace in min/km across the same similar-distance cohort. Bar height is run count; amber marks the current bucket and exact value. Hover shows the range, count and current value. Ties share a rank; cohorts include all dates.
   - **Estimated finish times** for 5K, 10K, half and marathon at this run's VDOT.
 - **Route map:** immediately after the tiles, a Mapbox GL JS route line, 600 px tall on desktop and 320 px on phones. Requires a GPS route and public Mapbox token. The Pro Map comes in Phase 3, also on Mapbox GL JS.
 - **Change in speed over route:** follows the map, only for tracks with splits.

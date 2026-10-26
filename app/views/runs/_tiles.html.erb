@@ -83,17 +83,17 @@
   <% end %>
 
   <% rank = run.longest_rank %>
-  <section class="<%= card %>">
+  <section class="<%= card %> col-span-2 sm:col-span-1">
     <h2 class="<%= label %>"><%= rank.ordinalize %> longest run</h2>
     <p class="<%= small %>">of <%= number_with_delimiter(run.run_count) %> runs</p>
-    <%= run_rank_strip(rank, run.run_count) %>
+    <%= render "rank_distribution", values: run.distance_distribution, current: run.distance_m / 1000.0, metric: "distance" %>
   </section>
 
   <% similar_rank = run.similar_rank %>
-  <section class="<%= card %>">
+  <section class="<%= card %> col-span-2 sm:col-span-1">
     <h2 class="<%= label %>"><%= similar_rank.ordinalize %> fastest for a similar distance</h2>
     <p class="<%= small %>">of <%= number_with_delimiter(run.similar_count) %> runs within ±10%</p>
-    <%= run_rank_strip(similar_rank, run.similar_count) %>
+    <%= render "rank_distribution", values: run.similar_pace_distribution, current: run.pace, metric: "pace" %>
   </section>
 
   <% if run.finish_times %>

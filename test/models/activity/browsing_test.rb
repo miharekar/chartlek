@@ -67,6 +67,30 @@ class Activity::BrowsingTest < ActiveSupport::TestCase
     assert_includes run.fastest_similar(365).to_a, run
   end
 
+  test "rank distributions include ties and the same all-time cohorts as ranks" do
+    run = run_at(Time.utc(2024, 3, 1), distance_m: 10_000, timer_s: 3000)
+    run_at(Time.utc(2024, 3, 2), distance_m: 10_000, timer_s: 3000)
+    run_at(Time.utc(2024, 3, 3), distance_m: 9000, timer_s: 2250)
+    run_at(Time.utc(2024, 3, 4), distance_m: 11_000, timer_s: 3850)
+    run_at(Time.utc(2024, 3, 5), distance_m: 11_001, timer_s: 2200)
+
+    assert_equal [9.0, 10.0, 10.0, 11.0, 11.001], run.distance_distribution.sort
+    assert_equal [250.0, 300.0, 300.0, 350.0], run.similar_pace_distribution.sort
+    assert_equal run.run_count, run.distance_distribution.size
+    assert_equal run.similar_count, run.similar_pace_distribution.size
+    assert_equal 3, run.longest_rank
+    assert_equal 2, run.similar_rank
+  end
+
+  test "a sole run is included in both distributions" do
+    run = run_at(Time.utc(2024, 3, 1), distance_m: 5000, timer_s: 1500)
+
+    assert_equal [5.0], run.distance_distribution
+    assert_equal [300.0], run.similar_pace_distribution
+    assert_equal 1, run.longest_rank
+    assert_equal 1, run.similar_rank
+  end
+
   test "earlier runs carry weather and exclude later ones" do
     run = run_at(Time.utc(2024, 3, 2))
     earlier = run_at(Time.utc(2024, 3, 1), weather: {"temperature" => 12.5})

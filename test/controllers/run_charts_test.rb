@@ -24,6 +24,7 @@ class RunChartsTest < ActionDispatch::IntegrationTest
     get run_path(run)
 
     assert_response :success
+    assert_select "[data-controller=rank-distribution] [data-rank-distribution-target=chart][role=group][aria-label]", count: 2
     assert_select "[data-controller=run-speed]"
     assert_select "[role=group][aria-label='Bar size'] button[value=bars][aria-pressed=true]", text: "per 100 m"
     assert_select "[role=group][aria-label='Bar size'] button[value=splits][aria-pressed=false]", text: "per km"

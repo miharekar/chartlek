@@ -79,15 +79,6 @@ module RunsHelper
     end
   end
 
-  def run_rank_strip(rank, total)
-    x = (total > 1) ? 4 + 112.0 * (rank - 1) / (total - 1) : 60
-
-    tag.svg viewBox: "0 0 120 12", class: "mt-2 h-3 w-full max-w-48", role: "img", aria: {label: "Rank #{rank} of #{total}"} do
-      tag.line(x1: 4, x2: 116, y1: 6, y2: 6, "stroke-width": 2, "stroke-linecap": "round", style: "stroke: var(--chart-grid)") +
-        tag.circle(cx: x.round(1), cy: 6, r: 4, style: "fill: var(--chart-highlight)")
-    end
-  end
-
   def run_sparkline(profile)
     paces = Array(profile).compact
 

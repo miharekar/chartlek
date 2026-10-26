@@ -64,6 +64,14 @@ module Activity::Browsing
     Activity.where("distance_m > ?", distance_m).count + 1
   end
 
+  def distance_distribution
+    Activity.pluck(:distance_m).map { it / 1000.0 }
+  end
+
+  def similar_pace_distribution
+    similar_distance.pluck(Arel.sql("timer_s / distance_m * 1000"))
+  end
+
   def run_count
     @run_count ||= Activity.count
   end
