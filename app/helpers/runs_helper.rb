@@ -1,5 +1,13 @@
 module RunsHelper
   COLUMNS = [%w[Date date left], %w[Name name left], %w[km km right], %w[Time time right], %w[Pace pace right], %w[HR hr right], %w[Elev elevation right], %w[VDOT vdot right]].freeze
+  DAY = "inline-flex size-8 items-center justify-center rounded-md text-sm tabular-nums"
+  DAY_STATES = {
+    selected: OverviewsHelper::PILL_STATES[:selected],
+    idle: "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800",
+    weekend: "bg-zinc-100 text-zinc-800 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700",
+    race: "bg-amber-100 font-medium text-amber-800 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:hover:bg-amber-900/70",
+    disabled: OverviewsHelper::PILL_STATES[:disabled]
+  }.freeze
   TAG = "rounded px-1.5 py-0.5 text-xs font-medium"
 
   def runs_period_title(year, month)
@@ -30,6 +38,26 @@ module RunsHelper
       else
         link
       end
+    end
+  end
+
+  def run_calendar_day(day, current)
+    date = day[:date]
+    weekend = date.saturday? || date.sunday?
+
+    if day[:id]
+      state = if date == current.local_started_at.to_date then :selected
+      elsif day[:race] then :race
+      elsif weekend then :weekend
+      else :idle
+      end
+      text = "#{date.strftime("%A, %-d %B %Y")} · #{overview_distance(day[:km])} km#{" · race" if day[:race]}"
+      classes = [DAY, DAY_STATES.fetch(state)]
+      classes << "ring-2 ring-amber-500" if day[:race] && state == :selected
+
+      link_to date.day, run_path(day[:id]), class: classes, aria: {label: text, current: (state == :selected) ? "page" : nil}, data: {controller: "day-tip", day_tip_text_value: text, action: "pointerenter->day-tip#hover pointerleave->day-tip#hide focus->day-tip#focus blur->day-tip#hide"}
+    else
+      tag.span date.day, class: [DAY, DAY_STATES[:disabled], ("bg-zinc-50 dark:bg-zinc-900/50" if weekend)]
     end
   end
 

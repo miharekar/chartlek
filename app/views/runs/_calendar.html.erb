@@ -1,0 +1,19 @@
+<% years = run.calendar_years %>
+<% months = run.calendar_months %>
+<nav class="mt-3 space-y-1" aria-label="Run calendar">
+  <div class="flex flex-wrap gap-1">
+    <% years.each do |year, id| %>
+      <%= overview_pill year.to_s, run_path(id), (year == run.local_started_at.year) ? :selected : :idle %>
+    <% end %>
+  </div>
+  <div class="flex flex-wrap gap-1">
+    <% (1..12).each do |month| %>
+      <%= overview_pill Date::ABBR_MONTHNAMES[month], (months[month] && run_path(months[month])), months[month] ? ((month == run.local_started_at.month) ? :selected : :idle) : :disabled %>
+    <% end %>
+  </div>
+  <div class="flex flex-wrap gap-0.5">
+    <% run.calendar_days.each do |day| %>
+      <%= run_calendar_day day, run %>
+    <% end %>
+  </div>
+</nav>

@@ -91,6 +91,42 @@ class Activity::BrowsingTest < ActiveSupport::TestCase
     assert_equal 1, run.similar_rank
   end
 
+  test "calendar years list every year newest first with the latest run" do
+    run_at(Time.utc(2022, 1, 5, 7))
+    old = run_at(Time.utc(2022, 9, 5, 7))
+    run = run_at(Time.utc(2024, 3, 1, 7))
+    latest = run_at(Time.utc(2024, 11, 2, 7))
+
+    assert_equal [2024, 2022], run.calendar_years.keys
+    assert_equal [latest.id, old.id], run.calendar_years.values
+  end
+
+  test "calendar months cover only the run's year and open the latest run of each month" do
+    run_at(Time.utc(2023, 2, 1, 7))
+    early = run_at(Time.utc(2024, 3, 1, 7))
+    late = run_at(Time.utc(2024, 3, 20, 7))
+    other = run_at(Time.utc(2024, 7, 4, 7))
+
+    assert_equal({3 => late.id, 7 => other.id}, early.calendar_months)
+  end
+
+  test "calendar days list the whole month with first run, race flag and total km" do
+    first = run_at(Time.utc(2024, 2, 10, 6), distance_m: 5000, timer_s: 1500)
+    run_at(Time.utc(2024, 2, 10, 18), distance_m: 7000, timer_s: 2100, race: true)
+    run_at(Time.utc(2024, 3, 1, 7))
+
+    days = first.calendar_days
+
+    assert_equal 29, days.size
+    assert_equal Date.new(2024, 2, 1), days.first[:date]
+    assert_nil days.first[:id]
+    assert_not days.first[:race]
+    assert_equal 0.0, days.first[:km]
+    assert_equal first.id, days[9][:id]
+    assert days[9][:race]
+    assert_in_delta 12.0, days[9][:km], 1e-9
+  end
+
   test "earlier runs carry weather and exclude later ones" do
     run = run_at(Time.utc(2024, 3, 2))
     earlier = run_at(Time.utc(2024, 3, 1), weather: {"temperature" => 12.5})

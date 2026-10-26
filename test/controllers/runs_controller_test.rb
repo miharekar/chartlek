@@ -95,6 +95,52 @@ class RunsControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Runs that day'] a[href=?]", run_path(same_day)
   end
 
+  test "show renders the date navigator for the run's year, month and day" do
+    run_at(Time.utc(2022, 8, 1, 7))
+    march = run_at(Time.utc(2023, 3, 9, 7))
+    race = run_at(Time.utc(2023, 5, 7, 7), race: true, distance_m: 10_000, timer_s: 3000)
+    run = run_at(Time.utc(2023, 5, 6, 7))
+    later = run_at(Time.utc(2023, 5, 6, 18))
+
+    get run_path(run)
+
+    assert_response :success
+    assert_select "nav[aria-label='Run calendar']" do
+      assert_select "a", text: /^2023$|^2022$/, count: 2
+      assert_select "a[href=?]", run_path(race), text: "2023"
+      assert_select "a.bg-lime-700", text: "2023"
+      assert_select "a.bg-lime-700", text: "May"
+      assert_select "a[href=?]", run_path(march), text: "Mar"
+      assert_select "span", text: "Jan"
+      assert_select "a", text: "Feb", count: 0
+      assert_select "a[aria-current=page]", text: "6"
+      assert_select "a[href=?]", run_path(run), text: "6"
+      assert_select "a[href=?]", run_path(later), text: "6", count: 0
+      assert_select "a[href=?][aria-label*='race'][data-day-tip-text-value*='10.0 km']", run_path(race), text: "7"
+      assert_select "span", text: "8"
+      assert_select "div:last-child > *", count: 31
+    end
+  end
+
+  test "date navigator selects the day when viewing a later run that day" do
+    first = run_at(Time.utc(2023, 5, 6, 7))
+    later = run_at(Time.utc(2023, 5, 6, 18))
+
+    get run_path(later)
+
+    assert_select "nav[aria-label='Run calendar'] a[aria-current=page]", text: "6", count: 1
+    assert_select "nav[aria-label='Run calendar'] a[aria-current=page][href=?]", run_path(first)
+  end
+
+  test "date navigator handles a leap month and never renders run names" do
+    run = run_at(Time.utc(2024, 2, 29, 7), name: "<b>x</b>")
+
+    get run_path(run)
+
+    assert_select "nav[aria-label='Run calendar'] b", false
+    assert_select "nav[aria-label='Run calendar'] a[aria-current=page]", text: "29"
+  end
+
   test "show has no external link for a smashrun run" do
     run = run_at(Time.utc(2015, 3, 3, 15), source: "smashrun")
 

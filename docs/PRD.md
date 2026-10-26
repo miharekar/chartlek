@@ -191,6 +191,7 @@ Phase 4 adds a secondary-axis overlay toggle for resting HR or VO2max.
   - Weather: temperature, humidity, wind, from Open-Meteo at the run's midpoint hour.
   - Location name (Garmin only), link to Garmin or Strava (none for Smashrun-only runs), previous/next run.
   - If there were several runs that day, a switcher between them.
+  - A Smashrun-style date navigator: every year with runs (newest first), the 12 months of the run's year, and every day of its month, with the run's year, month and day selected. A year or month with runs opens its latest run, and a day opens its first run; the others are inert. Weekends look distinct, race days are amber, and hovering or focusing a day shows its weekday, date and distance in the shared tooltip. (Smashrun's own year and month buttons open its overview pages instead.)
 - **Tiles:**
   - Distance, elapsed/timer/moving time, average pace and speed.
   - Calories with a food equivalent ("A bunch of bananas… or a kremšnita").

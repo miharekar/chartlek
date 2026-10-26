@@ -60,6 +60,24 @@ module Activity::Browsing
     Activity.where(local_started_at: local_started_at.all_day).order(:local_started_at, :id)
   end
 
+  def calendar_years
+    Activity.group(YEAR_SQL).pluck(YEAR_SQL, Arel.sql("id, MAX(local_started_at)")).to_h { [it[0].to_i, it[1]] }.sort.reverse.to_h
+  end
+
+  def calendar_months
+    Activity.where(local_started_at: local_started_at.all_year).group(MONTH_SQL).pluck(MONTH_SQL, Arel.sql("id, MAX(local_started_at)")).to_h { [it[0].to_i, it[1]] }
+  end
+
+  def calendar_days
+    first = local_started_at.beginning_of_month
+    runs = Activity.where(local_started_at: first.all_month).order(:local_started_at, :id).pluck(:id, :local_started_at, :race, :distance_m).group_by { it[1].to_date }
+
+    (first.to_date..first.to_date.end_of_month).map do |date|
+      day = runs.fetch(date, [])
+      {date:, id: day.first&.first, race: day.any? { it[2] }, km: day.sum { it[3] } / 1000.0}
+    end
+  end
+
   def longest_rank
     Activity.where("distance_m > ?", distance_m).count + 1
   end
