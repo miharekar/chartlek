@@ -197,11 +197,11 @@ Phase 4 adds a secondary-axis overlay toggle for resting HR or VO2max.
   - Calories with a food equivalent ("A bunch of bananas… or a kremšnita").
   - Average HR (min–max), average cadence (min–max), elevation gain and loss.
   - VDOT, with the explanation in an ⓘ.
-  - **Pace variability** (%), shown as Smashrun's circle glyph.
+  - **Pace variability** (%): the average speed deviation across complete 10 s timer windows, with an ⓘ explaining it. Beneath it, a chronological bar chart of each window's signed deviation from the run's average speed, centred on zero: faster above, slower below, stops while the timer runs at −100%. Hover or focus shows the window's timer-time range, pace ("Stopped" at zero distance) and deviation. The chart comes from the same full-resolution windows as the percentage, so a different order of the same windows gives a different picture. The final incomplete window is excluded and at least two complete windows are needed. Runs without `chart_metrics` show "Recording chart not processed yet."
   - **Nth longest run** and **Nth fastest for a similar distance** (±10%), each with a histogram: distance in km across all runs, or pace in min/km across the same similar-distance cohort. Bar height is run count; amber marks the current bucket and exact value. Hover shows the range, count and current value. Ties share a rank; cohorts include all dates.
   - **Estimated finish times** for 5K, 10K, half and marathon at this run's VDOT.
 - **Route map:** immediately after the tiles, a Mapbox GL JS route line, 600 px tall on desktop and 320 px on phones. Requires a GPS route and public Mapbox token. The Pro Map comes in Phase 3, also on Mapbox GL JS.
-- **Change in speed over route:** follows the map, only for tracks with splits.
+- **Change in speed over route:** follows the map, only for tracks with splits. When the track has recorded elevation, an **Elevation change** chart sits under it, with Smashrun's gained-up, lost-down bars: height gained above zero and height lost below it for each 100 m, or each km, interval. One interval can have both. It follows the speed chart's 100 m / per km toggle; the km bars are sums of the 100 m bins. Intervals without elevation are marked as missing, not bridged.
   - Bars per 100 m, switchable to per-km splits using two keyboard-accessible buttons with a pressed state.
   - Brushing a range shows a summary of the selection: distance, time, pace, HR, cadence.
 - **Elevation, HR and cadence charts:** follow the speed chart, 180 px each, sharing the x-axis (distance) and a synced hover. Chart sections require a track.
@@ -298,7 +298,8 @@ All metric math lives in Ruby and is unit-tested. The only JS math is interactiv
   - The band is ±1 SD of the residuals.
   - Weekly change = slope × 7.
 - **Pace axes:** linear in speed, labeled as pace. This matches Smashrun's 4:17 / 5:00 / 6:00 / 7:30 / 10:00 / 15:00 / 30:00 axis.
-- **Pace variability (Phase 2):** distance covered in consecutive 10 s windows while the timer is running, then mean absolute deviation ÷ mean, as a %.
+- **Pace variability (Phase 2):** distance covered in consecutive complete 10 s windows while the timer is running (stops count, the final partial window doesn't, and at least two windows are needed), then mean absolute deviation ÷ mean, as a %. The windows use linear interpolation between samples, so sparse recordings can hide changes. The window distances are stored (`tracks.chart_metrics`) and drawn as signed deviations from the mean.
+- **Elevation change bins (Phase 2):** computed from the full-resolution recording before the 2,000-point downsampling. Per 100 m bin, gain and loss are summed with the same 1 m hysteresis as the splits. The turning point carries across bin and km boundaries, and a change is attributed to the segment where it passes the threshold, split by distance when that segment spans bins. A missing altitude resets the turning point and marks its bins as missing. The per-km splits' gain and loss are sums of the same bins, so the splits and the km bars agree. Totals come from the recording and can differ from Garmin's summary.
 - **Tracks (Phase 2):**
   - Garmin originals are untrimmed: Garmin applies trims only to the summary. FIT recordings are clipped: records before `started_at` (−2 s) are dropped, then records whose timer time exceeds `timer_s` (+2 s). Clipping to `elapsed_s` cut real data off runs with long pauses, because Garmin's `elapsed_s` can be shorter than the file's wall-clock span. Every FIT track is within 1% of its summary's distance and timer.
   - TCX isn't clipped, because the TCX parser keeps no per-row timestamps. It removes pauses per lap instead: the lap's excess (the time the lap adds to `t`, namely its own gaps plus the gap into its first trackpoint unless that is over 10 s, minus `TotalTimeSeconds`) is taken out of stall gaps (over 10 s, distance advancing under 0.5 m/s), largest first. Garmin's `timer_s` for these imports equals the sum of the laps' `TotalTimeSeconds`; 57 of the 64 TCX runs end within 0.5% of it.
@@ -440,7 +441,7 @@ Index on `local_started_at`. All of history is about 2,900 rows. Aggregations lo
 ### Phase 2 additions
 
 - On `activities`: `has_one_attached :original` (Active Storage, local disk). Columns `splits` (JSON, per km), `pace_profile` (JSON, 20 values for the sparkline), `pace_variability` (float), `weather` (JSON: temperature, humidity, wind, precipitation, code, sunrise, sunset). The original is the Garmin ZIP as downloaded (`<id>.zip`) or the gzipped Smashrun detail (`smashrun-<id>.json.gz`).
-- `tracks`: `activity_id` (unique) and `data` (JSON of columnar arrays `t, d, lat, lng, alt, hr, cad`, downsampled to ≤ 2,000 points; series without data are omitted). Tracks live in a separate table so loading activities stays lean.
+- `tracks`: `activity_id` (unique), `chart_metrics` (nullable JSON: `speed_windows`, the distance in metres of each complete 10 s window, and `elevation`, the 100 m gain/loss bins; nil for rebuilt distances or not yet processed) and `data` (JSON of columnar arrays `t, d, lat, lng, alt, hr, cad`, downsampled to ≤ 2,000 points; series without data are omitted). Tracks live in a separate table so loading activities stays lean.
 - No `notables` column: notables are computed on the fly. `efforts` (fastest segments) moves to Phase 3 with the Pro Map.
 
 ### Phase 3 additions

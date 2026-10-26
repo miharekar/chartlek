@@ -13,7 +13,7 @@ import { hideTooltip, moveTooltip, showTooltip } from "helpers/tooltip"
 const MARGIN = { top: 8, right: 24, bottom: 24, left: 44 }
 
 export default class extends Controller {
-  static targets = ["chart", "stats", "unit"]
+  static targets = ["chart", "stats", "unit", "elevation"]
   static values = { bars: Array, splits: Array, unit: { type: String, default: "bars" } }
 
   connect() {
@@ -36,6 +36,7 @@ export default class extends Controller {
 
   unitValueChanged() {
     this.unitTargets.forEach(button => button.setAttribute("aria-pressed", button.value === this.unitValue))
+    if (this.hasElevationTarget) this.elevationTarget.dataset.recordingBarsUnitValue = this.unitValue
     if (this.size) this.draw()
   }
 

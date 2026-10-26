@@ -29,6 +29,8 @@ class Activity::TrackProcessingTest < ActiveSupport::TestCase
     assert_equal [1000.0, 560.0], activity.splits.pluck("distance")
     assert_equal 20, activity.pace_profile.size
     assert_not_nil activity.pace_variability
+    assert_equal 39, activity.track.chart_metrics["speed_windows"].size
+    assert_equal 16, activity.track.chart_metrics["elevation"].size
   end
 
   test "clips a Garmin recording to the summary timer" do
@@ -78,6 +80,7 @@ class Activity::TrackProcessingTest < ActiveSupport::TestCase
     assert_nil activity.splits
     assert_nil activity.pace_profile
     assert_nil activity.pace_variability
+    assert_nil activity.track.chart_metrics
   end
 
   test "processing again replaces the track" do
@@ -87,6 +90,21 @@ class Activity::TrackProcessingTest < ActiveSupport::TestCase
     2.times { activity.process_original }
 
     assert_equal 1, Track.where(activity:).count
+  end
+
+  test "chart metrics use the original samples before track downsampling" do
+    activity = create(:activity, source: "strava", distance_m: 4000.0, timer_s: 4000.0)
+    body = {"recordingKeys" => %w[clock distance elevation], "recordingValues" => [(0..4000).to_a, (0..4000).map { it / 1000.0 }, (0..4000).map { it.odd? ? 105.0 : 100.0 }]}.to_json
+    attach(activity, "smashrun-1004.json.gz", Zlib.gzip(body), "application/gzip")
+    activity.process_original
+
+    assert_equal 2000, activity.track.data["t"].size
+    metrics = activity.track.chart_metrics
+    assert_equal Array.new(400, 10.0), metrics["speed_windows"]
+    assert_equal 40, metrics["elevation"].size
+    assert_equal 10_000, metrics["elevation"].sum { it["gain"] }
+    assert_equal 10_000, metrics["elevation"].sum { it["loss"] }
+    assert_equal 0, activity.pace_variability
   end
 
   test "rejects an unsupported file inside the zip" do

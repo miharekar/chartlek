@@ -94,19 +94,6 @@ module RunsHelper
     end
   end
 
-  def run_variability_glyph(percent)
-    amplitude = [percent * 0.4, 7.0].min
-    points = (0...60).map { |index|
-      angle = index * 2 * Math::PI / 60
-      radius = 16 + amplitude * (Math.sin(5 * angle) + 0.5 * Math.sin(11 * angle + 1)) / 1.5
-      format("%.1f,%.1f", 24 + radius * Math.cos(angle), 24 + radius * Math.sin(angle))
-    }
-
-    tag.svg viewBox: "0 0 48 48", class: "size-12 shrink-0", role: "img", aria: {label: "Pace variability #{percent.round(1)}%"} do
-      tag.polygon points: points.join(" "), fill: "none", "stroke-width": 2, "stroke-linejoin": "round", style: "stroke: var(--chart-accent)"
-    end
-  end
-
   def run_sparkline(profile)
     paces = Array(profile).compact
 

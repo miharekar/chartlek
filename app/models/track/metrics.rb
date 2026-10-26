@@ -2,7 +2,6 @@ class Track::Metrics
   SPLIT_M = 1000.0
   SEGMENTS = 20
   WINDOW_S = 10
-  ELEVATION_THRESHOLD_M = 1.0
 
   def initialize(recording)
     @rows = recording.rows
@@ -21,20 +20,36 @@ class Track::Metrics
   end
 
   def pace_variability
-    windows = (@t.last / WINDOW_S).floor
-    covered = Array.new(windows) { interpolate(@t, @d, (it + 1) * WINDOW_S) - interpolate(@t, @d, it * WINDOW_S) }
-    mean = covered.sum / windows if windows > 1
+    if speed_windows
+      mean = speed_windows.sum / speed_windows.size
+      (speed_windows.sum { (it - mean).abs } / speed_windows.size / mean * 100).round(1)
+    end
+  end
 
-    (covered.sum { (it - mean).abs } / windows / mean * 100).round(1) if mean&.positive?
+  def chart_metrics
+    {speed_windows: speed_windows&.map { it.round(2) }, elevation: elevation_bins}
+  end
+
+  def speed_windows
+    @speed_windows ||= begin
+      windows = (@t.last / WINDOW_S).floor
+      covered = Array.new(windows) { interpolate(@t, @d, (it + 1) * WINDOW_S) - interpolate(@t, @d, it * WINDOW_S) }
+      covered if windows > 1 && covered.sum.positive?
+    end
   end
 
   private
+  def elevation_bins
+    return @elevation_bins if defined?(@elevation_bins)
+
+    @elevation_bins = Track::Elevation.new(@rows).bins&.map { it.transform_values { |value| value.is_a?(Float) ? value.round(2) : value } }
+  end
+
   def split(from, to)
     if to - from >= 1
       first = @d.bsearch_index { it > from }
       samples = @rows[first...(@d.bsearch_index { it > to } || @rows.size)]
-      altitudes = @rows[(first - 1)...(first + samples.size)].filter_map { it[:alt] }
-      gain, loss = elevation_change(altitudes)
+      gain, loss = elevation_change(from, to)
 
       {
         distance: (to - from).round(1),
@@ -48,22 +63,11 @@ class Track::Metrics
     end
   end
 
-  def elevation_change(altitudes)
-    if altitudes.size > 1
-      turning = altitudes.first
-      gain = loss = 0.0
+  def elevation_change(from, to)
+    if elevation_bins
+      known = elevation_bins[(from / Track::Elevation::BIN_M).floor..[(to / Track::Elevation::BIN_M).ceil - 1, elevation_bins.size - 1].min].select { it[:gain] }
 
-      altitudes.each do |altitude|
-        if altitude - turning > ELEVATION_THRESHOLD_M
-          gain += altitude - turning
-          turning = altitude
-        elsif turning - altitude > ELEVATION_THRESHOLD_M
-          loss += turning - altitude
-          turning = altitude
-        end
-      end
-
-      [gain, loss]
+      [known.sum { it[:gain] }, known.sum { it[:loss] }] if known.any?
     end
   end
 

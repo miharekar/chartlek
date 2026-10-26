@@ -73,12 +73,18 @@
   </section>
 
   <% if run.pace_variability %>
-    <section class="<%= card %>">
-      <h2 class="<%= label %>">Pace variability</h2>
-      <div class="mt-1 flex items-center gap-3">
-        <p class="<%= big %>"><%= run.pace_variability.round(1) %><span class="<%= unit %>">%</span></p>
-        <div class="ml-auto"><%= run_variability_glyph(run.pace_variability) %></div>
-      </div>
+    <section class="<%= card %> col-span-2">
+      <h2 class="<%= label %> flex items-center gap-1.5">Pace variability <%= overview_info "Average speed deviation across complete 10-second timer windows. A value of 10% means speed typically differs from the average by 10%. Above zero is faster; below is slower. Pauses removed by recording processing are excluded; stops while the timer runs count. Sparse recordings interpolate between samples and can hide changes. The final incomplete window is excluded; at least two complete windows are needed." %></h2>
+      <p class="<%= big %>"><%= run.pace_variability.round(1) %><span class="<%= unit %>">%</span></p>
+      <% windows = run.track&.chart_metrics&.dig("speed_windows") %>
+      <% if windows.present? %>
+        <div class="mt-2" data-controller="recording-bars" data-recording-bars-kind-value="speed" data-recording-bars-samples-value="<%= windows.to_json %>">
+          <div data-recording-bars-target="chart" role="group" aria-label="Chronological speed deviations in complete ten-second timer windows"></div>
+        </div>
+        <p class="<%= small %>">Green: faster. Amber: slower. Zero: average speed. Time runs left to right.</p>
+      <% else %>
+        <p class="<%= small %>">Recording chart not processed yet.</p>
+      <% end %>
     </section>
   <% end %>
 

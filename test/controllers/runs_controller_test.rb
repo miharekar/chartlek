@@ -89,7 +89,9 @@ class RunsControllerTest < ActionDispatch::IntegrationTest
     assert_select "p", text: /120–180/
     assert_select "p", text: /160–180/
     assert_select "p", text: /≈/
-    assert_select "svg[aria-label^='Pace variability']"
+    assert_select "h2", text: /Pace variability/
+    assert_select "p", text: /6\.5/
+    assert_select "[data-controller=recording-bars]", false
     assert_select "a[href=?]", run_path(earlier)
     assert_select "a[href=?]", run_path(same_day), text: "Next →"
     assert_select "nav[aria-label='Runs that day'] a[href=?]", run_path(same_day)

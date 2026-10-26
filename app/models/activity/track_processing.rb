@@ -13,7 +13,7 @@ module Activity::TrackProcessing
     metrics = Track::Metrics.new(recording) unless recording.rebuilt?
 
     transaction do
-      (track || build_track).update!(data: recording.data)
+      (track || build_track).update!(data: recording.data, chart_metrics: metrics&.chart_metrics)
       update!(splits: metrics&.splits, pace_profile: metrics&.pace_profile, pace_variability: metrics&.pace_variability)
     end
   end
