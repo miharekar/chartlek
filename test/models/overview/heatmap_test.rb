@@ -41,16 +41,6 @@ class Overview::HeatmapTest < ActiveSupport::TestCase
     assert_nil empty[:href]
   end
 
-  test "alternate scale uses quantiles of weeks that have runs" do
-    km = [10, 20, 30, 40, 50]
-    runs = km.each_with_index.map { |distance, index| run_on([2024, 1, 1 + index * 7, 7], distance) }
-    data = heatmap(runs)
-
-    assert_equal [0, 20.0, 30.0, 40.0, 46.0, 48.8], data[:alt_thresholds]
-    levels = data[:cells].select { it[:level] > 0 }.sort_by { it[:tip].last.to_f }.pluck(:alt)
-    assert_equal [1, 1, 2, 3, 6], levels
-  end
-
   test "year view is a day calendar" do
     run = run_on([2024, 1, 2, 7], 12)
     data = heatmap([run], year: 2024)
@@ -66,7 +56,6 @@ class Overview::HeatmapTest < ActiveSupport::TestCase
     assert_equal "No run", data[:cells].first[:tip].last
     assert_equal "Jan", data[:columns].first[:label]
     assert_equal %w[Jan Feb Mar], data[:columns].pluck(:label)
-    assert_nil day[:alt]
   end
 
   test "month view numbers the days" do

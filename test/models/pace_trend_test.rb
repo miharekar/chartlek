@@ -85,7 +85,7 @@ class PaceTrendTest < ActiveSupport::TestCase
     assert_equal [Time.utc(2023, 1, 10).to_i * 1000, Time.utc(2023, 2, 2).to_i * 1000], payload[:window]
     assert_equal "10K", payload[:distance]
 
-    junk = PaceTrend.new(metric: "bogus", from: "nope", distance: "1 mile")
+    junk = PaceTrend.new(metric: "bogus", from: "nope", distance: "far")
 
     assert_equal "spi", junk.metric
     assert_equal "Marathon", junk.distance

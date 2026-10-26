@@ -20,8 +20,8 @@ const FILLS = [
 ]
 
 export default class extends Controller {
-  static targets = ["chart", "toggle"]
-  static values = { data: Object, alternate: Boolean }
+  static targets = ["chart"]
+  static values = { data: Object }
 
   connect() {
     this.svg = select(this.chartTarget).append("svg").attr("class", "block")
@@ -37,21 +37,9 @@ export default class extends Controller {
     hideTooltip()
   }
 
-  toggleScale() {
-    this.alternateValue = !this.alternateValue
-    this.toggleTarget.setAttribute("aria-pressed", this.alternateValue)
-  }
-
-  alternateValueChanged() {
-    if (this.width) this.draw()
-  }
-
   draw() {
-    const { rows, cols, columns, cells, unit } = this.dataValue
-    const alternate = this.alternateValue && this.dataValue.alt_thresholds
-    const thresholds = alternate ? this.dataValue.alt_thresholds : this.dataValue.thresholds
+    const { rows, cols, columns, cells, thresholds, unit } = this.dataValue
     const cell = Math.max(6, Math.min(MAX_CELL, Math.floor((this.width - LABEL_WIDTH) / cols)))
-    const levelOf = cellData => (alternate ? cellData.alt : cellData.level)
     const gridHeight = rows.length * cell
 
     this.svg
@@ -99,15 +87,15 @@ export default class extends Controller {
       .attr("width", cell - GAP)
       .attr("height", cell - GAP)
       .attr("rx", Math.min(3, cell / 5))
-      .attr("fill", cellData => FILLS[levelOf(cellData)][0])
-      .attr("fill-opacity", cellData => FILLS[levelOf(cellData)][1])
-    groups.filter(cellData => cellData.text && cell >= 24).append("text").attr("x", 4).attr("y", 12).attr("font-size", 10).attr("pointer-events", "none").attr("fill", cellData => (levelOf(cellData) >= 3 ? "var(--chart-grid)" : "var(--chart-axis)")).text(cellData => cellData.text)
-    this.decorate(groups.filter(cellData => levelOf(cellData) >= 5), cell - GAP, levelOf)
+      .attr("fill", cellData => FILLS[cellData.level][0])
+      .attr("fill-opacity", cellData => FILLS[cellData.level][1])
+    groups.filter(cellData => cellData.text && cell >= 24).append("text").attr("x", 4).attr("y", 12).attr("font-size", 10).attr("pointer-events", "none").attr("fill", cellData => (cellData.level >= 3 ? "var(--chart-grid)" : "var(--chart-axis)")).text(cellData => cellData.text)
+    this.decorate(groups.filter(cellData => cellData.level >= 5), cell - GAP)
 
     this.drawLegend(thresholds, unit, LABEL_HEIGHT + gridHeight + LABEL_HEIGHT)
   }
 
-  decorate(selection, size, levelOf) {
+  decorate(selection, size) {
     selection
       .append("circle")
       .attr("cx", size / 2)
@@ -118,7 +106,7 @@ export default class extends Controller {
       .attr("stroke-width", Math.max(1, size / 10))
       .attr("pointer-events", "none")
     selection
-      .filter(cellData => levelOf(cellData) >= 6)
+      .filter(cellData => cellData.level >= 6)
       .append("circle")
       .attr("cx", size / 2)
       .attr("cy", size / 2)
@@ -147,7 +135,7 @@ export default class extends Controller {
       .attr("fill", item => FILLS[item.level][0])
       .attr("fill-opacity", item => FILLS[item.level][1])
     const marks = items.append("g").attr("transform", "translate(30,0)")
-    this.decorate(marks.filter(item => item.level >= 5), swatch, item => item.level)
+    this.decorate(marks.filter(item => item.level >= 5), swatch)
     legend.append("text").attr("x", thresholds.length * itemWidth).attr("y", 32).attr("text-anchor", "end").attr("font-size", 11).attr("fill", "var(--chart-axis)").text(unit)
   }
 

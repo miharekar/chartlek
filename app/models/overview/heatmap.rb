@@ -1,7 +1,6 @@
 class Overview::Heatmap
   WEEKLY_THRESHOLDS = [1, 20, 40, 50, 60, 80].freeze
   DAILY_THRESHOLDS = [0, 5, 10, 15, 21, 30].freeze
-  QUANTILES = [0.25, 0.5, 0.75, 0.9, 0.97].freeze
   MONTH_REFERENCE_YEAR = 2026
   WEEKDAY_LABELS = %w[Mon Tue Wed Thu Fri Sat Sun].freeze
 
@@ -27,15 +26,13 @@ class Overview::Heatmap
     totals = week_totals
     mondays = (@period.first.beginning_of_week..@period.last.beginning_of_week).step(7).to_a
     years = mondays.map(&:cwyear).uniq
-    alt = alt_thresholds(totals.values.select(&:positive?))
 
     {
       rows: years.map(&:to_s),
       cols: 53,
       columns: month_columns,
-      cells: mondays.map { weekly_cell(it, years, totals[it], alt) },
+      cells: mondays.map { weekly_cell(it, years, totals[it]) },
       thresholds: WEEKLY_THRESHOLDS,
-      alt_thresholds: alt,
       unit: "total kilometers run"
     }
   end
@@ -44,14 +41,13 @@ class Overview::Heatmap
     @activities.each_with_object(Hash.new(0.0)) { |activity, sums| sums[activity.local_started_at.to_date.beginning_of_week] += activity.distance_m / 1000.0 }
   end
 
-  def weekly_cell(monday, years, km, alt)
+  def weekly_cell(monday, years, km)
     middle = monday + 3
 
     {
       row: years.index(monday.cwyear),
       col: monday.cweek - 1,
       level: self.class.level(km, WEEKLY_THRESHOLDS),
-      alt: self.class.level(km, alt),
       tip: ["Week of #{date_text(monday)}", distance_text(km)],
       href: (Rails.application.routes.url_helpers.overview_period_path(middle.year, middle.month) if km.positive?)
     }
@@ -63,18 +59,6 @@ class Overview::Heatmap
       thursday = first + ((4 - first.wday) % 7)
       {label: first.strftime("%b"), col: thursday.cweek - 1}
     end
-  end
-
-  def alt_thresholds(weeks)
-    sorted = weeks.sort
-    [0] + QUANTILES.map { quantile(sorted, it).round(1) }
-  end
-
-  def quantile(sorted, fraction)
-    position = (sorted.size - 1) * fraction
-    lower = sorted[position.floor]
-    upper = sorted[position.ceil]
-    lower + (upper - lower) * (position - position.floor)
   end
 
   def daily

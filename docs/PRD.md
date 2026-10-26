@@ -109,7 +109,7 @@ The period selector offers **All time**, year pills (newest first, older years c
 | 9 | Trailing days | Daily rolling sum of distance: 365 days (all-time view), 90 (year), 7 (month). |
 | 10 | Runs pace vs distance | Scatter of runs in the period. x = km. y = pace on a speed-linear axis labeled as pace (ticks 4:00, 5:00, 6:00, 7:30, 10:00, 15:00, 30:00). The last run is highlighted and the average is a ring marker. The y metric is switchable: **Pace** / Avg HR / SPI. |
 | 11 | Consecutive days run | Longest streak and longest break with dates, plus the current streak or break. |
-| 12 | Weekly stats for each year | All-time view: heatmap with years as rows and Monday-start weeks as columns. Weekly km buckets: >1, >20, >40, >50, >60 (ring), >80 (dot). An "alternate scale" toggle switches to quantile buckets of your own weekly distances (assumption, see §13). Year and month views show a day calendar colored by daily km instead. |
+| 12 | Weekly stats for each year | All-time view: heatmap with years as rows and Monday-start weeks as columns. Weekly km buckets: >1, >20, >40, >50, >60 (ring), >80 (dot). Year and month views show a day calendar colored by daily km instead. |
 | 13 | Personal records | Benchmarks: 3 km, 5 km, 10 km, 15 km, 20 km, half marathon, 40 km, marathon, 50 km, 100 km. Only benchmarks with qualifying runs in the period are shown. Each row: date, pace, km/h, time, number of runs in the bucket, and a race tag. Phase 2 adds a pace sparkline per row (20-segment pace profile). |
 
 ### 5.3 Pace Trends (Phase 1)
@@ -592,7 +592,6 @@ Smashback's values, next to smashrun.com/miharekar (all time, km). Smashrun used
 | R5 | Strava CSV quirks. | Moot: the Strava API is the primary source (§7.3). |
 | R6 | Personal API key expiry (≤ 1 year). | Clear banner and rotation docs (§11). |
 | Q1 | Smashrun Pro's "Trends Comparison": what did it do? | Unknown. Skipped unless you remember. |
-| Q2 | What did "alternate scale" mean on the weekly heatmap? | Assumed to be quantile buckets of your own weekly distances. |
 | Q3 | Top runs: rolling 30-day window or calendar month? | Rolling 30-day chosen. It's a one-line change. |
 | R7 | Smashrun shutting down. | Its data is fetched once into stored originals (§7.5), so nothing depends on it afterwards. |
 | R8 | Garmin originals are untrimmed. | Clip FIT recordings to `started_at` and `timer_s` of recording time (§6). |

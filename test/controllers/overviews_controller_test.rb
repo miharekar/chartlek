@@ -16,7 +16,6 @@ class OverviewsControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-controller='trailing-line']"
     assert_select "[data-controller='pace-scatter']"
     assert_select "[data-controller='heatmap']"
-    assert_select "button", text: "alternate scale"
     assert_select "table", text: /5 km/
     assert_select "p", text: /fifteen/i
     assert_select "a[href='/overview/2023']"
@@ -38,7 +37,6 @@ class OverviewsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "[data-controller='heatmap']"
-    assert_select "button", text: "alternate scale", count: 0
     assert_select "nav[aria-label='Month'] a", text: "Mar"
     assert_select "nav[aria-label='Month'] span", text: "Apr"
   end
