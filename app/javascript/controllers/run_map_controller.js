@@ -70,7 +70,7 @@ export default class extends Controller {
     this.map.addSource("terrain-dem", { type: "raster-dem", url: "mapbox://mapbox.mapbox-terrain-dem-v1", tileSize: 512, maxzoom: 14 })
     this.map.addLayer({ id: "hillshade", type: "hillshade", source: "terrain-dem", paint: { "hillshade-exaggeration": shading.exaggeration, "hillshade-shadow-color": shading.shadow, "hillshade-highlight-color": shading.highlight, "hillshade-accent-color": shading.accent } }, firstLayer(BELOW_ROADS))
     this.map.addLayer({ id: "contours-minor", type: "line", ...contour, minzoom: 13, filter: ["<", ["get", "index"], 5], paint: { "line-color": color("--chart-muted"), "line-width": 0.5, "line-opacity": 0.3 } }, firstLayer(ROADS))
-    this.map.addLayer({ id: "contours-index", type: "line", ...contour, minzoom: 11, filter: INDEX_CONTOUR, paint: { "line-color": color("--chart-axis"), "line-width": ["interpolate", ["linear"], ["zoom"], 11, 0.6, 15, 1.3], "line-opacity": 0.6 } }, firstLayer(ROADS))
+    this.map.addLayer({ id: "contours-index", type: "line", ...contour, minzoom: 11, filter: INDEX_CONTOUR, paint: { "line-color": color("--chart-muted"), "line-width": ["interpolate", ["linear"], ["zoom"], 11, 0.5, 15, 0.9], "line-opacity": 0.5 } }, firstLayer(ROADS))
     this.map.addLayer({ id: "contour-labels", type: "symbol", ...contour, minzoom: 11, filter: INDEX_CONTOUR, layout: { "symbol-placement": "line", "symbol-spacing": 250, "text-field": ["concat", ["to-string", ["get", "ele"]], " m"], "text-font": TEXT_FONT, "text-size": 10 }, paint: { "text-color": color("--chart-axis"), ...halo } }, labels)
     this.map.addLayer({
       id: "peaks",
