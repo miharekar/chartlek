@@ -1,17 +1,11 @@
 module PaceTrendsHelper
   FILTERS = [["Exclude pauses", "no_pauses"], ["Exclude treadmill", "no_indoor"], ["Races only", "races"]].freeze
-  CARRIED_PARAMS = %w[metric no_pauses no_indoor races from to distance].freeze
+  CARRIED_PARAMS = %w[no_pauses no_indoor races from to distance].freeze
 
   def pace_trend_filter_chips
     safe_join(FILTERS.map { |label, key|
       active = params[key] == "1"
       pace_trend_chip(label, pace_trend_path(pace_trend_query.merge(key => (active ? nil : "1")).compact), active)
-    })
-  end
-
-  def pace_trend_metric_toggle(current)
-    safe_join(PaceTrend::METRICS.map { |metric|
-      pace_trend_chip(metric.upcase, pace_trend_path(pace_trend_query.merge("metric" => metric)), current == metric)
     })
   end
 

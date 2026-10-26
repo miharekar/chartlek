@@ -20,6 +20,16 @@ class PaceTrendsControllerTest < ActionDispatch::IntegrationTest
     assert_select "button[data-controller=info]", minimum: 2
   end
 
+  test "an old metric parameter is ignored" do
+    create(:activity)
+
+    get pace_trend_path(metric: "vdot")
+
+    assert_response :success
+    assert_select "[data-controller='pace-trends'][data-pace-trends-payload-value]"
+    assert_select "a[href*=metric]", false
+  end
+
   test "payload escapes run names" do
     create(:activity, name: "<script>alert(1)</script>")
 
@@ -28,11 +38,11 @@ class PaceTrendsControllerTest < ActionDispatch::IntegrationTest
     assert_no_match "<script>alert(1)</script>", response.body
   end
 
-  test "each filter and metric renders" do
+  test "each filter renders" do
     create(:activity, race: true)
     create(:activity, indoor: true)
 
-    [{metric: "vdot"}, {no_pauses: "1"}, {no_indoor: "1"}, {races: "1"}, {metric: "vdot", races: "1", no_indoor: "1", no_pauses: "1", from: "2024-01-01", to: "2024-03-01", distance: "5K"}].each do |query|
+    [{no_pauses: "1"}, {no_indoor: "1"}, {races: "1"}, {races: "1", no_indoor: "1", no_pauses: "1", from: "2024-01-01", to: "2024-03-01", distance: "5K"}].each do |query|
       get pace_trend_path(query)
 
       assert_response :success, query.inspect
@@ -58,7 +68,6 @@ class PaceTrendsControllerTest < ActionDispatch::IntegrationTest
 
     assert_select "a[href=?]", pace_trend_path(from: "2024-01-01", to: "2024-02-01"), "Races only"
     assert_select "a[href=?]", pace_trend_path(races: "1", from: "2024-01-01", to: "2024-02-01", no_pauses: "1"), "Exclude pauses"
-    assert_select "a[href=?]", pace_trend_path(races: "1", from: "2024-01-01", to: "2024-02-01", metric: "vdot"), "VDOT"
   end
 
   test "ignores unknown query params in chip links" do

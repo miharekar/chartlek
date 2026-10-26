@@ -68,9 +68,8 @@
   </section>
 
   <section class="<%= card %>">
-    <h2 class="<%= label %>">SPI · VDOT</h2>
-    <p class="<%= big %>"><%= run.spi ? run.spi.round : "–" %><span class="<%= unit %>">SPI</span></p>
-    <p class="<%= small %>"><%= run.vdot ? "VDOT #{run.vdot.round(1)}" : "–" %></p>
+    <h2 class="<%= label %> flex items-center gap-1.5">VDOT <%= vdot_info %></h2>
+    <p class="<%= big %>"><%= run.vdot ? run.vdot.round(1) : "–" %></p>
   </section>
 
   <% if run.pace_variability %>
@@ -99,7 +98,7 @@
 
   <% if run.finish_times %>
     <section class="<%= card %> col-span-2">
-      <h2 class="<%= label %>">Estimated finish times at SPI <%= run.spi.round %></h2>
+      <h2 class="<%= label %>">Estimated finish times at VDOT <%= run.vdot.round(1) %></h2>
       <dl class="mt-2 grid grid-cols-4 gap-2 text-center tabular-nums">
         <% run.finish_times.each do |name, seconds| %>
           <div>

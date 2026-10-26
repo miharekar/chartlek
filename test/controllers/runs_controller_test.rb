@@ -104,7 +104,7 @@ class RunsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[target=_blank]", false
   end
 
-  test "show highlights the run among the fastest and finishes with spi" do
+  test "show highlights the run among the fastest and finishes with vdot" do
     run = run_at(Time.utc(2023, 5, 6, 7), distance_m: 5000, timer_s: 1300)
 
     get run_path(run)

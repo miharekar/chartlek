@@ -76,11 +76,11 @@ class Activity::BrowsingTest < ActiveSupport::TestCase
     assert_equal 12.5, run.earlier_runs.first.weather["temperature"]
   end
 
-  test "finish times use the run's spi" do
+  test "finish times use the run's vdot" do
     run = run_at(Time.utc(2024, 3, 1))
 
     assert_equal %w[5K 10K Half Marathon], run.finish_times.map(&:first)
-    assert_in_delta Spi.time_for(5000, run.spi), run.finish_times.first.last, 1e-9
+    assert_in_delta Vdot.time_for(5000, run.vdot), run.finish_times.first.last, 1e-9
   end
 
   test "listed filters by period and whitelists the sort" do
@@ -112,7 +112,7 @@ class Activity::BrowsingTest < ActiveSupport::TestCase
     prior = run.prior_training
 
     assert_equal [inside, earlier_today].map { it.local_started_at.to_i * 1000 }, prior.pluck(:t)
-    assert_equal({t: Time.utc(2024, 3, 12, 6).to_i * 1000, km: 5.0, pace: 300.0, hr: 150, spi: inside.spi.round(1), s: 1500, url: "/runs/#{inside.id}"}, prior.first)
+    assert_equal({t: Time.utc(2024, 3, 12, 6).to_i * 1000, km: 5.0, pace: 300.0, hr: 150, vdot: inside.vdot.round(2), s: 1500, url: "/runs/#{inside.id}"}, prior.first)
   end
 
   test "prior training is empty for the first run" do

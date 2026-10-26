@@ -16,7 +16,7 @@ const HIT_RADIUS = 14
 const METRICS = {
   pace: { value: run => run.pace },
   hr: { value: run => run.hr },
-  spi: { value: run => run.spi }
+  vdot: { value: run => run.vdot }
 }
 
 export default class extends Controller {
@@ -162,7 +162,7 @@ export default class extends Controller {
 
   tooltip(run) {
     const hr = run.hr == null ? "–" : `${run.hr} bpm`
-    const spi = run.spi == null ? "–" : Math.round(run.spi)
-    return `<div class="font-medium">${formatDate(run.t)}</div><div>${escapeHtml(run.name || "Run")}</div><div>${formatDistance(run.km)} km · ${formatPace(run.pace)} /km</div><div class="text-zinc-500">HR ${hr} · SPI ${spi}</div>`
+    const vdot = run.vdot == null ? "–" : run.vdot.toFixed(1)
+    return `<div class="font-medium">${formatDate(run.t)}</div><div>${escapeHtml(run.name || "Run")}</div><div>${formatDistance(run.km)} km · ${formatPace(run.pace)} /km</div><div class="text-zinc-500">HR ${hr} · VDOT ${vdot}</div>`
   }
 }

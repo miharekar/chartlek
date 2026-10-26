@@ -42,7 +42,7 @@ Development URL: http://localhost:3000
 ## Architecture Overview
 
 - Data lives in SQLite (`storage/`).
-- `Activity` is one run, keyed by `(source, external_id)` with `source` `garmin`, `strava` or `smashrun` (only the one Smashrun-only run before Garmin; it has no `external_url`). Class-scoped concerns fill it in: `Activity::GarminSync`, `Activity::StravaImport`, `Activity::SmashrunImport`, `Activity::TrackProcessing`, `Activity::Weather`, `Activity::Browsing`, `Activity::Performance` (SPI/VDOT).
+- `Activity` is one run, keyed by `(source, external_id)` with `source` `garmin`, `strava` or `smashrun` (only the one Smashrun-only run before Garmin; it has no `external_url`). Class-scoped concerns fill it in: `Activity::GarminSync`, `Activity::StravaImport`, `Activity::SmashrunImport`, `Activity::TrackProcessing`, `Activity::Weather`, `Activity::Browsing`, `Activity::Performance` (VDOT).
 - `has_one_attached :original` (Active Storage, local disk): the Garmin ZIP as downloaded, or the gzipped Smashrun detail `smashrun-<id>.json.gz`. `process_original` parses it (`Track::Fit`, `Track::Tcx`, `Track::Smashrun`) into the `tracks` table (columnar JSON `t, d, lat, lng, alt, hr, cad`, at most 2,000 points) and the `splits`, `pace_profile`, `pace_variability` columns. `weather` (JSON) comes from Open-Meteo.
 - `Notables.for(activity, runs)` is computed on the fly (needs `weather` loaded; no column). `Food.for(calories)` picks the food equivalent.
 - Sync downloads every run it pages through that has no original, processes a run that has an original but no track (so a failed download or parse is retried by the next sync), and reprocesses a run whose `started_at`, `timer_s` or `distance_m` changed (picks up trims; other summary changes don't matter to `process_original`). It refreshes `Profile#sync_started_at` after each run (`Profile#sync_progress`), so a long sync keeps counting as running past `SYNC_STALE_AFTER` and page views don't start a second one. It fetches weather for runs 6–60 days old that lack it (the archive lags about 5 days). A failure for one run is logged and skipped.
@@ -86,7 +86,7 @@ Development URL: http://localhost:3000
 - Refreshes after a sync use `turbo_refreshes_with method: :replace`, so chart controllers reconnect and redraw; charts must not rely on morphing.
 - Escape interpolated names with `escapeHtml` before passing them to `showTooltip`.
 - Pages render an empty state instead of charts when there are no runs.
-- Predictions use the Ruby `Spi.time_table` / `Vdot.time_table` plus `predictTime` from `helpers/predictions`.
+- Predictions use the Ruby `Vdot.time_table` plus `predictTime` from `helpers/predictions`.
 
 ## Privacy
 

@@ -19,7 +19,7 @@
         <thead class="text-zinc-500 dark:text-zinc-400">
           <tr class="border-b border-zinc-200 dark:border-zinc-800">
             <% RunsHelper::COLUMNS.each do |label, key, align| %>
-              <%= runs_sort_header label, key, align %>
+              <%= runs_sort_header label, key, align, info: (key == "vdot") %>
             <% end %>
             <th class="px-3 py-2"></th>
           </tr>
@@ -34,7 +34,6 @@
               <td class="px-3 py-2 text-right"><%= overview_pace(run.pace) %></td>
               <td class="px-3 py-2 text-right"><%= run.avg_hr %></td>
               <td class="px-3 py-2 text-right"><%= run.elevation_gain_m&.round %></td>
-              <td class="px-3 py-2 text-right"><%= run.spi&.round %></td>
               <td class="px-3 py-2 text-right"><%= run.vdot&.round(1) %></td>
               <td class="px-3 py-2"><%= run_tags(run) %></td>
             </tr>

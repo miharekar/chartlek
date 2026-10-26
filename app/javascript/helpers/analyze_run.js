@@ -2,7 +2,7 @@ export const METRICS = {
   km: run => run.km,
   pace: run => (run.pace > 0 ? 3600 / run.pace : null),
   hr: run => run.hr,
-  spi: run => run.spi
+  vdot: run => run.vdot
 }
 
 export function histogram(runs, metric, count = 12) {

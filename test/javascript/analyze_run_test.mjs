@@ -15,10 +15,10 @@ registerHooks({
 const { histogram, selectRuns, summarize } = await import("helpers/analyze_run")
 
 const runs = [
-  { km: 5, pace: 300, hr: 150, spi: 50, s: 1500 },
-  { km: 10, pace: 360, hr: null, spi: null, s: 3600 },
-  { km: 20, pace: 330, hr: 140, spi: 60, s: 6600 },
-  { km: 5, pace: 300, hr: 160, spi: 55, s: 1500 }
+  { km: 5, pace: 300, hr: 150, vdot: 50, s: 1500 },
+  { km: 10, pace: 360, hr: null, vdot: null, s: 3600 },
+  { km: 20, pace: 330, hr: 140, vdot: 60, s: 6600 },
+  { km: 5, pace: 300, hr: 160, vdot: 55, s: 1500 }
 ]
 
 test("histogram bins runs by distance and keeps the maximum in the last bin", () => {

@@ -9,7 +9,6 @@ module Activity::Browsing
     "pace" => "timer_s / distance_m",
     "hr" => "avg_hr",
     "elevation" => "elevation_gain_m",
-    "spi" => "spi",
     "vdot" => "vdot"
   }.freeze
   SIMILAR_DISTANCE = 0.1
@@ -92,12 +91,12 @@ module Activity::Browsing
   def prior_training(days = TRAINING_WINDOW)
     window = (local_started_at.beginning_of_day - days.days)...local_started_at
     Activity.where(local_started_at: window).where.not(id:).order(:local_started_at, :id).map do |other|
-      {t: other.local_started_at.to_i * 1000, km: (other.distance_m / 1000).round(2), pace: other.pace.round(1), hr: other.avg_hr, spi: other.spi&.round(1), s: other.timer_s.round, url: Rails.application.routes.url_helpers.run_path(other)}
+      {t: other.local_started_at.to_i * 1000, km: (other.distance_m / 1000).round(2), pace: other.pace.round(1), hr: other.avg_hr, vdot: other.vdot&.round(2), s: other.timer_s.round, url: Rails.application.routes.url_helpers.run_path(other)}
     end
   end
 
   def finish_times
-    PaceTrend::DISTANCES.map { |label, meters| [label, Spi.time_for(meters, spi)] } if spi
+    PaceTrend::DISTANCES.map { |label, meters| [label, Vdot.time_for(meters, vdot)] } if vdot
   end
 
   private

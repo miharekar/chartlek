@@ -17,7 +17,6 @@ module Activity::Performance
 
   private
   def assign_performance
-    self.spi = Spi.for(distance_m, timer_s)
     self.vdot = Vdot.for(distance_m, timer_s)
   end
 end

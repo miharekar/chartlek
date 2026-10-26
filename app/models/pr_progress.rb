@@ -1,5 +1,5 @@
 class PrProgress
-  COLUMNS = %w[id time distance pace spi bucket best name race url vdot].freeze
+  COLUMNS = %w[id time distance pace vdot bucket best name race url].freeze
   REFERENCE_DAYS = [30, 60, 90].freeze
 
   attr_reader :today
@@ -7,7 +7,7 @@ class PrProgress
   delegate :empty?, to: :@activities
 
   def self.benchmarks
-    @benchmarks ||= PersonalRecords::BENCHMARKS.map { |name, meters| {name:, meters:, table: Spi.time_table(meters), vdot_table: Vdot.time_table(meters)} }.freeze
+    @benchmarks ||= PersonalRecords::BENCHMARKS.map { |name, meters| {name:, meters:, table: Vdot.time_table(meters)} }.freeze
   end
 
   def self.for_all
@@ -22,7 +22,7 @@ class PrProgress
   def reference_for(days)
     from = today - (days - 1)
 
-    @activities.select { it.spi && it.local_started_at.to_date >= from }.max_by { [it.spi, it.local_started_at] }
+    @activities.select { it.vdot && it.local_started_at.to_date >= from }.max_by { [it.vdot, it.local_started_at] }
   end
 
   def magic_prs
@@ -50,7 +50,7 @@ class PrProgress
   def run_row(activity)
     bucket = PersonalRecords.bucket_for(activity)
 
-    [activity.id, epoch_ms(activity.local_started_at), (activity.distance_m / 1000).round(3), activity.pace.round(1), activity.spi&.round(1), bucket && bucket_index(bucket.name), bucket&.time_s&.round(2), activity.name, activity.race ? 1 : 0, Rails.application.routes.url_helpers.run_path(activity), activity.vdot&.round(2)]
+    [activity.id, epoch_ms(activity.local_started_at), (activity.distance_m / 1000).round(3), activity.pace.round(1), activity.vdot&.round(2), bucket && bucket_index(bucket.name), bucket&.time_s&.round(2), activity.name, activity.race ? 1 : 0, Rails.application.routes.url_helpers.run_path(activity)]
   end
 
   def frontier_entry(record)

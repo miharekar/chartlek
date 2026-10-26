@@ -1,10 +1,9 @@
 require "test_helper"
 
 class Activity::PerformanceTest < ActiveSupport::TestCase
-  test "saving assigns spi and vdot" do
+  test "saving assigns vdot" do
     activity = create(:activity, distance_m: 10_000, timer_s: 3000)
 
-    assert_equal Spi.for(10_000, 3000), activity.spi
     assert_equal Vdot.for(10_000, 3000), activity.vdot
   end
 
@@ -13,13 +12,12 @@ class Activity::PerformanceTest < ActiveSupport::TestCase
 
     activity.update!(timer_s: 2800)
 
-    assert_equal Spi.for(10_000, 2800), activity.reload.spi
+    assert_equal Vdot.for(10_000, 2800), activity.reload.vdot
   end
 
-  test "spi and vdot stay nil under 400 m" do
+  test "vdot stays nil under 400 m" do
     activity = create(:activity, distance_m: 300, timer_s: 90)
 
-    assert_nil activity.spi
     assert_nil activity.vdot
   end
 
@@ -28,12 +26,11 @@ class Activity::PerformanceTest < ActiveSupport::TestCase
     activity = create(:activity, distance_m: 10_000, timer_s: 3000)
     Activity.set_callback(:save, :before, :assign_performance)
 
-    assert_nil activity.spi
+    assert_nil activity.vdot
 
     Activity.find_each(&:save!)
 
-    assert_equal Spi.for(10_000, 3000), activity.reload.spi
-    assert_equal Vdot.for(10_000, 3000), activity.vdot
+    assert_equal Vdot.for(10_000, 3000), activity.reload.vdot
   end
 
   test "paused? needs at least 60 seconds between elapsed and timer" do

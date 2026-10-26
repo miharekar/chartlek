@@ -1,7 +1,7 @@
 require "test_helper"
 
 class PaceTrendTest < ActiveSupport::TestCase
-  test "skips runs without a metric value" do
+  test "skips runs without a vdot" do
     create(:activity, distance_m: 300, timer_s: 90)
     run = create(:activity)
 
@@ -38,25 +38,22 @@ class PaceTrendTest < ActiveSupport::TestCase
     assert_equal [earlier.id, later.id], PaceTrend.new.runs.map(&:id)
   end
 
-  test "top runs follow the metric" do
+  test "top runs are the best three by vdot" do
     runs = [3700, 3800, 3900, 4000].each_with_index.map { |timer_s, day| create(:activity, local_started_at: Time.utc(2024, 1, 1) + day.days, distance_m: 10_000, timer_s:) }
 
     assert_equal runs.first(3).map(&:id).to_set, PaceTrend.new.top_ids
-    assert_equal runs.first(3).map(&:id).to_set, PaceTrend.new(metric: "vdot").top_ids
     assert_equal [true, true, true, false], PaceTrend.new.payload[:runs].pluck(:top)
   end
 
   test "payload serializes runs" do
     run = create(:activity, name: "Evening <b>Run</b>", local_started_at: Time.utc(2024, 3, 5, 18, 0), distance_m: 10_000, timer_s: 3000)
 
-    payload = PaceTrend.new(metric: "vdot").payload
+    payload = PaceTrend.new.payload
     row = payload[:runs].first
 
-    assert_equal "vdot", payload[:metric]
     assert_equal run.id, row[:id]
     assert_equal Time.utc(2024, 3, 5, 18).to_i * 1000, row[:t]
     assert_equal "Evening <b>Run</b>", row[:name]
-    assert_equal run.spi.round(1), row[:spi]
     assert_equal run.vdot.round(2), row[:vdot]
     assert_equal 10.0, row[:km]
     assert_equal 3000.0, row[:s]
@@ -85,9 +82,8 @@ class PaceTrendTest < ActiveSupport::TestCase
     assert_equal [Time.utc(2023, 1, 10).to_i * 1000, Time.utc(2023, 2, 2).to_i * 1000], payload[:window]
     assert_equal "10K", payload[:distance]
 
-    junk = PaceTrend.new(metric: "bogus", from: "nope", distance: "far")
+    junk = PaceTrend.new(from: "nope", distance: "far")
 
-    assert_equal "spi", junk.metric
     assert_equal "Marathon", junk.distance
     assert_equal Date.current.in_time_zone("UTC").to_i * 1000 + 1.day.to_i * 1000, junk.payload[:window].last
   end

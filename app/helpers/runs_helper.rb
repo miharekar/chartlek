@@ -1,5 +1,5 @@
 module RunsHelper
-  COLUMNS = [%w[Date date left], %w[Name name left], %w[km km right], %w[Time time right], %w[Pace pace right], %w[HR hr right], %w[Elev elevation right], %w[SPI spi right], %w[VDOT vdot right]].freeze
+  COLUMNS = [%w[Date date left], %w[Name name left], %w[km km right], %w[Time time right], %w[Pace pace right], %w[HR hr right], %w[Elev elevation right], %w[VDOT vdot right]].freeze
   TAG = "rounded px-1.5 py-0.5 text-xs font-medium"
 
   def runs_period_title(year, month)
@@ -10,7 +10,7 @@ module RunsHelper
     end
   end
 
-  def runs_sort_header(label, key, align)
+  def runs_sort_header(label, key, align, info: false)
     current = params[:sort].presence_in(Activity::SORTS.keys) || "date"
     descending = params[:dir] != "asc"
     arrow = if current != key
@@ -23,7 +23,13 @@ module RunsHelper
     next_dir = (current == key && descending) ? "asc" : "desc"
 
     tag.th class: "px-3 py-2 font-medium text-#{align}", aria: {sort: (current == key) ? (descending ? "descending" : "ascending") : nil} do
-      link_to "#{label}#{arrow}", runs_path(request.query_parameters.slice("year", "month").merge("sort" => key, "dir" => next_dir)), class: "hover:text-zinc-900 dark:hover:text-zinc-100"
+      link = link_to "#{label}#{arrow}", runs_path(request.query_parameters.slice("year", "month").merge("sort" => key, "dir" => next_dir)), class: "hover:text-zinc-900 dark:hover:text-zinc-100"
+
+      if info
+        tag.span safe_join([link, vdot_info]), class: "inline-flex items-center gap-1"
+      else
+        link
+      end
     end
   end
 

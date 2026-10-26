@@ -25,11 +25,10 @@ export default class extends Controller {
   static values = { payload: Object }
 
   connect() {
-    const { runs, metric, tables, domain, window: selection } = this.payloadValue
-    this.metric = metric
+    const { runs, tables, domain, window: selection } = this.payloadValue
     this.tables = Object.fromEntries(tables.map(({ label, table }) => [label, table]))
     this.distance = this.payloadValue.distance
-    this.runs = runs.map(run => ({ ...run, value: run[metric] }))
+    this.runs = runs.map(run => ({ ...run, value: run.vdot }))
     this.muted = this.runs.filter(run => !run.top)
     this.top = this.runs.filter(run => run.top)
     this.x = scaleUtc()
@@ -74,7 +73,7 @@ export default class extends Controller {
     this.clip = this.svg.append("defs").append("clipPath").attr("id", this.clipId).append("rect")
     this.xAxis = this.svg.append("g")
     this.yAxis = this.svg.append("g")
-    this.axisLabel = this.svg.append("text").attr("fill", "var(--chart-axis)").attr("font-size", 11).attr("x", MARGIN.left).attr("y", 9).text(this.metric.toUpperCase())
+    this.axisLabel = this.svg.append("text").attr("fill", "var(--chart-axis)").attr("font-size", 11).attr("x", MARGIN.left).attr("y", 9).text("VDOT")
     this.plot = this.svg.append("g").attr("clip-path", `url(#${this.clipId})`)
     this.band = this.plot.append("path").attr("fill", "var(--chart-accent)").attr("fill-opacity", 0.14)
     this.trend = this.plot.append("path").attr("fill", "none").attr("stroke", "var(--chart-accent)").attr("stroke-width", 1.5)
@@ -168,9 +167,8 @@ export default class extends Controller {
     this.cutTarget.hidden = !this.fit
     if (!this.fit) return
 
-    const label = this.metric.toUpperCase()
     const perWeek = weeklyChange(this.fit.slope)
-    this.changeTarget.innerHTML = `Change in ${label}: <strong>${formatChange(perWeek, this.metric)}</strong>`
+    this.changeTarget.innerHTML = `Change in VDOT: <strong>${formatChange(perWeek)}</strong>`
     const table = this.tables[this.distance]
     const seconds = predictTime(table, this.fit.at(start / DAY_MS)) - predictTime(table, this.fit.at(end / DAY_MS))
     const { verb, time } = formatFinishDelta(seconds)
@@ -213,8 +211,7 @@ export default class extends Controller {
       <div class="font-medium">${escapeHtml(run.name || "Untitled run")}</div>
       <div class="mb-1 text-zinc-500 dark:text-zinc-400">${formatDate(run.t)}</div>
       <div class="grid grid-cols-[auto_auto] gap-x-4">
-        ${row("SPI", run.spi == null ? "–" : Math.round(run.spi))}
-        ${row("VDOT", run.vdot == null ? "–" : run.vdot.toFixed(1))}
+        ${row("VDOT", run.vdot.toFixed(1))}
         ${row("Distance", `${formatDistance(run.km)} km`)}
         ${row("Pace", `${formatPace(run.s / run.km)} /km`)}
         ${row("Time", formatDuration(run.s))}

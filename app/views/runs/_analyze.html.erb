@@ -2,7 +2,7 @@
 <section class="mt-4 rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900/50" <%= tag.attributes(data: (runs.any? ? {controller: "analyze-run", analyze_run_runs_value: runs, analyze_run_from_value: run.local_started_at.beginning_of_day.to_i * 1000 - Activity::TRAINING_WINDOW * 86_400_000, analyze_run_to_value: run.local_started_at.to_i * 1000} : {})) %>>
   <h2 class="flex items-center gap-1.5 font-semibold">
     Training in the prior <%= Activity::TRAINING_WINDOW %> days
-    <%= overview_info "Runs in the 90 days before this one. The histogram groups them by distance, pace, heart rate or SPI. Drag across it to highlight those runs on the timeline below and see their share of the training. Click a bar on the timeline to open the run." %>
+    <%= overview_info "Runs in the 90 days before this one. The histogram groups them by distance, pace, heart rate or VDOT. Drag across it to highlight those runs on the timeline below and see their share of the training. Click a bar on the timeline to open the run." %>
   </h2>
   <% if runs.any? %>
     <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
@@ -12,7 +12,7 @@
           <option value="km" class="text-zinc-900">distance</option>
           <option value="pace" class="text-zinc-900">pace</option>
           <option value="hr" class="text-zinc-900">avg HR</option>
-          <option value="spi" class="text-zinc-900">SPI</option>
+          <option value="vdot" class="text-zinc-900">VDOT</option>
         </select>
       </label>
       <div class="tabular-nums" data-analyze-run-target="summary"></div>

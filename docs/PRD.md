@@ -50,7 +50,7 @@ These are explicitly out of scope:
 | v1 scope | Overview dashboard, Pace Trends, PR Progress (with predictions and Magic PRs). |
 | Eventually | Everything except badges: run page, Pro Map, Training Bands, Goals, wellness. |
 | Extras | Notables, food equivalents, Garmin wellness data (resting HR, VO2max, HRV, weight, sleep, Body Battery/stress). |
-| Performance index | Both. A Purdy Points–based SPI (0–1000, like Smashrun) is the main number, with Jack Daniels' VDOT shown alongside. |
+| Performance index | VDOT only. SPI (Smashrun's 1–1000 score on a 1974 world-record curve) was dropped: its number has no physical meaning, and on the owner's PRs VDOT predicted other distances more accurately (§6). |
 | Units | Metric only: km, min/km, m, °C, 24h clock, weeks start Monday. |
 | Look | Light and dark, following the system. |
 | Name | `smashback` |
@@ -105,22 +105,22 @@ The period selector offers **All time**, a pill for every year (newest first), a
 | 5 | Time of day | % of runs starting after noon (local time), with a small AM/PM donut. |
 | 6 | Average pace | Total timer time ÷ total distance. |
 | 7 | Longest run | km and date; links to the run. |
-| 8 | Distance per period | Bars: per month (all time), per week (year), per day (month). The metric in the title is switchable: **Distance** / Elevation gained / Avg distance / Avg pace / Avg SPI. Hover shows value and run count. Clicking a bar drills into that period. |
+| 8 | Distance per period | Bars: per month (all time), per week (year), per day (month). The metric in the title is switchable: **Distance** / Elevation gained / Avg distance / Avg pace / Avg VDOT. Hover shows value and run count. Clicking a bar drills into that period. |
 | 9 | Trailing days | Daily rolling sum of distance: 365 days (all-time view), 90 (year), 7 (month). |
-| 10 | Runs pace vs distance | Scatter of runs in the period. x = km. y = pace on a speed-linear axis labeled as pace (ticks 4:00, 5:00, 6:00, 7:30, 10:00, 15:00, 30:00). The last run is highlighted and the average is a ring marker. The y metric is switchable: **Pace** / Avg HR / SPI. |
+| 10 | Runs pace vs distance | Scatter of runs in the period. x = km. y = pace on a speed-linear axis labeled as pace (ticks 4:00, 5:00, 6:00, 7:30, 10:00, 15:00, 30:00). The last run is highlighted and the average is a ring marker. The y metric is switchable: **Pace** / Avg HR / VDOT. |
 | 11 | Consecutive days run | Longest streak and longest break with dates, plus the current streak or break. |
 | 12 | Weekly stats for each year | All-time view: heatmap with years as rows and Monday-start weeks as columns. Weekly km buckets: >1, >20, >40, >50, >60 (ring), >80 (dot). Year and month views show a day calendar colored by daily km instead. |
 | 13 | Personal records | Benchmarks: 3 km, 5 km, 10 km, 15 km, 20 km, half marathon, 40 km, marathon, 50 km, 100 km. Only benchmarks with qualifying runs in the period are shown. Each row: date, pace, km/h, time, number of runs in the bucket, and a race tag. Phase 2 adds a pace sparkline per row (20-segment pace profile). |
 
 ### 5.3 Pace Trends (Phase 1)
 
-This answers "am I getting faster?" by putting all distances on a common scale (SPI).
+This answers "am I getting faster?" by putting all distances on a common scale (VDOT).
 
 **Main chart**
 
-- x = date, y = SPI, with a toggle to show **VDOT** instead.
+- x = date, y = VDOT.
 - Every run is a small muted dot.
-- **Top runs** are accent (yellow) dots joined by a faint smoothed line. A run is a top run if it is in the top 3 by SPI within the 30 days ending on its date (see §6).
+- **Top runs** are accent (yellow) dots joined by a faint smoothed line. A run is a top run if it is in the top 3 by VDOT within the 30 days ending on its date (see §6).
 - A **regression band** shows the least-squares line through the top runs inside the selected window, ±1 SD of the residuals.
 
 **Timeline and window**
@@ -129,8 +129,8 @@ This answers "am I getting faster?" by putting all distances on a common scale (
 - A `d3-brush` on the timeline selects the window; the default is the last 12 months. The main chart zooms to the window.
 - The header shows:
   - The date range.
-  - "Change in SPI: **+0.6/week**", the slope × 7.
-  - "Cut **34:28** from your estimated **[Marathon ▾]** finish time". This is the predicted time at the chosen distance (5K, 10K, half, marathon), using the regression SPI at the start of the window versus the end. If the result is negative, it reads "Added".
+  - "Change in VDOT: **+0.05/week**", the slope × 7, always with two decimals.
+  - "Cut **34:28** from your estimated **[Marathon ▾]** finish time". This is the predicted time at the chosen distance (5K, 10K, half, marathon), using the regression VDOT at the start of the window versus the end. If the result is negative, it reads "Added".
 - The regression and header are recomputed in the browser while dragging, with no server round trip.
 
 **Filters**
@@ -143,7 +143,7 @@ Toggle chips:
 
 **Tooltip**
 
-Shows date, name, SPI, VDOT, distance, pace and time. Clicking a run opens its run page, which includes the Analyze Run View: the 90 days of training before that run.
+Shows date, name, VDOT, distance, pace and time. Clicking a run opens its run page, which includes the Analyze Run View: the 90 days of training before that run.
 
 **Later**
 
@@ -166,8 +166,8 @@ Phase 4 adds a secondary-axis overlay toggle for resting HR or VO2max.
 **"PRs you can beat"**
 
 1. Pick a reference period: last 30, 60 or 90 days.
-2. The reference run is the run with the highest SPI in that period. It is shown and can be changed by clicking another run.
-3. The chart draws the predicted time at each benchmark at the same SPI.
+2. The reference run is the run with the highest VDOT in that period. It is shown and can be changed by clicking another run.
+3. The chart draws the predicted time at each benchmark at the same VDOT, from the VDOT time tables.
 4. Predictions that beat the all-time PR are highlighted. Tooltips show predicted time, pace, and % improvement over the current PR.
 
 **"Magic PRs"**
@@ -181,7 +181,7 @@ Phase 4 adds a secondary-axis overlay toggle for resting HR or VO2max.
 
 **Runs list (`/runs`, filterable by year and month)**
 
-- Sortable table: date, name, km, time, pace, HR, elevation, SPI, VDOT.
+- Sortable table: date, name, km, time, pace, HR, elevation, VDOT. The VDOT header carries the explanation (§6).
 - Race and treadmill tags.
 
 **Run page (`/runs/:id`)**
@@ -195,10 +195,10 @@ Phase 4 adds a secondary-axis overlay toggle for resting HR or VO2max.
   - Distance, elapsed/timer/moving time, average pace and speed.
   - Calories with a food equivalent ("A bunch of bananas… or a kremšnita").
   - Average HR (min–max), average cadence (min–max), elevation gain and loss.
-  - SPI and VDOT.
+  - VDOT, with the explanation in an ⓘ.
   - **Pace variability** (%), shown as Smashrun's circle glyph.
   - **Nth longest run** and **Nth fastest for a similar distance** (±10%), each with a mini rank chart.
-  - **Estimated finish times** for 5K, 10K, half and marathon at this run's SPI.
+  - **Estimated finish times** for 5K, 10K, half and marathon at this run's VDOT.
 - **Change in speed over route:**
   - Bars per 100 m, toggleable to per-km splits.
   - Brushing a range shows a summary of the selection: distance, time, pace, HR, cadence.
@@ -207,7 +207,7 @@ Phase 4 adds a secondary-axis overlay toggle for resting HR or VO2max.
 - **Notables** as of the run's date (§6).
 - **Fastest runs for this distance:** for the last 90, 180 and 365 days.
 - **Analyze Run View (training in the prior 90 days):**
-  - A histogram of the 90 days before the run, by distance, pace, HR or SPI (selectable), above a timeline of those runs.
+  - A histogram of the 90 days before the run, by distance, pace, HR or VDOT (selectable), above a timeline of those runs.
   - Brushing the histogram highlights the matching runs in the timeline.
   - Shows run count, distance, duration, and % of total training for the selection.
 - **Overview:** the PR sparklines (§5.2 #13) light up once tracks are parsed.
@@ -222,7 +222,7 @@ Phase 4 adds a secondary-axis overlay toggle for resting HR or VO2max.
     - **Cadence:** cadence ranges.
   - Map tiles follow the light/dark theme.
 - **Distribution bars** under the map, using Smashrun's click cycle: 1× selects only that bucket, 2× that bucket and above, 3× that bucket and below, 4× resets. The legend shows distance, duration, average pace, HR and cadence for the selection.
-- **Fastest segments:** 250 m, 400 m, 1 km, 5 km, 10 km, half, … up to the run's length, each with pace and SPI. Clicking one isolates it on the map and updates the stats.
+- **Fastest segments:** 250 m, 400 m, 1 km, 5 km, 10 km, half, … up to the run's length, each with pace and VDOT. Clicking one isolates it on the map and updates the stats.
 - **Splits** per km for pace, elevation, HR or cadence, following the current metric. Clicking a split isolates it.
 - **Change-in-pace graph** under the map. Hovering another metric's filter overlays that metric on a secondary axis.
 
@@ -254,7 +254,7 @@ Phase 4 adds a secondary-axis overlay toggle for resting HR or VO2max.
 - **Page `/wellness`:**
   - Resting HR (daily, with a 7-day average).
   - HRV (nightly average with Garmin's baseline band).
-  - VO2max: step line from activity summaries, overlaid on the SPI trend.
+  - VO2max: step line from activity summaries, overlaid on the VDOT trend.
   - Weight (measurements with a trend line).
   - Sleep (duration and score).
   - Body Battery (daily high/low) and stress (daily average).
@@ -267,26 +267,21 @@ All metric math lives in Ruby and is unit-tested. The only JS math is interactiv
 
 - **Run eligibility:** an activity counts if its type is a running subtype and its distance is ≥ 0.1 km. Treadmill, indoor and virtual runs are counted but flagged.
 - **Time basis:**
-  - `timer_s` is Garmin's `duration`, which excludes manual pauses. It drives pace, SPI and PRs.
+  - `timer_s` is Garmin's `duration`, which excludes manual pauses. It drives pace, VDOT and PRs.
   - `elapsed_s` and `moving_s` are also stored.
   - A run *has pauses* when `elapsed_s − timer_s ≥ 60`.
 - **Local time:** all day bucketing (streaks, weekdays, AM/PM, calendars) uses Garmin's `startTimeLocal`. UTC is stored as well.
-- **SPI:**
-  - Purdy points P for (distance, `timer_s`), using the 1974 least-squares running curve (J. G. Purdy, "Least squares model for the running curve", *Research Quarterly* 45, 1974; scoring scale from Gardner & Purdy, *Computer generated track scoring tables*, 1970):
-    - V(d) = −b₁e^(−r₁d) + b₂e^(−r₂d) + b₃e^(−r₃d) + b₄e^(−r₄d) + b₅e^(−r₅d), the 1970 world-record velocity in m/s at distance d in m.
-    - A = 85 / (0.0654 − 0.00258·V), B = 1 − 1035/A, P = A·((d/V)/t − B). A 1970 world record scores 1035.
-    - b = 11.15895, 4.304605, 0.5234627, 4.031560, 2.316157; r = 3.796158e−2, 1.646772e−3, 4.107670e−4, 7.068099e−6, 5.220990e−9.
-  - Raw P goes negative for easy runs, so it is not clamped. It is rescaled to Smashrun's anchors: SPI = 1 + 999·(P − P_walk)/(1000 − P_walk), clamped to 1..1000, where P_walk = P(5 km, 1 h) is SPI 1 and P = 1000 is SPI 1000.
-  - `nil` for runs under 400 m or a time ≤ 0.
-  - Golden tests: 1970 world records score near 1035, and 5 km / 10 km / 20 km times track the published 1970 Gardner–Purdy table (a different, table-based model on a 950-point scale, so the tolerance is loose).
 - **VDOT** (Daniels–Gilbert):
   - v = m/min, t = minutes.
   - VO2 = −4.60 + 0.182258·v + 0.000104·v²
   - %max = 0.8 + 0.1894393·e^(−0.012778·t) + 0.2989558·e^(−0.1932605·t)
   - VDOT = VO2 / %max
+  - `nil` for runs under 400 m or a time ≤ 0.
+  - The explanation shown in the app (an ⓘ next to the run page's VDOT tile, the Pace Trends title and the runs table's VDOT header): "VDOT is Jack Daniels' estimate of the VO2max a run implies, on the same scale as your watch's VO2max. It puts every distance on one scale, and one point is worth about 2% of race time. Easy runs score lower because they aren't all-out." followed by example times for VDOT 45 and 50, computed from `Vdot.time_for` so they can't drift from the model (VDOT 45 ≈ 5K 21:49, 10K 45:13, half 1:40:14, marathon 3:28:16; VDOT 50 ≈ 19:56, 41:20, 1:31:31, 3:10:40).
+  - **Why VDOT and not SPI:** VDOT (Jack Daniels, 1979, still the basis of *Daniels' Running Formula*) is the VO2max a run implies, on the same scale as the VO2max a watch shows. SPI is Smashrun's 1–1000 score, built on a 1974 world-record curve, and its number has no physical meaning. Predicting each of the owner's 10K, half and marathon PRs from the other two, VDOT was off by 2.0% on average and SPI by 4.8%. From the 10K PR, SPI predicted a 3:31 marathon and VDOT 3:17; the actual PR is 3:20:40.
 - **Predictions:**
-  - Time at distance D for a given SPI comes from inverting the Purdy function in closed form: t = A·T_w / (P + A − 1035), where T_w = d/V(d) and P is the points for that SPI.
-  - The VDOT-based equivalent is shown in tooltips.
+  - Time at distance D for a given VDOT comes from inverting the VDOT formula numerically (`Vdot.time_for`, bisection).
+  - `Vdot.time_table(distance)` ships a lookup table per distance (VDOT 10–90, finer steps at low values), and the browser interpolates it linearly.
 - **PRs (Smashrun rule):**
   - For benchmark D, qualifying runs have D ≤ distance < D + 1 km.
   - PR time = `timer_s × D / distance` (time interpolated at constant pace).
@@ -296,9 +291,9 @@ All metric math lives in Ruby and is unit-tested. The only JS math is interactiv
   - A streak is maximal consecutive local dates with ≥ 1 run.
   - A break is maximal consecutive dates without a run, between the first run and the end of the period.
 - **Trailing N days:** for each date, the sum of distance over `[date − N + 1, date]`.
-- **Top runs (Pace Trends):** a run is a top run if its SPI ranks ≤ 3 among runs in `[date − 29 days, date]`. Smashrun's FAQ says "3 best per month" while their blog says "rolling 30-day"; we use the rolling 30-day window (§13).
+- **Top runs (Pace Trends):** a run is a top run if its VDOT ranks ≤ 3 among runs in `[date − 29 days, date]`. Smashrun's FAQ says "3 best per month" while their blog says "rolling 30-day"; we use the rolling 30-day window (§13).
 - **Regression:**
-  - OLS of SPI against time (days) over the top runs in the window.
+  - OLS of VDOT against time (days) over the top runs in the window.
   - The band is ±1 SD of the residuals.
   - Weekly change = slope × 7.
 - **Pace axes:** linear in speed, labeled as pace. This matches Smashrun's 4:17 / 5:00 / 6:00 / 7:30 / 10:00 / 15:00 / 30:00 axis.
@@ -436,7 +431,7 @@ Smashrun supplies tracks for the runs before Garmin, and the one run that exists
 | `elevation_gain_m`, `elevation_loss_m` | |
 | `avg_hr`, `max_hr`, `avg_cadence`, `max_cadence`, `calories`, `vo2max` | All nullable; older runs lack some of these. |
 | `start_lat`, `start_lng`, `location_name` | |
-| `spi`, `vdot` | Computed on save |
+| `vdot` | Computed on save |
 | `summary` | JSON: the raw Garmin summary or Strava CSV row, so fields can be re-derived without re-fetching. |
 
 Index on `local_started_at`. All of history is about 2,900 rows. Aggregations load the period's runs into Ruby; add caching only if measurements show a need.
@@ -479,7 +474,7 @@ Garmin profile and HR zones (JSON), `synced_at`, `sync_error`.
   - Mapbox GL JS in Phase 2, the single-file UMD build vendored in `vendor/javascript` with its CSS (`app/assets/stylesheets/mapbox-gl.css`), pinned with `preload: false` and imported dynamically so only run pages with a map load it. The multi-chunk ESM build breaks under Propshaft's digested paths. Every map, including the Phase 3 Pro Map, uses it.
 - **Code organization (Visualizer `STYLE.md`):**
   - Rich models with thin controllers.
-  - Class-scoped concerns, for example `Activity::Performance` for SPI/VDOT, `Activity::GarminSync`, `Activity::StravaImport`.
+  - Class-scoped concerns, for example `Activity::Performance` for VDOT, `Activity::GarminSync`, `Activity::StravaImport`.
   - POROs in `app/models` for aggregates: `Overview`, `PersonalRecords`, `PaceTrend`, `PrProgress`.
   - Integrations in `app/lib`: `Garmin::Client`, `Strava::Client`, `Smashrun::Client`, `OpenMeteo::Client`.
   - Jobs follow the `_later`/`_now` pattern.
@@ -534,14 +529,14 @@ Garmin profile and HR zones (JSON), `synced_at`, `sync_error`.
 
 **Unit tests**
 
-- SPI/VDOT golden values.
+- VDOT golden values.
 - PR bucketing and interpolation.
 - Streaks and breaks.
 - Trailing sums.
 - Weekly buckets.
 - Magic PR targets.
 - Top-run flagging.
-- Predictions: SPI uses the closed form; the Ruby lookup tables are interpolated in the browser.
+- Predictions: the Ruby VDOT lookup tables are interpolated in the browser.
 - Garmin client: token caching, re-exchange on 401, expired-key error.
 - Sync: idempotent upsert, delete reconciliation.
 - Strava gap-fill cutoff.
@@ -588,7 +583,6 @@ Smashback's values, next to smashrun.com/miharekar (all time, km). Smashrun used
 | R1 | FIT parsing in Ruby. | Spiked on 16 FIT files from 2018 to 2026: the fork parses all of them with its post-read `Activity#check` validation no-oped, matching Garmin's distance and timer. Later, with all runs processed, every FIT track is within 1% of its summary. `fit_kit` doesn't build on Ruby 4.0.9. About 2,000 records/s, so a full backfill needs several processes (§7.2). |
 | R2 | Personal API rate limits are undocumented. The maximum `limit` is 100 (250 returns HTTP 500). | Verified: no 429s in a full backfill at 1 request/s. Throttle and back off anyway. |
 | R3 | Does `activityType=running` include child types such as treadmill and trail? | Verified: it includes `trail_running`. Treadmill runs are typed `treadmill_running`. |
-| R4 | Purdy constants and table fidelity. | Golden tests against published Purdy tables before building the charts. |
 | R5 | Strava CSV quirks. | Moot: the Strava API is the primary source (§7.3). |
 | R6 | Personal API key expiry (≤ 1 year). | Clear banner and rotation docs (§11). |
 | Q1 | Smashrun Pro's "Trends Comparison": what did it do? | Unknown. Skipped unless you remember. |

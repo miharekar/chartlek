@@ -2,9 +2,8 @@ class PaceTrend::TopRuns
   RANK = 3
   WINDOW_DAYS = 30
 
-  def initialize(runs, metric)
+  def initialize(runs)
     @runs = runs.sort_by { [it.local_started_at, it.id] }
-    @metric = metric
   end
 
   def ids
@@ -26,6 +25,6 @@ class PaceTrend::TopRuns
   end
 
   def keys
-    @keys ||= @runs.map { [-it.public_send(@metric), it.local_started_at.to_i, it.id] }
+    @keys ||= @runs.map { [-it.vdot, it.local_started_at.to_i, it.id] }
   end
 end

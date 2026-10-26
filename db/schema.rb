@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_25_180000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_26_090000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -62,7 +62,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_25_180000) do
     t.float "vo2max"
     t.float "start_lat"
     t.float "start_lng"
-    t.float "spi"
     t.float "vdot"
     t.string "location_name"
     t.json "summary"

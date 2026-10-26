@@ -19,7 +19,7 @@ class Overview::Bars
 
   def bucket(from, runs)
     distance_km = runs.sum(&:distance_m) / 1000.0
-    spis = runs.filter_map(&:spi)
+    vdots = runs.filter_map(&:vdot)
 
     {
       from: from.iso8601,
@@ -28,7 +28,7 @@ class Overview::Bars
       elevation: runs.sum { it.elevation_gain_m.to_f }.round,
       avg_distance: (runs.any? ? (distance_km / runs.size).round(2) : nil),
       avg_pace: (runs.any? ? (runs.sum(&:timer_s) / distance_km).round(1) : nil),
-      avg_spi: (spis.any? ? (spis.sum / spis.size).round(1) : nil),
+      avg_vdot: (vdots.any? ? (vdots.sum / vdots.size).round(2) : nil),
       href: href(from, runs)
     }
   end

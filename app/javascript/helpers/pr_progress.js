@@ -46,9 +46,9 @@ export function recordsByBucket(frontier, count) {
   return records
 }
 
-export function predictions(benchmarks, records, spi) {
+export function predictions(benchmarks, records, vdot) {
   return benchmarks.map(({ meters, table }, bucket) => {
-    const time = predictTime(table, spi)
+    const time = predictTime(table, vdot)
     const record = records[bucket]
     return {
       bucket,

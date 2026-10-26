@@ -2,11 +2,9 @@
 <div class="flex flex-wrap items-center justify-between gap-4">
   <h1 class="flex items-center gap-2 text-2xl font-semibold">
     Pace Trends
-    <%= overview_info "Every run is a muted dot, scored by SPI or VDOT so all distances share one scale. Bright dots are top runs: the top 3 by score in the 30 days ending on that run. The band is the least-squares line through the top runs in the window, plus or minus one standard deviation of the residuals. Drag the timeline to change the window." %>
+    <%= overview_info "#{vdot_explanation} Every run is a muted dot, scored by VDOT so all distances share one scale. Bright dots are top runs: the top 3 by score in the 30 days ending on that run. The band is the least-squares line through the top runs in the window, plus or minus one standard deviation of the residuals. Drag the timeline to change the window." %>
   </h1>
   <div class="flex flex-wrap items-center gap-2">
-    <div class="flex gap-1"><%= pace_trend_metric_toggle(@pace_trend.metric) %></div>
-    <span class="mx-1 h-4 w-px bg-zinc-300 dark:bg-zinc-700"></span>
     <%= pace_trend_filter_chips %>
   </div>
 </div>
@@ -26,7 +24,7 @@
             <%= options_for_select(PaceTrend::DISTANCES.map(&:first), @pace_trend.distance) %>
           </select>
           finish time
-          <%= overview_info "Predicted time at the chosen distance from the regression score at the start of the window versus the end. Faster is Cut, slower is Added." %>
+          <%= overview_info "Predicted time at the chosen distance from the regression VDOT at the start of the window versus the end. Faster is Cut, slower is Added." %>
         </div>
         <div class="text-zinc-500" data-pace-trends-target="message" hidden>Not enough top runs in this window to draw a trend.</div>
       </div>

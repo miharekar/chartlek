@@ -17,7 +17,7 @@ const METRICS = {
   elevation: { value: bucket => bucket.elevation, text: value => `${Math.round(value)} m` },
   avg_distance: { value: bucket => bucket.avg_distance, text: value => `${formatDistance(value)} km` },
   avg_pace: { value: bucket => (bucket.avg_pace ? 3600 / bucket.avg_pace : null), text: speed => `${formatPace(3600 / speed)} /km`, tick: speed => (speed > 0 ? formatPace(3600 / speed) : "") },
-  avg_spi: { value: bucket => bucket.avg_spi, text: value => String(Math.round(value)) }
+  avg_vdot: { value: bucket => bucket.avg_vdot, text: value => value.toFixed(1) }
 }
 
 const monthLabel = utcFormat("%b")

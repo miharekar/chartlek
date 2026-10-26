@@ -19,11 +19,11 @@ registerHooks({
 
 const { formatChange, formatFinishDelta } = await import("helpers/pace_trends_format")
 
-test("formatChange picks precision per metric", () => {
-  assert.equal(formatChange(0.64, "spi"), "+0.6/week")
-  assert.equal(formatChange(-1.26, "spi"), "-1.3/week")
-  assert.equal(formatChange(0.054, "vdot"), "+0.05/week")
-  assert.equal(formatChange(-0.001, "spi"), "0.0/week")
+test("formatChange keeps two decimals for small VDOT changes", () => {
+  assert.equal(formatChange(0.64), "+0.64/week")
+  assert.equal(formatChange(-1.26), "-1.26/week")
+  assert.equal(formatChange(0.054), "+0.05/week")
+  assert.equal(formatChange(-0.001), "0.00/week")
 })
 
 test("formatFinishDelta says Cut or Added", () => {

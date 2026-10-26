@@ -15,7 +15,7 @@ const HISTOGRAM_HEIGHT = 176
 const HISTOGRAM_TOP = 12
 const TIMELINE_HEIGHT = 112
 
-const LABELS = { km: "km", pace: "/km", hr: "bpm", spi: "SPI" }
+const LABELS = { km: "km", pace: "/km", hr: "bpm", vdot: "VDOT" }
 
 export default class extends Controller {
   static targets = ["histogram", "timeline", "summary"]
@@ -176,7 +176,7 @@ export default class extends Controller {
         ${row("Pace", `${formatPace(run.pace)} /km`)}
         ${row("Time", formatDuration(run.s))}
         ${row("HR", run.hr == null ? "–" : run.hr)}
-        ${row("SPI", run.spi == null ? "–" : Math.round(run.spi))}
+        ${row("VDOT", run.vdot == null ? "–" : run.vdot.toFixed(1))}
       </div>`
   }
 }

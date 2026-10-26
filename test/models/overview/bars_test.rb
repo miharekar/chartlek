@@ -13,9 +13,9 @@ class Overview::BarsTest < ActiveSupport::TestCase
 
   def runs
     @runs ||= [
-      run_on([2024, 2, 5, 7, 0], distance_m: 10_000, timer_s: 3000, elevation_gain_m: 100, spi: 500),
-      run_on([2024, 2, 7, 7, 0], distance_m: 5000, timer_s: 1500, elevation_gain_m: nil, spi: 400),
-      run_on([2024, 3, 3, 7, 0], distance_m: 8000, timer_s: 2400, elevation_gain_m: 50, spi: nil)
+      run_on([2024, 2, 5, 7, 0], distance_m: 10_000, timer_s: 3000, elevation_gain_m: 100, vdot: 50),
+      run_on([2024, 2, 7, 7, 0], distance_m: 5000, timer_s: 1500, elevation_gain_m: nil, vdot: 40),
+      run_on([2024, 3, 3, 7, 0], distance_m: 8000, timer_s: 2400, elevation_gain_m: 50, vdot: nil)
     ]
   end
 
@@ -39,12 +39,12 @@ class Overview::BarsTest < ActiveSupport::TestCase
     assert_equal 100, february[:elevation]
     assert_in_delta 7.5, february[:avg_distance], 1e-9
     assert_in_delta 300, february[:avg_pace], 1e-9
-    assert_in_delta 450, february[:avg_spi], 1e-9
+    assert_in_delta 45, february[:avg_vdot], 1e-9
     assert_equal "/overview/2024/2", february[:href]
   end
 
-  test "spi average ignores runs without one" do
-    assert_nil buckets(runs)[1][:avg_spi]
+  test "vdot average ignores runs without one" do
+    assert_nil buckets(runs)[1][:avg_vdot]
   end
 
   test "year view buckets by monday-start week" do

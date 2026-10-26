@@ -35,6 +35,14 @@ class OverviewsHelperTest < ActionView::TestCase
     assert_not_includes html, "<b>"
   end
 
+  test "vdot explanation computes its example times from the model" do
+    text = vdot_explanation
+
+    assert_includes text, "VDOT 45 ≈ 5K #{overview_duration(Vdot.time_for(5000, 45))}"
+    assert_includes text, "marathon #{overview_duration(Vdot.time_for(42_195, 50))}."
+    assert_includes text, "one point is worth about 2% of race time"
+  end
+
   test "disabled pills are not links" do
     assert_includes overview_pill("Jan", "/x", :disabled), "<span"
     assert_includes overview_pill("Jan", "/x", :idle), 'href="/x"'

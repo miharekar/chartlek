@@ -6,7 +6,6 @@ import { scaleLog } from "d3-scale"
 import { line } from "d3-shape"
 import { utcDay, utcMonth } from "d3-time"
 import { formatDate, formatDistance, formatDuration, formatPace } from "helpers/formatters"
-import { predictTime } from "helpers/predictions"
 import { paceScale } from "helpers/pace_scale"
 import { daysSince, daysSincePr, magicText, parseRuns, percentSlower, predictions, recordsByBucket, windowBest } from "helpers/pr_progress"
 import { observeSize } from "helpers/resize"
@@ -103,7 +102,7 @@ export default class extends Controller {
     this.reachable = new Set(this.benchmarks.flatMap(({ meters }, bucket) => (meters / 1000 <= longest ? [bucket] : [])))
 
     const visible = this.runs.filter(run => run.distance >= lowest)
-    const peak = max(this.runs, run => run.spi)
+    const peak = max(this.runs, run => run.vdot)
     const paces = visible.map(run => run.pace).concat(this.frontier.map(record => record.pace))
     for (const row of predictions(this.benchmarks, this.records, peak)) if (this.reachable.has(row.bucket)) paces.push(row.pace)
     for (const target of this.magic) paces.push((target.target / this.benchmarks[target.bucket].meters) * 1000)
@@ -228,7 +227,7 @@ export default class extends Controller {
     this.renderReference(reference)
     if (!reference) return
 
-    const rows = predictions(this.benchmarks, this.records, reference.spi).filter(row => this.reachable.has(row.bucket))
+    const rows = predictions(this.benchmarks, this.records, reference.vdot).filter(row => this.reachable.has(row.bucket))
     const points = rows.map(row => this.point(row.bucket, row.pace))
     this.overlayLayer.append("path").attr("d", line()(points)).attr("fill", "none").attr("stroke", "var(--chart-highlight)").attr("stroke-width", 2).attr("stroke-opacity", 0.8)
     this.overlayLayer
@@ -288,7 +287,7 @@ export default class extends Controller {
     const [x, y] = pointer(event)
     const index = this.nearestDot(x, y)
     const run = index != null && this.dots[index]
-    if (!run || run.spi == null) return
+    if (!run || run.vdot == null) return
     this.referenceId = run.id
     this.days = null
     this.syncControls()
@@ -334,13 +333,12 @@ export default class extends Controller {
       const faster = row.change >= 0
       versus = `<div class="${MUTED}">${Math.abs(row.change).toFixed(1)}% ${faster ? "faster" : "slower"} than your PR (${formatDuration(record.time)})</div>`
     }
-    const vdot = reference.vdot == null ? "" : `<div class="${MUTED}">VDOT equivalent: ${formatDuration(predictTime(this.benchmarks[row.bucket].vdot_table, reference.vdot))}</div>`
-    return `<div class="font-medium">Predicted ${escapeHtml(name)} at SPI ${Math.round(reference.spi)}</div><div>${formatDuration(row.time)} · ${formatPace(row.pace)} /km</div>${vdot}${versus}`
+    return `<div class="font-medium">Predicted ${escapeHtml(name)} at VDOT ${reference.vdot.toFixed(1)}</div><div>${formatDuration(row.time)} · ${formatPace(row.pace)} /km</div>${versus}`
   }
 
   runHtml(run) {
-    const spi = run.spi == null ? "" : ` · SPI ${Math.round(run.spi)}`
-    return `<div class="font-medium">${escapeHtml(run.name || "Run")}${run.race ? ` ${this.tag("Race")}` : ""}</div><div>${formatDistance(run.distance)} km · ${formatPace(run.pace)} /km${spi}</div><div class="${MUTED}">${formatDate(run.time)}</div>`
+    const vdot = run.vdot == null ? "" : ` · VDOT ${run.vdot.toFixed(1)}`
+    return `<div class="font-medium">${escapeHtml(run.name || "Run")}${run.race ? ` ${this.tag("Race")}` : ""}</div><div>${formatDistance(run.distance)} km · ${formatPace(run.pace)} /km${vdot}</div><div class="${MUTED}">${formatDate(run.time)}</div>`
   }
 
   tag(label) {
@@ -357,10 +355,10 @@ export default class extends Controller {
 
   renderReference(reference) {
     if (!reference) {
-      this.referenceTarget.textContent = `No run with an SPI in the last ${this.days || "selected"} days.`
+      this.referenceTarget.textContent = `No run with a VDOT in the last ${this.days || "selected"} days.`
       return
     }
-    this.referenceTarget.innerHTML = `${formatDate(reference.time)} · ${escapeHtml(reference.name || "Run")} · ${formatDistance(reference.distance)} km at ${formatPace(reference.pace)} /km · SPI ${Math.round(reference.spi)} <a href="${escapeHtml(reference.url)}" class="underline">open</a> · click any run to use it instead`
+    this.referenceTarget.innerHTML = `${formatDate(reference.time)} · ${escapeHtml(reference.name || "Run")} · ${formatDistance(reference.distance)} km at ${formatPace(reference.pace)} /km · VDOT ${reference.vdot.toFixed(1)} <a href="${escapeHtml(reference.url)}" class="underline">open</a> · click any run to use it instead`
   }
 
   renderRange() {

@@ -50,11 +50,10 @@ class PrProgressTest < ActiveSupport::TestCase
     benchmarks = PrProgress.new(Activity.all, today: @today).data[:benchmarks]
 
     assert_equal PersonalRecords::BENCHMARKS.map(&:first), benchmarks.pluck(:name)
-    assert_equal Spi.time_table(10_000), benchmarks[2][:table]
-    assert_equal Vdot.time_table(10_000), benchmarks[2][:vdot_table]
+    assert_equal Vdot.time_table(10_000), benchmarks[2][:table]
   end
 
-  test "reference is the highest SPI run in the period" do
+  test "reference is the highest VDOT run in the period" do
     create(:activity, local_started_at: Time.utc(2024, 6, 20, 8), distance_m: 10_000, timer_s: 3300)
     best = create(:activity, local_started_at: Time.utc(2024, 6, 10, 8), distance_m: 10_000, timer_s: 2700)
     create(:activity, local_started_at: Time.utc(2024, 6, 25, 8), distance_m: 10_000, timer_s: 3000)
@@ -79,7 +78,7 @@ class PrProgressTest < ActiveSupport::TestCase
     assert_equal recent, PrProgress.new(Activity.all, today: @today).reference_for(30)
   end
 
-  test "reference ignores runs without an SPI and is nil when the period is empty" do
+  test "reference ignores runs without a VDOT and is nil when the period is empty" do
     create(:activity, local_started_at: Time.utc(2024, 6, 20, 8), distance_m: 300, timer_s: 100)
     create(:activity, local_started_at: Time.utc(2024, 1, 20, 8))
     progress = PrProgress.new(Activity.all, today: @today)
