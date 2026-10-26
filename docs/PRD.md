@@ -96,6 +96,8 @@ Routes: `/` → `/overview`, `/overview/:year`, `/overview/:year/:month`.
 
 The period selector offers **All time**, a pill for every year (newest first), and month pills for the selected year (months without runs are disabled). The period applies to every widget.
 
+The header row has a **Latest run · date · km →** button linking to the newest run overall, on every period (absent when there are no runs).
+
 | # | Widget | Spec |
 |---|---|---|
 | 1 | Kilometers run | Big total with the number in English words underneath, Smashrun-style ("thirty three thousand four hundred sixty four"). Run count. |

@@ -42,6 +42,10 @@ class Overview
     activities.max_by(&:distance_m)
   end
 
+  def latest
+    @all.last
+  end
+
   def days_run
     run_dates.size
   end

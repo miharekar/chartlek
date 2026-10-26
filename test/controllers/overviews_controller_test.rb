@@ -22,6 +22,17 @@ class OverviewsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href='/overview/2024']"
   end
 
+  test "links to the latest run on every period" do
+    create_runs
+    latest = Activity.order(:local_started_at).last
+
+    ["/overview", "/overview/2023"].each do |path|
+      get path
+
+      assert_select "a[href='/runs/#{latest.id}']", text: "Latest run · 5 Mar · 5.1 km →"
+    end
+  end
+
   test "period selector lists every year without a dropdown" do
     (2010..2024).each { |year| create(:activity, local_started_at: Time.utc(year, 5, 6, 7), started_at: Time.utc(year, 5, 6, 7)) }
 
@@ -37,6 +48,7 @@ class OverviewsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "[data-controller='period-bars']", false
+    assert_select "a", text: /Latest run/, count: 0
     assert_select "p", text: /No runs/
   end
 
