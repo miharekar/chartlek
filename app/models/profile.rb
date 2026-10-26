@@ -3,6 +3,8 @@ class Profile < ApplicationRecord
   SYNC_INTERVAL = 30.minutes
   INVALID_KEY_ERROR = "Garmin key is invalid or expired"
 
+  encrypts :strava_access_token, :strava_refresh_token
+
   def self.instance
     first_or_create!
   end
@@ -43,6 +45,18 @@ class Profile < ApplicationRecord
     last_attempted_at = sync_started_at || (sync_error.present? ? updated_at : synced_at)
 
     !syncing? && (last_attempted_at.nil? || last_attempted_at < SYNC_INTERVAL.ago)
+  end
+
+  def strava_connected?
+    strava_refresh_token.present?
+  end
+
+  def store_strava_tokens(access_token:, refresh_token:, expires_at:)
+    update!(strava_access_token: access_token, strava_refresh_token: refresh_token, strava_token_expires_at: Time.zone.at(expires_at))
+  end
+
+  def disconnect_strava
+    update!(strava_access_token: nil, strava_refresh_token: nil, strava_token_expires_at: nil)
   end
 
   def invalid_key?

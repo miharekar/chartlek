@@ -11,23 +11,17 @@ namespace :strava do
     puts Activity.import_strava(path)
   end
 
-  desc "Authorize on Strava in the browser, then import runs from before your Garmin history"
+  desc "Import runs from before your Garmin history through the connected Strava account"
   task fetch: :environment do
-    $stdout.sync = true
     abort garmin_first unless Activity.exists?(source: "garmin")
-    abort "Set STRAVA_CLIENT_ID and STRAVA_SECRET in .env" if ENV["STRAVA_CLIENT_ID"].blank? || ENV["STRAVA_SECRET"].blank?
+    abort "Strava is not connected. Use the Connect Strava button in the app's nav bar." unless Profile.instance.strava_connected?
 
-    client = Strava::Client.new
-    callback = Strava::Callback.new
-    state = SecureRandom.hex(16)
-    puts "Open this link on this machine and authorize Smashback:", client.authorize_url(callback.redirect_uri, state:)
+    begin
+      summaries = Strava::Client.new.activities
+    rescue Strava::Client::NotConnected
+      abort "Strava rejected the stored tokens. Use the Connect Strava button in the app's nav bar."
+    end
 
-    params = callback.wait
-    abort "Strava authorization failed: #{params["error"] || "state mismatch"}" unless params["code"].present? && params["state"] == state
-    warn "Private activities were not shared, so they are skipped." unless params["scope"].to_s.split(",").include?("activity:read_all")
-
-    client.authorize(params["code"])
-    summaries = client.activities
     puts "Fetched #{summaries.size} Strava activities"
     puts Activity.import_strava_activities(summaries)
   end

@@ -40,12 +40,18 @@
           <%= yield :nav_right %>
           <div class="flex items-center gap-3 text-sm text-zinc-500 dark:text-zinc-400">
             <%= render "syncs/status", profile: sync_profile %>
+            <% unless sync_profile.strava_connected? %>
+              <%= button_to "Connect Strava", strava_connection_path, class: "rounded-md border border-zinc-300 dark:border-zinc-700 px-2.5 py-1 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 cursor-pointer" %>
+            <% end %>
             <%= button_to "Sync now", sync_path, class: "rounded-md border border-zinc-300 dark:border-zinc-700 px-2.5 py-1 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 cursor-pointer" %>
           </div>
         </div>
       </div>
     </nav>
     <%= render "syncs/invalid_key_banner" if sync_profile.invalid_key? %>
+    <% flash.each do |type, message| %>
+      <p class="max-w-7xl mx-auto px-5 pt-4 text-sm <%= (type == "alert") ? "text-red-700 dark:text-red-400" : "text-lime-700 dark:text-[#9CFF44]" %>" role="status"><%= message %></p>
+    <% end %>
     <main class="max-w-7xl mx-auto px-5 py-8">
       <%= yield %>
     </main>

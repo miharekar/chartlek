@@ -20,10 +20,11 @@ class ActivityTest < ActiveSupport::TestCase
     assert_not build(:activity, source: "polar").valid?
   end
 
-  test "external_url links to the source" do
-    assert_equal "https://connect.garmin.com/app/activity/42", build(:activity, source: "garmin", external_id: "42").external_url
-    assert_equal "https://www.strava.com/activities/42", build(:activity, source: "strava", external_id: "42").external_url
-    assert_nil build(:activity, source: "smashrun", external_id: "42").external_url
+  test "garmin_url and strava_url link to the source" do
+    assert_equal "https://connect.garmin.com/app/activity/42", build(:activity, source: "garmin", external_id: "42").garmin_url
+    assert_nil build(:activity, source: "strava", external_id: "42").garmin_url
+    assert_equal "https://www.strava.com/activities/99", build(:activity, source: "garmin", strava_id: 99).strava_url
+    assert_nil build(:activity, source: "garmin").strava_url
   end
 
   test "external_id is unique per source" do

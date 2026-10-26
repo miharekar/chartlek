@@ -17,8 +17,11 @@
     <nav class="flex flex-wrap items-center gap-2" aria-label="Runs">
       <%= link_to "← Previous", run_path(previous), class: link if previous %>
       <%= link_to "Next →", run_path(following), class: link if following %>
-      <% if run.external_url %>
-        <%= link_to "Open in #{run.source.capitalize}", run.external_url, target: "_blank", rel: "noopener", class: link %>
+      <% if run.garmin_url %>
+        <%= link_to "Open in Garmin", run.garmin_url, target: "_blank", rel: "noopener", class: link %>
+      <% end %>
+      <% if run.strava_url %>
+        <%= link_to "Open in Strava", run.strava_url, target: "_blank", rel: "noopener", class: link %>
       <% end %>
     </nav>
   </div>

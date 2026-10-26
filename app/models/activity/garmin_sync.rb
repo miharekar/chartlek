@@ -34,6 +34,7 @@ module Activity::GarminSync
           profile.finish_sync(error: "Sync failed: #{error.message.truncate(200)}")
         else
           profile.finish_sync
+          link_strava_later if profile.strava_connected?
         ensure
           if changes.any? || profile.sync_error != previous_error
             Turbo::StreamsChannel.broadcast_refresh_to(:garmin_sync)

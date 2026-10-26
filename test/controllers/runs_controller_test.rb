@@ -143,6 +143,30 @@ class RunsControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Run calendar'] a[aria-current=page]", text: "29"
   end
 
+  test "show offers Open in Garmin and, once linked, Open in Strava" do
+    run = run_at(Time.utc(2023, 5, 6, 7))
+
+    get run_path(run)
+
+    assert_select "a[href=?][target=_blank]", "https://connect.garmin.com/app/activity/#{run.external_id}", text: "Open in Garmin"
+    assert_select "a", text: "Open in Strava", count: 0
+
+    run.update!(strava_id: 777)
+    get run_path(run)
+
+    assert_select "a[href=?][target=_blank]", "https://connect.garmin.com/app/activity/#{run.external_id}", text: "Open in Garmin"
+    assert_select "a[href=?][target=_blank][rel=noopener]", "https://www.strava.com/activities/777", text: "Open in Strava"
+  end
+
+  test "show offers only Strava for a strava sourced run" do
+    run = run_at(Time.utc(2016, 5, 6, 7), source: "strava", external_id: "4242")
+
+    get run_path(run)
+
+    assert_select "a", text: "Open in Garmin", count: 0
+    assert_select "a[href=?]", "https://www.strava.com/activities/4242", text: "Open in Strava"
+  end
+
   test "show has no external link for a smashrun run" do
     run = run_at(Time.utc(2015, 3, 3, 15), source: "smashrun")
 

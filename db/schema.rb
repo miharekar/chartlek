@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_26_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_26_150000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -71,8 +71,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_26_120000) do
     t.json "pace_profile"
     t.float "pace_variability"
     t.json "weather"
+    t.bigint "strava_id"
     t.index ["local_started_at"], name: "index_activities_on_local_started_at"
     t.index ["source", "external_id"], name: "index_activities_on_source_and_external_id", unique: true
+    t.index ["strava_id"], name: "index_activities_on_strava_id"
   end
 
   create_table "profiles", force: :cascade do |t|
@@ -82,6 +84,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_26_120000) do
     t.text "sync_error"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "strava_access_token"
+    t.text "strava_refresh_token"
+    t.datetime "strava_token_expires_at"
   end
 
   create_table "tracks", force: :cascade do |t|

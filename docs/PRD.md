@@ -189,7 +189,7 @@ Phase 4 adds a secondary-axis overlay toggle for resting HR or VO2max.
 - **Header:**
   - Local date and time, start–end clock time.
   - Weather: temperature, humidity, wind, from Open-Meteo at the run's midpoint hour.
-  - Location name (Garmin only), link to Garmin or Strava (none for Smashrun-only runs), previous/next run.
+  - Location name (Garmin only), previous/next run, and Open in Garmin and Open in Strava buttons side by side. Garmin shows for Garmin runs; Strava shows for runs with a `strava_id` (§7.6). A Smashrun-only run has neither.
   - If there were several runs that day, a switcher between them.
   - A Smashrun-style date navigator: every year with runs (newest first), the 12 months of the run's year, and every day of its month, with the run's year, month and day selected. A year or month with runs opens its latest run, and a day opens its first run; the others are inert. Weekends look distinct, race days are amber, and hovering or focusing a day shows its weekday, date and distance in the shared tooltip. (Smashrun's own year and month buttons open its overview pages instead.)
 - **Tiles:**
@@ -378,11 +378,18 @@ The Personal API has **no** time-series, splits, laps, weather or HR-time-in-zon
 
 ### 7.3 Strava gap fill (Phase 0, one-time)
 
-`bin/rails strava:fetch` is the source: it asks for `activity:read_all` in the browser, pages through `/athlete/activities`, and applies the cutoff below. The API gives each run's real local time and its race flag. `start_date` is UTC and `start_date_local` is wall-clock time with a `Z` suffix, so both are parsed as UTC. The archive import stays as a fallback: request the archive from Strava (*Settings → My Account → Download or Delete Your Account → Request your archive*), unzip it, and run `bin/rails strava:import[~/Downloads/export_xxx]`, which reads `activities.csv` and takes rows whose type matches `/run/i`.
+`bin/rails strava:fetch` is the source: it uses the connected Strava account (§7.6), pages through `/athlete/activities`, and applies the cutoff below. The API gives each run's real local time and its race flag. `start_date` is UTC and `start_date_local` is wall-clock time with a `Z` suffix, so both are parsed as UTC. The archive import stays as a fallback: request the archive from Strava (*Settings → My Account → Download or Delete Your Account → Request your archive*), unzip it, and run `bin/rails strava:import[~/Downloads/export_xxx]`, which reads `activities.csv` and takes rows whose type matches `/run/i`.
 
 1. **Cutoff:** Garmin is authoritative from its first run on. Rows that start later than 10 minutes before the first Garmin run are skipped, so sync Garmin first; the tasks refuse to run without Garmin runs. Matching each Strava run against Garmin runs was tried first, but every Strava-only "run" inside Garmin's history turned out to be a hike Garmin recorded as hiking (78) or a second copy of a run (1). The task prints a report of imported and skipped rows.
 2. Imported runs get `source: "strava"` and link out to Strava.
 3. Tracks come from Smashrun (§7.5).
+
+### 7.6 Strava connection and run links (Phase 2)
+
+- **Connection:** the nav's Connect Strava button (shown only while disconnected) starts Strava's OAuth with scope `activity:read_all` and a session `state`. The callback is `GET /strava/callback` on whichever host serves the app (`http://localhost:3000` locally, `https://run.rekar.eu` in production). It checks the state, stores the access token, refresh token and expiry on the singleton `Profile` (both tokens encrypted with Active Record encryption), shows a notice and queues a full link.
+- **Refresh:** `Strava::Client` refreshes when the token expires within 5 minutes and saves the rotated refresh token. A 401 or a revoked refresh clears the connection so the button shows again. There are no retries.
+- **Links:** `activities.strava_id` is matched to the run whose `started_at` is within ±10 minutes of the Strava run's start, nearest first, and is never overwritten. The connect queues a full scan (about 15 requests at 200 per page); each Garmin sync then links recent unlinked runs from the newest activities only. The Strava `external_id` field (upload file name, or `garmin_push_N`) is not used.
+- **Not tested against the live API:** the first real connect and link happen after deploy.
 
 ### 7.4 Weather (Phase 2)
 
@@ -423,6 +430,7 @@ Smashrun supplies tracks for the runs before Garmin, and the one run that exists
 |---|---|
 | `source` | `garmin`, `strava` or `smashrun`. Unique with `external_id`. |
 | `external_id` | Garmin, Strava or Smashrun activity ID. |
+| `strava_id` | Nullable, indexed. The Strava activity ID behind the Open in Strava button: set from `external_id` for Strava-sourced runs and by the link job for the others (§7.6). |
 | `started_at` | UTC |
 | `local_started_at` | From `startTimeLocal`. Used for all day bucketing. |
 | `name` | |
@@ -441,6 +449,7 @@ Index on `local_started_at`. All of history is about 2,900 rows. Aggregations lo
 ### Phase 2 additions
 
 - On `activities`: `has_one_attached :original` (Active Storage, local disk). Columns `splits` (JSON, per km), `pace_profile` (JSON, 20 values for the sparkline), `pace_variability` (float), `weather` (JSON: temperature, humidity, wind, precipitation, code, sunrise, sunset). The original is the Garmin ZIP as downloaded (`<id>.zip`) or the gzipped Smashrun detail (`smashrun-<id>.json.gz`).
+- `profiles` also holds the Strava connection: `strava_access_token` and `strava_refresh_token` (encrypted) and `strava_token_expires_at` (§7.6).
 - `tracks`: `activity_id` (unique), `chart_metrics` (nullable JSON: `speed_windows`, the distance in metres of each complete 10 s window, and `elevation`, the 100 m gain/loss bins; nil for rebuilt distances or not yet processed) and `data` (JSON of columnar arrays `t, d, lat, lng, alt, hr, cad`, downsampled to ≤ 2,000 points; series without data are omitted). Tracks live in a separate table so loading activities stays lean.
 - No `notables` column: notables are computed on the fly. `efforts` (fastest segments) moves to Phase 3 with the Pro Map.
 
