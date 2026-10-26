@@ -18,7 +18,7 @@ registerHooks({
 })
 
 const { variabilityWedges, wedgeSummary, centreFontSize } = await import("helpers/pace_variability")
-const { rovingTarget } = await import("helpers/roving")
+const { rovingTarget, noMouseFocus } = await import("helpers/roving")
 
 const near = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-9, `${actual} !== ${expected}`)
 const bars = times => times.map((time, index) => ({ from: index / 10, to: (index + 1) / 10, distance: 100, time }))
@@ -102,4 +102,32 @@ test("roving keys move by one, jump to the ends and clamp", () => {
   assert.equal(rovingTarget("End", 5, 9), 9)
   assert.equal(rovingTarget("Tab", 5, 9), null)
   assert.equal(rovingTarget("ArrowUp", 5, 9), null)
+})
+
+test("noMouseFocus stops the default mousedown focus and blurs a focused element of the same chart", () => {
+  let prevented = 0
+  let blurred = 0
+  const focused = { blur: () => blurred++ }
+  const chart = { contains: node => node === focused }
+  const target = { closest: () => chart }
+  globalThis.document = { activeElement: focused }
+
+  noMouseFocus({ preventDefault: () => prevented++, currentTarget: target })
+
+  assert.equal(prevented, 1)
+  assert.equal(blurred, 1)
+})
+
+test("noMouseFocus leaves focus elsewhere on the page alone", () => {
+  let blurred = 0
+  const elsewhere = { blur: () => blurred++ }
+  const chart = { contains: () => false }
+  globalThis.document = { activeElement: elsewhere }
+
+  noMouseFocus({ preventDefault: () => {}, currentTarget: { closest: () => chart } })
+  globalThis.document = { activeElement: null }
+  noMouseFocus({ preventDefault: () => {}, currentTarget: { closest: () => null } })
+
+  assert.equal(blurred, 0)
+  delete globalThis.document
 })

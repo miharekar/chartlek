@@ -3,7 +3,7 @@ import { arc } from "d3-shape"
 import { select } from "d3-selection"
 import { centreFontSize, variabilityWedges, wedgeSummary } from "helpers/pace_variability"
 import { observeSize } from "helpers/resize"
-import { rovingTarget } from "helpers/roving"
+import { noMouseFocus, rovingTarget } from "helpers/roving"
 import { hideTooltip, isTooltipFor, moveTooltip, showTooltipFor, tooltipHtml } from "helpers/tooltip"
 
 const MAX_SIZE = 280
@@ -52,6 +52,7 @@ export default class extends Controller {
       .attr("tabindex", (_, index) => (index === Math.min(this.current, this.wedges.length - 1) ? 0 : -1))
       .attr("role", "img")
       .attr("aria-label", wedge => wedgeSummary(wedge).label)
+    groups.on("mousedown", noMouseFocus)
     groups.append("path").attr("class", "fill").attr("d", visible).attr("fill", "var(--chart-accent)")
     groups.append("path").attr("class", "hit").attr("d", sector).attr("fill", "transparent")
 

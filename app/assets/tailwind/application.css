@@ -53,3 +53,7 @@
     --chart-axis: #a1a1aa;
   }
 }
+
+svg :focus:not(:focus-visible) {
+    outline: none;
+}

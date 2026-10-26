@@ -5,6 +5,7 @@ import { select } from "d3-selection"
 import { formatDistance, formatPace } from "helpers/formatters"
 import { distribution } from "helpers/rank_distribution"
 import { observeSize } from "helpers/resize"
+import { noMouseFocus } from "helpers/roving"
 import { hideTooltip, isTooltipFor, moveTooltip, showTooltipFor, tooltipHtml } from "helpers/tooltip"
 
 const HEIGHT = 150
@@ -44,6 +45,7 @@ export default class extends Controller {
     this.svg.append("text").attr("x", MARGIN.left).attr("y", 11).attr("font-size", 10).attr("fill", "var(--chart-axis)").text("Runs")
     this.svg.selectAll("rect").data(bins).join("rect")
       .attr("tabindex", 0).attr("role", "img").attr("aria-label", bin => this.summary(bin).join(". "))
+      .on("mousedown", noMouseFocus)
       .attr("x", bin => x(bin.from)).attr("width", bin => Math.max(1, x(bin.to) - x(bin.from) - 1))
       .attr("y", bin => y(bin.count)).attr("height", bin => bottom - y(bin.count))
       .attr("fill", bin => bin.current ? "var(--chart-highlight)" : "var(--chart-accent)")
