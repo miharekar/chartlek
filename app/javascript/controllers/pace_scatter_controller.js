@@ -6,7 +6,7 @@ import { scaleLinear } from "d3-scale"
 import { pointer, select } from "d3-selection"
 import { formatDate, formatDistance, formatPace } from "helpers/formatters"
 import { paceScale } from "helpers/pace_scale"
-import { clearRuns, clearSelection, publish, quadrant, selectionMean, setRuns, subscribe } from "helpers/linked_selection"
+import { clearRuns, clearSelection, hoverSelection, publish, selectionMean, setRuns, subscribe } from "helpers/linked_selection"
 import { observeSize } from "helpers/resize"
 import { escapeHtml, hideTooltip, moveTooltip, showTooltip } from "helpers/tooltip"
 
@@ -15,15 +15,21 @@ const PACE_TICKS = [180, 240, 300, 360, 450, 600, 900, 1800]
 const HIT_RADIUS = 14
 const STATES = {
   normal: ["var(--chart-accent)", 0.5],
-  selected: ["var(--chart-accent-highlight)", 1],
-  dim: ["var(--chart-accent)", 0.12]
+  selected: ["var(--chart-highlight)", 1],
+  dim: ["var(--chart-muted)", 0.3]
 }
+const RADIUS = { normal: 2.5, selected: 3.5, dim: 2.5 }
 
 function paint(node, state) {
   if (!node) return
   const [fill, opacity] = STATES[state]
   node.setAttribute("fill", fill)
   node.setAttribute("fill-opacity", opacity)
+  node.setAttribute("r", RADIUS[state])
+}
+
+function raise(node) {
+  node?.parentNode.appendChild(node)
 }
 
 const METRICS = {
@@ -64,13 +70,19 @@ export default class extends Controller {
 
     if ((next == null) !== (previous == null)) {
       view.byRun.forEach((node, index) => paint(node, next ? (next.has(index) ? "selected" : "dim") : "normal"))
+      if (next) for (const index of next) raise(view.byRun.get(index))
     } else if (next) {
-      for (const index of next) if (!previous.has(index)) paint(view.byRun.get(index), "selected")
+      for (const index of next) {
+        if (previous.has(index)) continue
+        paint(view.byRun.get(index), "selected")
+        raise(view.byRun.get(index))
+      }
       for (const index of previous) if (!next.has(index)) paint(view.byRun.get(index), "dim")
     }
     this.active = next
 
     if (view.ring) {
+      view.ring.attr("stroke-width", next ? 3 : 2)
       const mean = next && selectionMean(this.runs, next, view.key)
       const base = view.average[view.key]
       view.ring.attr("cx", view.x(mean ? mean.km : base.km)).attr("cy", view.y(mean ? mean.value : base.value))
@@ -129,7 +141,7 @@ export default class extends Controller {
     const lastRun = runs[last]
     if (value(lastRun) != null) {
       const [lastX, lastY] = position(lastRun)
-      chart.append("circle").attr("cx", lastX).attr("cy", lastY).attr("r", 5).attr("fill", "var(--chart-highlight)").attr("stroke", "var(--chart-grid)")
+      chart.append("circle").attr("cx", lastX).attr("cy", lastY).attr("r", 5).attr("fill", "var(--chart-highlight)").attr("stroke", "currentColor").attr("stroke-width", 2)
     }
     let ring
     if (average[key]) {
@@ -178,14 +190,17 @@ export default class extends Controller {
 
     chart
       .append("rect")
-      .attr("width", innerWidth)
-      .attr("height", innerHeight)
+      .attr("x", -MARGIN.left)
+      .attr("y", -MARGIN.top)
+      .attr("width", innerWidth + MARGIN.left + MARGIN.right)
+      .attr("height", innerHeight + MARGIN.top + MARGIN.bottom)
       .attr("fill", "transparent")
       .on("mousemove", event => {
         const [mouseX, mouseY] = pointer(event)
-        const found = points.length ? delaunay.find(mouseX, mouseY) : -1
+        const inPlot = mouseX >= 0 && mouseX <= innerWidth && mouseY >= 0 && mouseY <= innerHeight
+        const found = inPlot && points.length ? delaunay.find(mouseX, mouseY) : -1
         const near = found >= 0 && Math.hypot(points[found][0] - mouseX, points[found][1] - mouseY) <= HIT_RADIUS
-        publish({ runs: new Set(quadrant(quadrantPoints, mouseX, mouseY)), span: null, source: "scatter" })
+        publish({ runs: new Set(hoverSelection(quadrantPoints, mouseX, mouseY, innerWidth, innerHeight)), span: null, source: "scatter" })
         current = near ? shown[found].run : null
         event.currentTarget.style.cursor = near ? "pointer" : "default"
 

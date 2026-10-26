@@ -141,7 +141,7 @@ export default class extends Controller {
       .join("rect")
       .attr("x", (_, index) => x(index) - x.step() * 0.075)
       .attr("width", x.step())
-      .attr("height", innerHeight)
+      .attr("height", innerHeight + MARGIN.bottom)
       .attr("fill", "transparent")
       .style("cursor", bucket => (bucket.href ? "pointer" : "default"))
       .on("mouseenter", (event, bucket) => {

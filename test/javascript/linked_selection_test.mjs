@@ -45,6 +45,27 @@ test("quadrant keeps runs strictly longer and strictly higher than the cursor", 
   assert.deepEqual(L.quadrant([], 1, 1), [])
 })
 
+test("over the axes the hover selects a half-plane, inside the plot the quadrant", () => {
+  const points = [
+    { x: 10, y: 10, index: 0 },
+    { x: 20, y: 5, index: 1 },
+    { x: 20, y: 30, index: 2 },
+    { x: 40, y: 40, index: 3 }
+  ]
+  const select = (x, y) => L.hoverSelection(points, x, y, 50, 50)
+
+  assert.deepEqual(select(10, 10), [1])
+  assert.deepEqual(select(10, 60), [1, 2, 3])
+  assert.deepEqual(select(20, 60), [3])
+  assert.deepEqual(select(60, 60), [])
+  assert.deepEqual(select(-10, 10), [1])
+  assert.deepEqual(select(-10, 30), [0, 1])
+  assert.deepEqual(select(-10, 60), [])
+  assert.deepEqual(select(0, 60), [0, 1, 2, 3])
+  assert.deepEqual(select(-10, 0), [])
+  assert.deepEqual(select(30, -5), [])
+})
+
 test("trailing windows select runs in the N days ending that day", () => {
   const times = [utc(2026, 1, 1, 7), utc(2026, 1, 3, 7), utc(2026, 1, 3, 18), utc(2026, 1, 10, 7)]
   const end = utc(2026, 1, 3) + DAY

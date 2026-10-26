@@ -114,12 +114,14 @@ The header row has a **Latest run · date · km →** button linking to the newe
 | 12 | Weekly stats for each year | All-time view: heatmap with years as rows and Monday-start weeks as columns. Weekly km buckets: >1, >20, >40, >50, >60 (ring), >80 (dot). Year and month views show a day calendar colored by daily km instead. |
 | 13 | Personal records | Benchmarks: 3 km, 5 km, 10 km, 15 km, 20 km, half marathon, 40 km, marathon, 50 km, 100 km. Only benchmarks with qualifying runs in the period are shown. Each row: date, pace, km/h, time, number of runs in the bucket, and a race tag. Phase 2 adds a pace sparkline per row (20-segment pace profile). |
 
-**Linked hover (Smashrun-style).** Hovering one of the charts below selects a set of the period's runs and highlights them in the others; leaving clears it. The chart under the pointer keeps its own tooltip and click.
+**Linked hover (Smashrun-style).** Hovering one of the charts below selects a set of the period's runs and highlights them in the others; leaving clears it. The chart under the pointer keeps its own tooltip and click. Hover also works over a chart's axes and their margins: the bars and the trailing line treat the bottom axis as the nearest column or day. On the scatter, selected runs are drawn larger in amber, the others muted grey, and the mean ring (the legend's lime ring) thickens; with no selection the chart looks as usual.
 
 | Hover | Selects |
 |---|---|
 | Trailing line, at day d | the runs in the N days ending at d (N is the chart's window, 365, 90 or 7), among the period's runs |
-| Scatter, at the cursor | the runs plotted strictly further right and strictly higher (longer, and faster or higher on the y metric) than the cursor |
+| Scatter, at the cursor in the plot | the runs plotted strictly further right and strictly higher (longer, and faster or higher on the y metric) than the cursor |
+| Scatter, over the bottom axis | every run longer than the cursor's x, at any pace |
+| Scatter, over the left axis | every run above the cursor's y (faster, or higher HR or VDOT), at any distance; the bottom-left corner selects nothing |
 | Distance bars, at the cursor | every run of the period whose column is under the cursor (the full chart height counts, and gaps snap to the nearest bar); that bar stays at full opacity and the others dim |
 | Heatmap cell | the runs of that week (all time) or day |
 | Heatmap legend bucket | the runs in every cell of that bucket |

@@ -78,7 +78,7 @@ export default class extends Controller {
       .append("rect")
       .attr("x", -MARGIN.left)
       .attr("width", width)
-      .attr("height", innerHeight)
+      .attr("height", innerHeight + MARGIN.bottom)
       .attr("fill", "transparent")
       .on("mousemove", event => {
         const point = points[bisect(points, x.invert(pointer(event)[0]))]

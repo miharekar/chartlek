@@ -22,6 +22,15 @@ export function quadrant(points, x, y) {
   return points.filter(point => point.x > x && point.y < y).map(point => point.index)
 }
 
+export function hoverSelection(points, x, y, width, height) {
+  const inX = x >= 0
+  const inY = y <= height
+  if (inX && inY) return quadrant(points, Math.min(x, width), Math.max(y, 0))
+  if (inX) return points.filter(point => point.x > Math.min(x, width)).map(point => point.index)
+  if (inY) return points.filter(point => point.y < Math.max(y, 0)).map(point => point.index)
+  return []
+}
+
 export function indicesInRange(sorted, from, to) {
   const indexes = []
   for (let index = bisectLeft(sorted, from); index < sorted.length && sorted[index] < to; index++) indexes.push(index)
