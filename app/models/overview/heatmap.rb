@@ -32,6 +32,7 @@ class Overview::Heatmap
       cols: 53,
       columns: month_columns,
       cells: mondays.map { weekly_cell(it, years, totals[it]) },
+      step: 7,
       thresholds: WEEKLY_THRESHOLDS,
       unit: "total kilometers run"
     }
@@ -47,6 +48,7 @@ class Overview::Heatmap
     {
       row: years.index(monday.cwyear),
       col: monday.cweek - 1,
+      from: epoch_ms(monday),
       level: self.class.level(km, WEEKLY_THRESHOLDS),
       tip: ["Week of #{date_text(monday)}", distance_text(km)],
       href: (Rails.application.routes.url_helpers.overview_period_path(middle.year, middle.month) if km.positive?)
@@ -70,6 +72,7 @@ class Overview::Heatmap
       cols: ((@period.last.beginning_of_week - first_monday).to_i / 7) + 1,
       columns: daily_columns(first_monday),
       cells: @period.range.map { daily_cell(it, by_day[it] || [], first_monday) },
+      step: 1,
       thresholds: DAILY_THRESHOLDS,
       unit: "kilometers run per day"
     }
@@ -85,11 +88,16 @@ class Overview::Heatmap
     {
       row: date.cwday - 1,
       col: (date.beginning_of_week - first_monday).to_i / 7,
+      from: epoch_ms(date),
       level: self.class.level(km, DAILY_THRESHOLDS),
       tip: [date_text(date), (runs.any? ? distance_text(km) : "No run")],
       href: (Rails.application.routes.url_helpers.run_path(runs.first) if runs.any?),
       text: (date.day.to_s if @period.kind == :month)
     }
+  end
+
+  def epoch_ms(date)
+    date.to_time(:utc).to_i * 1000
   end
 
   def date_text(date)

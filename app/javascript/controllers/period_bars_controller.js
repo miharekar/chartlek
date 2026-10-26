@@ -2,9 +2,10 @@ import { Controller } from "@hotwired/stimulus"
 import { axisBottom, axisLeft } from "d3-axis"
 import { max } from "d3-array"
 import { scaleBand, scaleLinear } from "d3-scale"
-import { select } from "d3-selection"
+import { pointer, select } from "d3-selection"
 import { utcFormat } from "d3-time-format"
 import { formatDate, formatDistance, formatPace } from "helpers/formatters"
+import { bucketShares, clearSelection, getRuns, getTimes, periodsAbove, publish, runsInBuckets, subscribe } from "helpers/linked_selection"
 import { observeSize } from "helpers/resize"
 import { parseTime } from "helpers/time"
 import { escapeHtml, hideTooltip, moveTooltip, showTooltip } from "helpers/tooltip"
@@ -13,8 +14,8 @@ const MARGIN = { top: 8, right: 8, bottom: 24, left: 44 }
 const DAY_MS = 86400000
 
 const METRICS = {
-  distance: { value: bucket => bucket.distance, text: value => `${formatDistance(value)} km` },
-  elevation: { value: bucket => bucket.elevation, text: value => `${Math.round(value)} m` },
+  distance: { weight: run => run.km, value: bucket => bucket.distance, text: value => `${formatDistance(value)} km` },
+  elevation: { weight: run => run.elev, value: bucket => bucket.elevation, text: value => `${Math.round(value)} m` },
   avg_distance: { value: bucket => bucket.avg_distance, text: value => `${formatDistance(value)} km` },
   avg_pace: { value: bucket => (bucket.avg_pace ? 3600 / bucket.avg_pace : null), text: speed => `${formatPace(3600 / speed)} /km`, tick: speed => (speed > 0 ? formatPace(3600 / speed) : "") },
   avg_vdot: { value: bucket => bucket.avg_vdot, text: value => value.toFixed(1) }
@@ -33,12 +34,34 @@ export default class extends Controller {
       this.size = size
       this.draw()
     })
+    this.unsubscribe = subscribe(selection => this.#apply(selection))
   }
 
   disconnect() {
     this.stopObserving()
+    this.unsubscribe()
     this.svg.remove()
     hideTooltip()
+    clearSelection()
+  }
+
+  #apply(selection) {
+    const view = this.view
+    if (!view) return
+    const shares = selection ? bucketShares(getRuns(), view.starts, selection.runs, view.metric.weight || (() => 1)) : null
+
+    if (Boolean(selection) !== view.active) {
+      view.bars.attr("fill-opacity", selection ? 0.3 : null)
+      view.active = Boolean(selection)
+    }
+    view.shareNodes.forEach((node, index) => {
+      const height = Math.round((shares?.[index] ?? 0) * view.heights[index])
+      if (height !== view.drawn[index]) {
+        view.drawn[index] = height
+        node.setAttribute("height", height)
+        node.setAttribute("y", view.innerHeight - height)
+      }
+    })
   }
 
   metric(event) {
@@ -98,6 +121,19 @@ export default class extends Controller {
       .attr("class", "pointer-events-none")
 
     const bars = chart.selectAll("rect")
+    const heights = values.map(value => (value == null ? 0 : innerHeight - y(value)))
+    const shares = chart
+      .append("g")
+      .selectAll("rect")
+      .data(buckets)
+      .join("rect")
+      .attr("x", (_, index) => x(index))
+      .attr("width", x.bandwidth())
+      .attr("y", innerHeight)
+      .attr("height", 0)
+      .attr("fill", "var(--chart-accent-highlight)")
+      .attr("class", "pointer-events-none")
+    this.view = { bars, shareNodes: shares.nodes(), drawn: heights.map(() => 0), active: false, heights, innerHeight, metric, starts: buckets.map(bucket => parseTime(bucket.from).getTime()) }
     chart
       .append("g")
       .selectAll("rect")
@@ -112,10 +148,15 @@ export default class extends Controller {
         bars.filter((_, index) => index === buckets.indexOf(bucket)).attr("fill", "var(--chart-accent-highlight)")
         showTooltip(this.tooltip(bucket, granularity, metric), event)
       })
-      .on("mousemove", moveTooltip)
+      .on("mousemove", event => {
+        moveTooltip(event)
+        const level = y.invert(pointer(event)[1])
+        publish({ runs: new Set(runsInBuckets(getTimes(), this.view.starts, new Set(periodsAbove(values, level)))), span: null, source: "bars" })
+      })
       .on("mouseleave", () => {
         bars.attr("fill", "var(--chart-accent)")
         hideTooltip()
+        clearSelection()
       })
       .on("click", (_, bucket) => this.open(bucket))
   }

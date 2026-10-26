@@ -6,12 +6,25 @@ import { scaleLinear } from "d3-scale"
 import { pointer, select } from "d3-selection"
 import { formatDate, formatDistance, formatPace } from "helpers/formatters"
 import { paceScale } from "helpers/pace_scale"
+import { clearRuns, clearSelection, publish, quadrant, selectionMean, setRuns, subscribe } from "helpers/linked_selection"
 import { observeSize } from "helpers/resize"
 import { escapeHtml, hideTooltip, moveTooltip, showTooltip } from "helpers/tooltip"
 
 const MARGIN = { top: 8, right: 12, bottom: 24, left: 44 }
 const PACE_TICKS = [180, 240, 300, 360, 450, 600, 900, 1800]
 const HIT_RADIUS = 14
+const STATES = {
+  normal: ["var(--chart-accent)", 0.5],
+  selected: ["var(--chart-accent-highlight)", 1],
+  dim: ["var(--chart-accent)", 0.12]
+}
+
+function paint(node, state) {
+  if (!node) return
+  const [fill, opacity] = STATES[state]
+  node.setAttribute("fill", fill)
+  node.setAttribute("fill-opacity", opacity)
+}
 
 const METRICS = {
   pace: { value: run => run.pace },
@@ -24,17 +37,44 @@ export default class extends Controller {
   static values = { data: Object, metric: { type: String, default: "pace" } }
 
   connect() {
+    this.runs = this.dataValue.runs
+    setRuns(this.runs)
     this.svg = select(this.chartTarget).append("svg").attr("class", "block")
     this.stopObserving = observeSize(this.chartTarget, size => {
       this.size = size
       this.draw()
     })
+    this.unsubscribe = subscribe(selection => this.#apply(selection))
   }
 
   disconnect() {
     this.stopObserving()
+    this.unsubscribe()
+    clearRuns(this.runs)
     this.svg.remove()
     hideTooltip()
+    clearSelection()
+  }
+
+  #apply(selection) {
+    const view = this.view
+    if (!view) return
+    const next = selection?.runs ?? null
+    const previous = this.active
+
+    if ((next == null) !== (previous == null)) {
+      view.byRun.forEach((node, index) => paint(node, next ? (next.has(index) ? "selected" : "dim") : "normal"))
+    } else if (next) {
+      for (const index of next) if (!previous.has(index)) paint(view.byRun.get(index), "selected")
+      for (const index of previous) if (!next.has(index)) paint(view.byRun.get(index), "dim")
+    }
+    this.active = next
+
+    if (view.ring) {
+      const mean = next && selectionMean(this.runs, next, view.key)
+      const base = view.average[view.key]
+      view.ring.attr("cx", view.x(mean ? mean.km : base.km)).attr("cy", view.y(mean ? mean.value : base.value))
+    }
   }
 
   metric(event) {
@@ -75,7 +115,7 @@ export default class extends Controller {
     }
 
     const points = shown.map(({ run }) => position(run))
-    chart
+    const dots = chart
       .append("g")
       .selectAll("circle")
       .data(points)
@@ -91,17 +131,21 @@ export default class extends Controller {
       const [lastX, lastY] = position(lastRun)
       chart.append("circle").attr("cx", lastX).attr("cy", lastY).attr("r", 5).attr("fill", "var(--chart-highlight)").attr("stroke", "var(--chart-grid)")
     }
-    if (average[key] != null) {
-      chart
+    let ring
+    if (average[key]) {
+      ring = chart
         .append("circle")
-        .attr("cx", x(average.km))
-        .attr("cy", y(average[key]))
+        .attr("cx", x(average[key].km))
+        .attr("cy", y(average[key].value))
         .attr("r", 7)
         .attr("fill", "none")
         .attr("stroke", "var(--chart-accent-highlight)")
         .attr("stroke-width", 2)
     }
 
+    const nodes = dots.nodes()
+    this.view = { key, x, y, average, ring, byRun: new Map(shown.map(({ index }, position) => [index, nodes[position]])) }
+    this.active = null
     this.addHover(chart, shown, points, innerWidth, innerHeight)
   }
 
@@ -128,6 +172,7 @@ export default class extends Controller {
 
   addHover(chart, shown, points, innerWidth, innerHeight) {
     const delaunay = Delaunay.from(points)
+    const quadrantPoints = shown.map(({ index }, position) => ({ x: points[position][0], y: points[position][1], index }))
     const ring = chart.append("circle").attr("r", 6).attr("fill", "none").attr("stroke", "var(--chart-axis)").attr("stroke-width", 1.5).attr("display", "none").attr("pointer-events", "none")
     let current
 
@@ -140,6 +185,7 @@ export default class extends Controller {
         const [mouseX, mouseY] = pointer(event)
         const found = points.length ? delaunay.find(mouseX, mouseY) : -1
         const near = found >= 0 && Math.hypot(points[found][0] - mouseX, points[found][1] - mouseY) <= HIT_RADIUS
+        publish({ runs: new Set(quadrant(quadrantPoints, mouseX, mouseY)), span: null, source: "scatter" })
         current = near ? shown[found].run : null
         event.currentTarget.style.cursor = near ? "pointer" : "default"
 
@@ -154,6 +200,7 @@ export default class extends Controller {
       .on("mouseleave", () => {
         ring.attr("display", "none")
         hideTooltip()
+        clearSelection()
       })
       .on("click", () => {
         if (current) window.Turbo.visit(current.href)

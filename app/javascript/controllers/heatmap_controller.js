@@ -1,5 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 import { select } from "d3-selection"
+import { cellSelected, clearSelection, dayStart, getTimes, keysOf, levelKeys, publish, runsInKeys, spanSelection, subscribe, weekStart } from "helpers/linked_selection"
 import { observeSize } from "helpers/resize"
 import { escapeHtml, hideTooltip, moveTooltip, showTooltip } from "helpers/tooltip"
 
@@ -8,6 +9,8 @@ const LABEL_WIDTH = 40
 const LABEL_HEIGHT = 18
 const LEGEND_HEIGHT = 56
 const MAX_CELL = 48
+const DAY_MS = 86400000
+const DIMMED = 0.2
 
 const FILLS = [
   ["var(--chart-grid)", 0.7],
@@ -29,16 +32,41 @@ export default class extends Controller {
       this.width = width
       this.draw()
     })
+    this.unsubscribe = subscribe(selection => this.#apply(selection))
   }
 
   disconnect() {
     this.stopObserving()
+    this.unsubscribe()
     this.svg.remove()
     hideTooltip()
+    clearSelection()
+  }
+
+  #keyOf() {
+    return this.step === 7 ? weekStart : dayStart
+  }
+
+  #apply(selection) {
+    if (!this.groups) return
+    const ignore = !selection || selection.source === "cell"
+
+    const keys = ignore || selection.span ? null : keysOf(getTimes(), selection.runs, this.#keyOf())
+
+    this.nodes.forEach((node, index) => {
+      const dim = !ignore && !cellSelected(this.cells[index], this.step, selection.span, keys)
+      if (dim !== this.dimmed[index]) {
+        this.dimmed[index] = dim
+        if (dim) node.setAttribute("opacity", DIMMED)
+        else node.removeAttribute("opacity")
+      }
+    })
   }
 
   draw() {
-    const { rows, cols, columns, cells, thresholds, unit } = this.dataValue
+    const { rows, cols, columns, cells, step, thresholds, unit } = this.dataValue
+    this.cells = cells
+    this.step = step
     const cell = Math.max(6, Math.min(MAX_CELL, Math.floor((this.width - LABEL_WIDTH) / cols)))
     const gridHeight = rows.length * cell
 
@@ -77,9 +105,15 @@ export default class extends Controller {
       .join("g")
       .attr("transform", cellData => `translate(${cellData.col * cell},${cellData.row * cell})`)
       .style("cursor", cellData => (cellData.href ? "pointer" : "default"))
-      .on("mouseenter", (event, cellData) => showTooltip(cellData.tip.map((line, index) => `<div class="${index === 0 ? "font-medium" : ""}">${escapeHtml(line)}</div>`).join(""), event))
+      .on("mouseenter", (event, cellData) => {
+        showTooltip(cellData.tip.map((line, index) => `<div class="${index === 0 ? "font-medium" : ""}">${escapeHtml(line)}</div>`).join(""), event)
+        publish(spanSelection(getTimes(), cellData.from, cellData.from + this.step * DAY_MS, "cell"))
+      })
       .on("mousemove", moveTooltip)
-      .on("mouseleave", hideTooltip)
+      .on("mouseleave", () => {
+        hideTooltip()
+        clearSelection()
+      })
       .on("click", (_, cellData) => this.open(cellData))
 
     groups
@@ -91,6 +125,9 @@ export default class extends Controller {
       .attr("fill-opacity", cellData => FILLS[cellData.level][1])
     groups.filter(cellData => cellData.text && cell >= 24).append("text").attr("x", 4).attr("y", 12).attr("font-size", 10).attr("pointer-events", "none").attr("fill", cellData => (cellData.level >= 3 ? "var(--chart-grid)" : "var(--chart-axis)")).text(cellData => cellData.text)
     this.decorate(groups.filter(cellData => cellData.level >= 5), cell - GAP)
+    this.groups = groups
+    this.nodes = groups.nodes()
+    this.dimmed = this.nodes.map(() => false)
 
     this.drawLegend(thresholds, unit, LABEL_HEIGHT + gridHeight + LABEL_HEIGHT)
   }
@@ -125,6 +162,9 @@ export default class extends Controller {
       .join("g")
       .attr("transform", (_, index) => `translate(${index * itemWidth},0)`)
 
+    items
+      .on("mouseenter", (_, item) => publish({ runs: new Set(runsInKeys(getTimes(), this.#keyOf(), levelKeys(this.cells, item.level))), span: null, source: "legend" }))
+      .on("mouseleave", () => clearSelection())
     items.append("text").attr("y", swatch / 2).attr("dominant-baseline", "central").attr("font-size", 11).attr("fill", "var(--chart-axis)").text(item => `>${item.threshold}`)
     items
       .append("rect")

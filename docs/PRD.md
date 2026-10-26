@@ -112,6 +112,25 @@ The period selector offers **All time**, a pill for every year (newest first), a
 | 12 | Weekly stats for each year | All-time view: heatmap with years as rows and Monday-start weeks as columns. Weekly km buckets: >1, >20, >40, >50, >60 (ring), >80 (dot). Year and month views show a day calendar colored by daily km instead. |
 | 13 | Personal records | Benchmarks: 3 km, 5 km, 10 km, 15 km, 20 km, half marathon, 40 km, marathon, 50 km, 100 km. Only benchmarks with qualifying runs in the period are shown. Each row: date, pace, km/h, time, number of runs in the bucket, and a race tag. Phase 2 adds a pace sparkline per row (20-segment pace profile). |
 
+**Linked hover (Smashrun-style).** Hovering one of the charts below selects a set of the period's runs and highlights them in the others; leaving clears it. The chart under the pointer keeps its own tooltip and click.
+
+| Hover | Selects |
+|---|---|
+| Trailing line, at day d | the runs in the N days ending at d (N is the chart's window, 365, 90 or 7), among the period's runs |
+| Scatter, at the cursor | the runs plotted strictly further right and strictly higher (longer, and faster or higher on the y metric) than the cursor |
+| Distance bars, at the cursor height | every run in the periods whose bar is taller than the cursor |
+| Heatmap cell | the runs of that week (all time) or day |
+| Heatmap legend bucket | the runs in every cell of that bucket |
+| Longest / current streak or break | the runs in that span (none for a break) |
+
+| Chart | Shows the selection as |
+|---|---|
+| Scatter | the selected dots in the highlight colour and the rest faded; the average ring moves to the selection's mean (km-weighted pace, plain mean of HR and VDOT). An empty selection keeps the ring where it was |
+| Bars | the selection's share inside each bar (by km for Distance, by metres gained for Elevation, by run count for the averages) over a faded bar |
+| Heatmap | every cell outside the selection faded (a streak or break fades the cells outside its dates; hovering a cell itself fades nothing) |
+
+The selection is only for the current view, is published through one shared module that redraws just the highlight layers once per animation frame, and is mouse driven.
+
 ### 5.3 Pace Trends (Phase 1)
 
 This answers "am I getting faster?" by putting all distances on a common scale (VDOT).

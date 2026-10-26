@@ -5,9 +5,9 @@
     Consecutive days run
     <%= overview_info "A streak is days in a row with at least one run. A break is days in a row without one, counted from your first run." %>
   </h2>
-  <dl class="mt-3 divide-y divide-zinc-200 dark:divide-zinc-800">
+  <dl class="mt-3 divide-y divide-zinc-200 dark:divide-zinc-800" data-controller="streaks">
     <% [["Longest break", streaks.longest_break], ["Longest streak", streaks.longest_streak]].each do |title, segment| %>
-      <div class="flex items-center gap-6 py-4">
+      <%= tag.div class: "flex items-center gap-6 py-4", data: (segment && {from: segment.from.iso8601, to: segment.to.iso8601, action: "mouseenter->streaks#select mouseleave->streaks#clear"}) do %>
         <dt class="w-24 text-sm font-medium text-zinc-500 dark:text-zinc-400"><%= title %></dt>
         <dd>
           <% if segment %>
@@ -17,16 +17,16 @@
             <span class="text-zinc-400">None</span>
           <% end %>
         </dd>
-      </div>
+      <% end %>
     <% end %>
     <% if current %>
-      <div class="flex items-center gap-6 py-4">
+      <%= tag.div class: "flex items-center gap-6 py-4", data: {from: current.from.iso8601, to: current.to.iso8601, action: "mouseenter->streaks#select mouseleave->streaks#clear"} do %>
         <dt class="w-24 text-sm font-medium text-zinc-500 dark:text-zinc-400">Current <%= current.kind %></dt>
         <dd>
           <span class="text-5xl font-semibold tabular-nums text-lime-700 dark:text-[#9CFF44]"><%= current.days %></span> <span class="text-sm text-zinc-500 dark:text-zinc-400">days</span>
           <span class="block text-sm tabular-nums text-zinc-600 dark:text-zinc-300"><%= overview_range(current.from, current.to) %></span>
         </dd>
-      </div>
+      <% end %>
     <% end %>
   </dl>
 </section>

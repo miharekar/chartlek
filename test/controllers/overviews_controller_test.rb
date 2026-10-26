@@ -81,4 +81,36 @@ class OverviewsControllerTest < ActionDispatch::IntegrationTest
       assert_select "[data-controller='period-bars']"
     end
   end
+
+  test "the chart payloads carry what the linked hover needs" do
+    create(:activity, local_started_at: Time.utc(2024, 3, 5, 18), started_at: Time.utc(2024, 3, 5, 18), distance_m: 5100, timer_s: 1500, elevation_gain_m: 41.6)
+    create(:activity, local_started_at: Time.utc(2024, 3, 7, 7), started_at: Time.utc(2024, 3, 7, 7), distance_m: 10_000, timer_s: 3000, elevation_gain_m: nil)
+
+    get "/overview/2024/3"
+
+    scatter = JSON.parse(css_select("[data-controller='pace-scatter']").first["data-pace-scatter-data-value"])
+    assert_equal [Time.utc(2024, 3, 5, 18).to_i * 1000, Time.utc(2024, 3, 7, 7).to_i * 1000], scatter["runs"].pluck("t")
+    assert_equal [42, nil], scatter["runs"].pluck("elev")
+    assert_equal [5.1, 10.0], scatter["runs"].pluck("km")
+
+    heatmap = JSON.parse(css_select("[data-controller='heatmap']").first["data-heatmap-data-value"])
+    assert_equal 1, heatmap["step"]
+    assert_equal Time.utc(2024, 3, 1).to_i * 1000, heatmap["cells"].first["from"]
+    assert heatmap["cells"].all? { it["from"] % 86_400_000 == 0 }
+
+    get "/overview"
+    weekly = JSON.parse(css_select("[data-controller='heatmap']").first["data-heatmap-data-value"])
+    assert_equal 7, weekly["step"]
+    assert_equal [1], weekly["cells"].pluck("from").map { Time.at(it / 1000).utc.wday }.uniq
+  end
+
+  test "the streak segments expose their span for the linked hover" do
+    create(:activity, local_started_at: Time.utc(2024, 3, 5, 7), started_at: Time.utc(2024, 3, 5, 7))
+    create(:activity, local_started_at: Time.utc(2024, 3, 6, 7), started_at: Time.utc(2024, 3, 6, 7))
+
+    get "/overview/2024/3"
+
+    assert_select "[data-controller=streaks] [data-from='2024-03-05'][data-to='2024-03-06'][data-action*='streaks#select']"
+    assert_select "[data-controller=streaks] [data-action*='streaks#clear']", minimum: 1
+  end
 end
