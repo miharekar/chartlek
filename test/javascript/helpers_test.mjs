@@ -19,7 +19,7 @@ registerHooks({
 
 const { formatPace, formatDuration, formatDistance, formatDate } = await import("helpers/formatters")
 const { parseTime, snapToDays } = await import("helpers/time")
-const { escapeHtml } = await import("helpers/tooltip")
+const { escapeHtml, anchoredPosition, isTooltipFor, showTooltip, showTooltipFor, hideTooltip } = await import("helpers/tooltip")
 const { paceScale } = await import("helpers/pace_scale")
 
 test("formatPace", () => {
@@ -130,4 +130,39 @@ test("snapToDays clamps a wide range to the bounds", () => {
 test("escapeHtml escapes markup characters", () => {
   assert.equal(escapeHtml(`Run <3 & "fun" 'ok'`), "Run &lt;3 &amp; &quot;fun&quot; &#39;ok&#39;")
   assert.equal(escapeHtml(5), "5")
+})
+
+test("anchoredPosition", () => {
+  const viewport = { width: 400, height: 600 }
+  const size = { width: 200, height: 60 }
+  const anchor = (left, top) => ({ left, top, width: 16, height: 16, bottom: top + 16 })
+
+  assert.deepEqual(anchoredPosition(anchor(100, 100), size, viewport), { left: 8, top: 122 })
+  assert.deepEqual(anchoredPosition(anchor(180, 100), size, viewport), { left: 88, top: 122 })
+  assert.equal(anchoredPosition(anchor(390, 100), size, viewport).left, 192)
+  assert.equal(anchoredPosition(anchor(180, 560), size, viewport).top, 494)
+})
+
+test("the tooltip knows which anchor it is showing for", () => {
+  const classes = new Set(["hidden"])
+  const tooltip = { className: "", style: {}, isConnected: true, classList: { add: name => classes.add(name), remove: name => classes.delete(name), contains: name => classes.has(name) }, getBoundingClientRect: () => ({ width: 100, height: 20 }) }
+  globalThis.document = { createElement: () => tooltip, body: { append() {} } }
+  globalThis.window = { innerWidth: 400, innerHeight: 600 }
+  const anchor = { getBoundingClientRect: () => ({ left: 10, top: 10, width: 16, height: 16, bottom: 26 }) }
+  const other = { getBoundingClientRect: anchor.getBoundingClientRect }
+
+  try {
+    assert.equal(isTooltipFor(anchor), false)
+    showTooltipFor("a", anchor)
+    assert.equal(isTooltipFor(anchor), true)
+    assert.equal(isTooltipFor(other), false)
+    showTooltip("chart", { clientX: 5, clientY: 5 })
+    assert.equal(isTooltipFor(anchor), false)
+    showTooltipFor("a", anchor)
+    hideTooltip()
+    assert.equal(isTooltipFor(anchor), false)
+  } finally {
+    delete globalThis.document
+    delete globalThis.window
+  }
 })

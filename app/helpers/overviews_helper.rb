@@ -1,5 +1,7 @@
 module OverviewsHelper
   PILL = "rounded-md px-2.5 py-1 text-sm tabular-nums"
+  INFO = "inline-flex size-4 shrink-0 cursor-help items-center justify-center rounded-full text-zinc-400 hover:text-zinc-700 focus-visible:text-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime-700 dark:text-zinc-500 dark:hover:text-zinc-200 dark:focus-visible:text-zinc-200 dark:focus-visible:outline-[#6ACD12]"
+  INFO_ICON = '<svg viewBox="0 0 16 16" class="size-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6.75"/><path d="M8 7.25v3.5"/><circle cx="8" cy="4.9" r=".4" fill="currentColor"/></svg>'.html_safe.freeze
   PILL_STATES = {
     selected: "bg-lime-700 font-medium text-white dark:bg-[#6ACD12] dark:text-zinc-950",
     idle: "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800",
@@ -57,6 +59,6 @@ module OverviewsHelper
   end
 
   def overview_info(text)
-    tag.span "ⓘ", title: text, class: "cursor-help text-zinc-400 dark:text-zinc-500"
+    tag.button INFO_ICON, type: "button", class: INFO, aria: {label: text}, data: {controller: "info", action: "mouseenter->info#show mouseleave->info#leave focus->info#show blur->info#hide click->info#toggle keydown.esc@window->info#hide click@document->info#outside"}
   end
 end

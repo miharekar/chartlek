@@ -19,7 +19,7 @@ class PrProgressesControllerTest < ActionDispatch::IntegrationTest
     data = JSON.parse(css_select("[data-controller=pr-progress]").first["data-pr-progress-data-value"])
     assert_equal 1, data["runs"].size
     assert_equal 1, data["frontier"].size
-    assert_select "span[title]", text: "ⓘ", minimum: 2
+    assert_select "button[data-controller=info]", minimum: 2
     assert_select "[data-pr-progress-target=table]"
   end
 

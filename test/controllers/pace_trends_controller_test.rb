@@ -17,7 +17,7 @@ class PaceTrendsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "[data-controller='pace-trends'][data-pace-trends-payload-value]"
     assert_select "select option[selected]", "Marathon"
-    assert_select "span[title]", text: "ⓘ", minimum: 2
+    assert_select "button[data-controller=info]", minimum: 2
   end
 
   test "payload escapes run names" do

@@ -1,6 +1,9 @@
 const OFFSET = 14
+const ANCHOR_GAP = 6
+const MARGIN = 8
 
 let element
+let owner
 
 const ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }
 
@@ -20,6 +23,7 @@ export function showTooltip(html, event) {
   const tooltip = tooltipElement()
   tooltip.innerHTML = html
   tooltip.classList.remove("hidden")
+  owner = null
   moveTooltip(event)
 }
 
@@ -31,6 +35,29 @@ export function moveTooltip(event) {
   tooltip.style.transform = `translate(${Math.max(0, left)}px, ${Math.max(0, top)}px)`
 }
 
+export function anchoredPosition(anchor, size, viewport) {
+  const centered = anchor.left + anchor.width / 2 - size.width / 2
+  const left = Math.max(MARGIN, Math.min(centered, viewport.width - size.width - MARGIN))
+  const below = anchor.bottom + ANCHOR_GAP
+  const top = below + size.height + MARGIN > viewport.height ? anchor.top - ANCHOR_GAP - size.height : below
+  return { left, top: Math.max(0, top) }
+}
+
+export function showTooltipFor(html, anchor) {
+  const tooltip = tooltipElement()
+  tooltip.innerHTML = html
+  tooltip.classList.remove("hidden")
+  owner = anchor
+  const { width, height } = tooltip.getBoundingClientRect()
+  const { left, top } = anchoredPosition(anchor.getBoundingClientRect(), { width, height }, { width: window.innerWidth, height: window.innerHeight })
+  tooltip.style.transform = `translate(${left}px, ${top}px)`
+}
+
+export function isTooltipFor(anchor) {
+  return owner === anchor && Boolean(element?.isConnected) && !element.classList.contains("hidden")
+}
+
 export function hideTooltip() {
+  owner = null
   element?.classList.add("hidden")
 }

@@ -88,7 +88,7 @@ These are explicitly out of scope:
 - **Links:**
   - Phase 1: clicking a run in any chart opened it on Garmin Connect (`connect.garmin.com/app/activity/:id`, verified) or on Strava for gap runs.
   - Phase 2: clicks open the run page in the same tab instead. The run page links out to Garmin or Strava.
-- **Chart info:** every chart has an ⓘ popover explaining how to read it, adapted from Smashrun's FAQ.
+- **Chart info:** every chart has an ⓘ button explaining how to read it, adapted from Smashrun's FAQ. The text shows in the shared tooltip on hover, keyboard focus or tap, and Escape or a click elsewhere hides it.
 
 ### 5.2 Overview (Phase 1)
 

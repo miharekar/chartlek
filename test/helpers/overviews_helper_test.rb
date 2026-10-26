@@ -25,6 +25,16 @@ class OverviewsHelperTest < ActionView::TestCase
     assert_equal "March 2023", overview_period_title(Overview::Period.new(year: 2023, month: 3, today:, first_date: today))
   end
 
+  test "info is a labelled button with escaped text" do
+    html = overview_info(%(Pace <b>"fast"</b> & more))
+
+    assert_select Nokogiri::HTML.fragment(html), "button[type=button][data-controller=info]" do |buttons|
+      assert_equal %(Pace <b>"fast"</b> & more), buttons.first["aria-label"]
+      assert_select buttons, "svg circle"
+    end
+    assert_not_includes html, "<b>"
+  end
+
   test "disabled pills are not links" do
     assert_includes overview_pill("Jan", "/x", :disabled), "<span"
     assert_includes overview_pill("Jan", "/x", :idle), 'href="/x"'
