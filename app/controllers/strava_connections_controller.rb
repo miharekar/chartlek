@@ -5,7 +5,7 @@ class StravaConnectionsController < ApplicationController
     if params[:error].present?
       redirect_to root_path, alert: "Strava connection was cancelled."
     elsif params[:code].present? && state.present? && ActiveSupport::SecurityUtils.secure_compare(state, params[:state].to_s)
-      connect(params[:code], params[:scope].to_s)
+      activity_access?(params[:scope].to_s) ? connect(params[:code], params[:scope].to_s) : redirect_to(root_path, alert: "Strava activity access is needed to link your runs. Connect again and leave the activity access ticked.")
     else
       redirect_to root_path, alert: "Strava authorization failed: state mismatch."
     end
@@ -18,6 +18,10 @@ class StravaConnectionsController < ApplicationController
   end
 
   private
+  def activity_access?(scope)
+    (scope.split(",") & Strava::Client::ACTIVITY_SCOPES).any?
+  end
+
   def connect(code, scope)
     Strava::Client.new.authorize(code)
     Activity.link_strava_later(full: true)

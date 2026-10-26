@@ -86,6 +86,61 @@ class Strava::ClientTest < ActiveSupport::TestCase
     assert_equal "refresh-2", Profile.find(@profile.id).strava_refresh_token
   end
 
+  test "a rejected refresh after another process rotated the token uses the new token and keeps the connection" do
+    connect(expires_in: 1.minute)
+    other = Profile.find(@profile.id)
+    stub_request(:post, TOKEN_URL).to_return do
+      other.store_strava_tokens(access_token: "access-2", refresh_token: "refresh-2", expires_at: 6.hours.from_now.to_i)
+      {status: 400, body: {message: "Bad Request"}.to_json}
+    end
+    stub_request(:get, ACTIVITIES_URL).with(query: hash_including("page" => "1"), headers: {"Authorization" => "Bearer access-2"}).to_return(body: [{id: 1}].to_json)
+    stub_request(:get, ACTIVITIES_URL).with(query: hash_including("page" => "2")).to_return(body: [].to_json)
+
+    assert_equal [1], @client.activities.pluck("id")
+
+    assert_requested :post, TOKEN_URL, times: 1
+    assert_equal "refresh-2", Profile.find(@profile.id).strava_refresh_token
+    assert Profile.find(@profile.id).strava_connected?
+  end
+
+  test "a rejected refresh after another process cleared the connection raises NotConnected" do
+    connect(expires_in: 1.minute)
+    stub_request(:post, TOKEN_URL).to_return do
+      Profile.find(@profile.id).disconnect_strava
+      {status: 400, body: "{}"}
+    end
+
+    assert_raises(Strava::Client::NotConnected) { @client.activities }
+  end
+
+  test "the token request is not made inside a transaction" do
+    connect(expires_in: 1.minute)
+    baseline = Profile.connection.open_transactions
+    open_transactions = nil
+    stub_request(:post, TOKEN_URL).to_return do
+      open_transactions = Profile.connection.open_transactions
+      {body: token("access-2", "refresh-2")}
+    end
+    stub_request(:get, ACTIVITIES_URL).with(query: hash_including("page" => "1")).to_return(body: [].to_json)
+
+    @client.activities
+
+    assert_equal baseline, open_transactions
+  end
+
+  test "a timeout on refresh propagates and keeps the connection" do
+    connect(expires_in: 1.minute)
+    stub_request(:post, TOKEN_URL).to_timeout
+
+    assert_raises(Net::OpenTimeout) { @client.activities }
+
+    assert Profile.find(@profile.id).strava_connected?
+  end
+
+  test "requests use short explicit timeouts" do
+    assert_equal 10, Strava::Client::TIMEOUT
+  end
+
   test "a refresh that finds the connection already cleared raises NotConnected without a request" do
     connect(expires_in: 1.minute)
     Profile.find(@profile.id).disconnect_strava

@@ -8,8 +8,10 @@ class Strava::Client
   TOKEN_URL = "https://www.strava.com/oauth/token"
   ACTIVITIES_URL = "https://www.strava.com/api/v3/athlete/activities"
   SCOPE = "activity:read_all"
+  ACTIVITY_SCOPES = %w[activity:read activity:read_all].freeze
   PER_PAGE = 200
   REFRESH_MARGIN = 5.minutes
+  TIMEOUT = 10
 
   def initialize(client_id: ENV["STRAVA_CLIENT_ID"], client_secret: ENV["STRAVA_SECRET"], profile: Profile.instance)
     @client_id = client_id
@@ -37,7 +39,7 @@ class Strava::Client
   def activities_page(page, after)
     uri = URI(ACTIVITIES_URL)
     uri.query = URI.encode_www_form({page:, per_page: PER_PAGE, after:}.compact)
-    response = Net::HTTP.get_response(uri, "Authorization" => "Bearer #{access_token}")
+    response = start(uri) { it.get(uri.request_uri, "Authorization" => "Bearer #{access_token}") }
 
     if response.code == "401"
       @profile.disconnect_strava
@@ -59,26 +61,41 @@ class Strava::Client
   end
 
   def refresh
-    @profile.with_lock do
-      raise NotConnected, "Strava is not connected" unless @profile.strava_connected?
+    @profile.reload
+    raise NotConnected, "Strava is not connected" unless @profile.strava_connected?
 
-      store(request_token(grant_type: "refresh_token", refresh_token: @profile.strava_refresh_token, label: "token refresh")) if expiring?
+    if expiring?
+      sent = @profile.strava_refresh_token
+
+      begin
+        store(request_token(grant_type: "refresh_token", refresh_token: sent, label: "token refresh"))
+      rescue Error => error
+        rejected(error, sent)
+      end
     end
-  rescue NotConnected
-    raise
-  rescue Error => error
-    if error.message.match?(/responded (400|401)/)
+  end
+
+  def rejected(error, sent)
+    raise error unless error.message.match?(/responded (400|401)/)
+
+    @profile.reload
+    if @profile.strava_refresh_token == sent
       @profile.disconnect_strava
       raise NotConnected, "Strava revoked the connection"
-    else
-      raise
+    elsif !@profile.strava_connected?
+      raise NotConnected, "Strava is not connected"
     end
   end
 
   def request_token(label:, **params)
-    response = Net::HTTP.post_form(URI(TOKEN_URL), client_id: @client_id, client_secret: @client_secret, **params)
+    uri = URI(TOKEN_URL)
+    response = start(uri) { it.post(uri.path, URI.encode_www_form(client_id: @client_id, client_secret: @client_secret, **params), "Content-Type" => "application/x-www-form-urlencoded") }
 
     JSON.parse(checked(response, label).body)
+  end
+
+  def start(uri, &)
+    Net::HTTP.start(uri.host, uri.port, use_ssl: true, open_timeout: TIMEOUT, read_timeout: TIMEOUT, &)
   end
 
   def store(token)

@@ -38,9 +38,33 @@ class StravaConnectionsControllerTest < ActionDispatch::IntegrationTest
     state = start["state"]
     stub_request(:post, TOKEN_URL).to_return(body: {access_token: "a", refresh_token: "r", expires_at: 6.hours.from_now.to_i}.to_json)
 
-    get strava_callback_path(code: "c", state:, scope: "read")
+    get strava_callback_path(code: "c", state:, scope: "read,activity:read")
 
     assert_match "Private activities were not shared", flash[:notice]
+    assert Profile.instance.strava_connected?
+  end
+
+  test "a grant without activity access stores nothing and queues nothing" do
+    ["read", "", "profile:read_all"].each do |scope|
+      state = start["state"]
+
+      assert_no_enqueued_jobs do
+        get strava_callback_path(code: "c", state:, scope:)
+      end
+
+      assert_match "activity access is needed", flash[:alert]
+      assert_not Profile.instance.strava_connected?
+    end
+    assert_not_requested :post, TOKEN_URL
+  end
+
+  test "a grant with no scope parameter is rejected too" do
+    state = start["state"]
+
+    get strava_callback_path(code: "c", state:)
+
+    assert_match "activity access is needed", flash[:alert]
+    assert_not Profile.instance.strava_connected?
   end
 
   test "a state mismatch is rejected and stores nothing" do
@@ -64,7 +88,7 @@ class StravaConnectionsControllerTest < ActionDispatch::IntegrationTest
   test "the state can be used only once" do
     state = start["state"]
     stub_request(:post, TOKEN_URL).to_return(body: {access_token: "a", refresh_token: "r", expires_at: 6.hours.from_now.to_i}.to_json)
-    get strava_callback_path(code: "c", state:)
+    get strava_callback_path(code: "c", state:, scope: "activity:read_all")
     Profile.instance.disconnect_strava
 
     get strava_callback_path(code: "c", state:)
@@ -93,7 +117,7 @@ class StravaConnectionsControllerTest < ActionDispatch::IntegrationTest
     state = start["state"]
     stub_request(:post, TOKEN_URL).to_return(status: 400, body: "{}")
 
-    get strava_callback_path(code: "bad", state:)
+    get strava_callback_path(code: "bad", state:, scope: "activity:read_all")
 
     assert_equal "Strava authorization failed.", flash[:alert]
     assert_not Profile.instance.strava_connected?
@@ -102,7 +126,7 @@ class StravaConnectionsControllerTest < ActionDispatch::IntegrationTest
   test "the nav button shows only while disconnected" do
     get root_path
     follow_redirect!
-    assert_select "form[action=?] button", strava_connection_path, text: "Connect Strava"
+    assert_select "form[action=?][data-turbo=false] button", strava_connection_path, text: "Connect Strava"
 
     Profile.instance.store_strava_tokens(access_token: "a", refresh_token: "r", expires_at: 1.hour.from_now.to_i)
     get "/overview"
