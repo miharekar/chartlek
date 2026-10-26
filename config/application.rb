@@ -38,5 +38,6 @@ module Smashback
 
     # Don't generate system test files.
     config.generators.system_tests = nil
+    config.action_dispatch.trusted_proxies = ActionDispatch::RemoteIp::TRUSTED_PROXIES + [IPAddr.new("100.64.0.0/10")]
   end
 end

@@ -31,7 +31,7 @@ These are explicitly out of scope:
 - Cooper test view.
 - Local run tags, notes or edits.
 - Running power (Stryd or native).
-- Multi-user support, authentication, and production deployment.
+- Multi-user support and authentication. (It is deployed for the owner alone: a Docker container on their machine, §9.)
 - Imperial units, including mile benchmarks.
 - Writing anything back to Garmin.
 - A mobile app.
@@ -75,7 +75,7 @@ These are explicitly out of scope:
 - **Nav:** Overview, Runs, Pace Trends, PR Progress. Later phases add Training Bands, Goals and Wellness.
 - **Sync status in the nav:**
   - Shows "Synced 12 min ago" and a **Sync now** button.
-  - Opening the app triggers a sync if the last one was more than 30 min ago.
+  - A sync runs every hour in the background (a Solid Queue recurring task in the container), and on the **Sync now** button. Opening a page does not sync.
   - A sync that created, changed or deleted runs, or that changed the error state, refreshes the page with a Turbo `:replace` refresh (`turbo_refreshes_with method: :replace`). Morphing would wipe the D3-drawn SVGs; a full replace makes the chart controllers reconnect and redraw.
   - Any other sync only replaces the nav sync status in place. The status also shows "Syncing…" live when a sync starts, and no page state (modes, selections, brushed windows) is lost.
   - If the Garmin key has expired, a banner explains how to rotate it (§11).
@@ -388,7 +388,7 @@ The Personal API has **no** time-series, splits, laps, weather or HR-time-in-zon
 - **Backfill:** page through the activity search newest to oldest until a page comes back empty, upserting by `(source, external_id)`. About 30 requests cover the whole history.
 - **Incremental:** page newest-first until a full page is all already-known IDs.
 - **Full resync:** a rare manual action. It re-pages everything, picks up edits to old activities, and deletes local Garmin runs that no longer exist on Garmin.
-- **Triggers:** opening the app (if the last sync was more than 30 min ago) and the **Sync now** button. Both call `Activity.sync_later` → `Activity::SyncJob` → `Activity.sync_now`. Phase 1 uses the default development job adapter, which is fine because the sync is idempotent.
+- **Triggers:** the hourly `garmin_sync` recurring task (`config/recurring.yml`, production) and the **Sync now** button. Both run `Activity::SyncJob` → `Activity.sync_now` (the button through `Activity.sync_later`). In development `bin/dev` syncs only on the button, with the default job adapter; the sync is idempotent.
 - **Originals (Phase 2):**
   - `bin/rails activities:download` is the one-time backfill: about 2,514 files at ≤ 1 request/s (about 45 min of downloads), in the foreground with progress output. FIT parsing is slower than the download (2–8 s per file), so the whole run takes hours single-process. The class methods respect relation scoping, so split it across processes, for example `Activity.where("activities.id % 4 = ?", k).download_originals` in 4 `bin/rails runner` processes. Each process throttles itself to 1 request/s, so together they exceed 1 request/s: the real backfill averaged about 1.6 requests/s with 4 processes and saw no errors.
   - The sync downloads the original of every run it pages through that has none, processes a run that has an original but no track, and reprocesses a run whose `started_at`, `timer_s` or `distance_m` changed, which picks up trims. A failure for one run is logged and skipped, and the next sync retries it. The sync refreshes `sync_started_at` after each run, so a long sync keeps counting as running.
@@ -519,6 +519,12 @@ Garmin profile and HR zones (JSON), `synced_at`, `sync_error`.
   - Shared helpers live in `app/javascript/helpers/charts/`: pace and duration formatters, axes, tooltip, brush.
   - Charts redraw on `ResizeObserver`.
   - Theme comes from CSS variables (`--chart-accent`, `--chart-muted`, `--chart-grid`, …), so a light/dark switch needs no redraw. The variables, Tailwind's `dark:` variant and `color-scheme` all key off `<html data-theme>`.
+
+### Deployment
+
+- One Docker container (`docker compose up -d --build`, Dockerfile on `ruby:4.0.9-slim`, Puma without Thruster) on port 9295, served at `https://run.rekar.eu` by Caddy on the Pi over Tailscale. On the LAN it speaks plain http, so `force_ssl` and `assume_ssl` are off. Rails honours the forwarded scheme and host from any sender, so the Strava OAuth callback is `https://run.rekar.eu/strava/callback`; the tailnet range is a trusted proxy only so that `request.remote_ip` is the real client.
+- The production primary database is the same `storage/development.sqlite3` that `bin/dev` uses (SQLite in WAL mode), so there is one dataset; cache, queue and cable have their own `storage/production_*.sqlite3`. `./storage` and `config/master.key` are mounted, and `.env` supplies the Garmin, Strava, Smashrun and Mapbox settings. The entrypoint runs `db:prepare` only.
+- Solid Queue runs inside Puma and runs the hourly Garmin sync (§7.2). There is no auth, as before: the machine is only reachable through the LAN and the tailnet.
 
 ## 10. Design
 

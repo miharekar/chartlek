@@ -1,0 +1,19 @@
+services:
+  smashback:
+    build:
+      context: .
+      args:
+        RUBY_VERSION: 4.0.9
+    pull_policy: never
+    # Rootless Docker maps container root to the host user that owns the bind mounts.
+    user: "0:0"
+    ports:
+      - "9295:3000"
+    env_file: .env
+    environment:
+      RAILS_ENV: production
+      SOLID_QUEUE_IN_PUMA: "1"
+    volumes:
+      - ./storage:/rails/storage
+      - ./config/master.key:/rails/config/master.key:ro
+    restart: unless-stopped

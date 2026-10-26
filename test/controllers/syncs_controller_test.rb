@@ -9,36 +9,20 @@ class SyncsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to "/pace_trend"
   end
 
-  test "opening a page syncs when never synced" do
-    assert_enqueued_with(job: Activity::SyncJob) { get "/overview" }
+  test "opening a page never starts a sync" do
+    Profile.instance.update!(synced_at: 2.days.ago)
+
+    assert_no_enqueued_jobs do
+      get "/overview"
+      get "/runs"
+    end
   end
 
-  test "opening a page syncs when the last attempt is old" do
-    Profile.instance.update!(synced_at: 31.minutes.ago)
+  test "the hourly Garmin sync is scheduled in production" do
+    task = YAML.load_file(Rails.root.join("config/recurring.yml")).dig("production", "garmin_sync")
 
-    assert_enqueued_with(job: Activity::SyncJob) { get "/overview" }
-  end
-
-  test "opening a page does not sync after a recent success" do
-    Profile.instance.update!(synced_at: 5.minutes.ago)
-
-    assert_no_enqueued_jobs { get "/overview" }
-  end
-
-  test "opening a page does not sync after a recent failed attempt" do
-    Profile.instance.update!(synced_at: 2.days.ago, sync_error: Profile::INVALID_KEY_ERROR)
-
-    assert_no_enqueued_jobs { get "/overview" }
-  end
-
-  test "opening a page does not sync while syncing" do
-    Profile.instance.update!(sync_started_at: 1.minute.ago)
-
-    assert_no_enqueued_jobs { get "/overview" }
-  end
-
-  test "non-HTML requests do not sync" do
-    assert_no_enqueued_jobs { get "/overview", as: :json }
+    assert_equal "Activity::SyncJob", task["class"]
+    assert_equal "every hour", task["schedule"]
   end
 
   test "nav shows sync status" do

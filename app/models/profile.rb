@@ -1,6 +1,5 @@
 class Profile < ApplicationRecord
   SYNC_STALE_AFTER = 15.minutes
-  SYNC_INTERVAL = 30.minutes
   INVALID_KEY_ERROR = "Garmin key is invalid or expired"
 
   encrypts :strava_access_token, :strava_refresh_token
@@ -39,12 +38,6 @@ class Profile < ApplicationRecord
 
   def syncing?
     sync_started_at.present? && sync_started_at > SYNC_STALE_AFTER.ago
-  end
-
-  def sync_due?
-    last_attempted_at = sync_started_at || (sync_error.present? ? updated_at : synced_at)
-
-    !syncing? && (last_attempted_at.nil? || last_attempted_at < SYNC_INTERVAL.ago)
   end
 
   def strava_connected?

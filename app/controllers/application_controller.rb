@@ -5,8 +5,6 @@ class ApplicationController < ActionController::Base
   # Changes to the importmap will invalidate the etag for HTML responses
   stale_when_importmap_changes
 
-  before_action :sync_if_due, if: -> { request.get? && request.format.html? }
-
   helper_method :sync_profile, :current_theme
 
   private
@@ -16,9 +14,5 @@ class ApplicationController < ActionController::Base
 
   def sync_profile
     @sync_profile ||= Profile.instance
-  end
-
-  def sync_if_due
-    Activity.sync_later if sync_profile.sync_due?
   end
 end
