@@ -7,17 +7,22 @@ import { pointer, select } from "d3-selection"
 import { formatDistance, formatDistanceRange, formatDuration, formatPace } from "helpers/formatters"
 import { paceScale } from "helpers/pace_scale"
 import { observeSize } from "helpers/resize"
+import { clear, publish, subscribe } from "helpers/run_cursor"
 import { rangeStats } from "helpers/run_stats"
 import { hideTooltip, moveTooltip, showTooltip, tooltipHtml } from "helpers/tooltip"
 
 const MARGIN = { top: 8, right: 24, bottom: 24, left: 44 }
 
 export default class extends Controller {
-  static targets = ["chart", "stats", "unit", "elevation"]
+  static targets = ["chart", "stats", "unit"]
   static values = { bars: Array, splits: Array, unit: { type: String, default: "bars" } }
 
   connect() {
     this.svg = select(this.chartTarget).append("svg").attr("class", "block")
+    this.unsubscribe = subscribe(distance => {
+      this.cursor = distance
+      this.#showCursor()
+    })
     this.stopObserving = observeSize(this.chartTarget, size => {
       this.size = size
       this.draw()
@@ -26,8 +31,10 @@ export default class extends Controller {
 
   disconnect() {
     this.stopObserving()
+    this.unsubscribe()
     this.svg.remove()
     hideTooltip()
+    clear()
   }
 
   unit(event) {
@@ -36,7 +43,6 @@ export default class extends Controller {
 
   unitValueChanged() {
     this.unitTargets.forEach(button => button.setAttribute("aria-pressed", button.value === this.unitValue))
-    if (this.hasElevationTarget) this.elevationTarget.dataset.recordingBarsUnitValue = this.unitValue
     if (this.size) this.draw()
   }
 
@@ -94,13 +100,33 @@ export default class extends Controller {
     const layer = chart.append("g").call(brush)
     layer.select(".selection").attr("fill", "var(--chart-accent-low)").attr("fill-opacity", 0.3).attr("stroke", "var(--chart-accent-highlight)")
 
+    this.cursorX = x
+    this.cursorLine = chart.append("line").attr("y1", 0).attr("y2", innerHeight).attr("stroke", "var(--chart-highlight)").attr("stroke-width", 1.5).attr("pointer-events", "none").attr("display", "none")
+    this.#showCursor()
+
     const bySpan = bisector((start, position) => start - position)
     layer.on("mousemove", event => {
       const position = x.invert(pointer(event)[0]) * 1000
       const index = Math.max(0, bySpan.right(starts, position) - 1)
       showTooltip(this.#tooltipHtml(bars[index], starts[index]), event)
       moveTooltip(event)
-    }).on("mouseleave", () => hideTooltip())
+      publish(position)
+    }).on("mouseleave", () => {
+      hideTooltip()
+      clear()
+    })
+  }
+
+  #showCursor() {
+    if (!this.cursorLine) return
+
+    if (this.cursor == null) {
+      this.cursorLine.attr("display", "none")
+    } else {
+      const [start, end] = this.cursorX.domain()
+      const position = this.cursorX(Math.max(start, Math.min(end, this.cursor / 1000)))
+      this.cursorLine.attr("display", null).attr("x1", position).attr("x2", position)
+    }
   }
 
   #renderStats(stats, brushed) {

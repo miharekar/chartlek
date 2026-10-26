@@ -22,6 +22,10 @@ class Track < ApplicationRecord
     data.fetch("lng", []).zip(data.fetch("lat", [])).reject { it.include?(nil) }
   end
 
+  def route_distances
+    data.fetch("d", []).zip(data.fetch("lng", []), data.fetch("lat", [])).reject { it.drop(1).include?(nil) }.map(&:first)
+  end
+
   private
   def rows
     keys = data.keys.map(&:to_sym)

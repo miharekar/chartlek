@@ -91,7 +91,6 @@ class RunsControllerTest < ActionDispatch::IntegrationTest
     assert_select "p", text: /≈/
     assert_select "h2", text: /Pace variability/
     assert_select "p", text: /6\.5/
-    assert_select "[data-controller=recording-bars]", false
     assert_select "a[href=?]", run_path(earlier)
     assert_select "a[href=?]", run_path(same_day), text: "Next →"
     assert_select "nav[aria-label='Runs that day'] a[href=?]", run_path(same_day)
@@ -221,7 +220,6 @@ class RunsControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-controller=pace-variability][data-pace-variability-percent-value='6.5']"
     assert_select "[data-controller=pace-variability][data-pace-variability-bars-value=?]", [{from: 0.0, to: 0.1, distance: 100.0, time: 30.0}, {from: 0.1, to: 0.2, distance: 100.0, time: 20.0}, {from: 0.2, to: 0.3, distance: 100.0, time: 40.0}].to_json
     assert_select "[data-pace-variability-target=chart][role=group][aria-label*='100 metres']"
-    assert_select "[data-controller=recording-bars]", false
     assert_select "p", text: /Green: faster/, count: 0
     assert_select "section.col-span-2.sm\\:col-span-1 h2", text: /Pace variability/
   end
@@ -242,6 +240,7 @@ class RunsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :not_found
   end
+
   test "the elevation profile card shows the chart, the run's totals and its hill difficulty" do
     run = run_at(Time.utc(2023, 5, 6, 7), distance_m: 10_000, timer_s: 3000, pace_variability: 6.5, elevation_gain_m: 150.4, elevation_loss_m: 148.2)
     Track.create!(activity: run, data: {"t" => [0, 30, 60], "d" => [0, 100, 200], "alt" => [100.0, nil, 130.0]})
@@ -281,5 +280,4 @@ class RunsControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-controller=analyze-run][data-analyze-run-current-value*='\"km\":8.0']"
     assert_select "p", text: /This run.*Average.*Previous runs/m
   end
-end
 end

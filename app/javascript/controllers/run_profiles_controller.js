@@ -6,6 +6,7 @@ import { pointer, select } from "d3-selection"
 import { area, line } from "d3-shape"
 import { formatDistance } from "helpers/formatters"
 import { observeSize } from "helpers/resize"
+import { clear, publish, subscribe } from "helpers/run_cursor"
 
 const MARGIN = { top: 20, right: 24, bottom: 4, left: 44 }
 const AXIS_HEIGHT = 20
@@ -25,6 +26,10 @@ export default class extends Controller {
 
   connect() {
     this.root = select(this.chartTarget).append("div")
+    this.unsubscribe = subscribe(distance => {
+      this.cursor = distance
+      this.#show()
+    })
     this.stopObserving = observeSize(this.chartTarget, ({ width }) => {
       this.width = width
       this.draw()
@@ -33,12 +38,15 @@ export default class extends Controller {
 
   disconnect() {
     this.stopObserving()
+    this.unsubscribe()
     this.root.remove()
+    clear()
   }
 
   draw() {
     const { d, ...rest } = this.seriesValue
     const distances = d.map(meters => meters / 1000)
+    this.distances = distances
     const charts = CHARTS.filter(chart => rest[chart.key])
     const innerWidth = this.width - MARGIN.left - MARGIN.right
     const x = scaleLinear().domain([0, distances.at(-1)]).range([0, innerWidth])
@@ -49,6 +57,7 @@ export default class extends Controller {
       const last = index === charts.length - 1
       this.#drawChart(chart, rest[chart.key], distances, x, innerWidth, last)
     })
+    this.#show()
   }
 
   #drawChart({ label, unit, fill }, values, distances, x, innerWidth, last) {
@@ -83,16 +92,20 @@ export default class extends Controller {
 
     svg.append("text").attr("x", MARGIN.left).attr("y", 12).attr("font-size", 11).attr("fill", "var(--chart-axis)").text(label)
     const readout = svg.append("text").attr("x", this.width - MARGIN.right).attr("y", 12).attr("text-anchor", "end").attr("font-size", 11).attr("fill", "var(--chart-axis)")
-    const cursor = chart.append("line").attr("y1", 0).attr("y2", innerHeight).attr("stroke", "var(--chart-accent-highlight)").attr("display", "none")
+    const cursor = chart.append("line").attr("y1", 0).attr("y2", innerHeight).attr("stroke", "var(--chart-highlight)").attr("stroke-width", 1.5).attr("pointer-events", "none").attr("display", "none")
     this.hovers.push({ cursor, readout, unit, x, values })
 
     chart.append("rect").attr("width", innerWidth).attr("height", innerHeight).attr("fill", "transparent")
-      .on("mousemove", event => this.#hover(x.invert(pointer(event)[0]), distances))
-      .on("mouseleave", () => this.#unhover())
+      .on("mousemove", event => publish(x.invert(pointer(event)[0]) * 1000))
+      .on("mouseleave", () => clear())
   }
 
-  #hover(distance, distances) {
-    const index = Math.min(distances.length - 1, Math.max(0, BY_DISTANCE.center(distances, distance)))
+  #show() {
+    if (!this.hovers) return
+    if (this.cursor == null) return this.#unhover()
+
+    const distances = this.distances
+    const index = Math.min(distances.length - 1, Math.max(0, BY_DISTANCE.center(distances, this.cursor / 1000)))
     for (const { cursor, readout, unit, x, values } of this.hovers) {
       const value = values[index]
       cursor.attr("display", null).attr("x1", x(distances[index])).attr("x2", x(distances[index]))

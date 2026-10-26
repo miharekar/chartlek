@@ -44,4 +44,24 @@ class TrackTest < ActiveSupport::TestCase
     assert_equal [[2.0, 1.0], [6.0, 5.0]], track("lat" => [1.0, nil, 5.0], "lng" => [2.0, nil, 6.0]).route
     assert_equal [], track("t" => [0, 1]).route
   end
+
+  test "route distances line up with the route and skip the same points" do
+    located = track("d" => [0, 10, 20], "lat" => [1.0, nil, 5.0], "lng" => [2.0, nil, 6.0])
+
+    assert_equal [0, 20], located.route_distances
+    assert_equal located.route.size, located.route_distances.size
+    assert_equal [], track("t" => [0, 1]).route_distances
+  end
+
+  test "each route point is paired with the distance of its own row" do
+    rows = {"d" => [0, 10, 25, 40, 70], "lat" => [1.0, nil, 3.0, 4.0, nil], "lng" => [10.0, nil, 30.0, 40.0, nil]}
+    located = track(rows)
+
+    assert_equal [[10.0, 1.0], [30.0, 3.0], [40.0, 4.0]], located.route
+    assert_equal [0, 25, 40], located.route_distances
+    located.route.zip(located.route_distances).each do |(lng, lat), distance|
+      row = rows["d"].index(distance)
+      assert_equal [rows["lng"][row], rows["lat"][row]], [lng, lat]
+    end
+  end
 end

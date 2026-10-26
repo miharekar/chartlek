@@ -1,4 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
+import { routeAt } from "helpers/route_point"
+import { subscribe } from "helpers/run_cursor"
 
 const STYLES = { light: "mapbox://styles/mapbox/light-v11", dark: "mapbox://styles/mapbox/dark-v11" }
 const PADDING = 32
@@ -14,9 +16,13 @@ const TEXT_FONT = ["DIN Pro Medium", "Arial Unicode MS Regular"]
 const color = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim()
 
 export default class extends Controller {
-  static values = { route: Array, token: String }
+  static values = { route: Array, distances: Array, token: String }
 
   async connect() {
+    this.unsubscribe = subscribe(distance => {
+      this.cursor = distance
+      this.#showCursor()
+    })
     const connection = (this.connection = Symbol())
     await import("mapbox-gl")
     if (this.connection !== connection) return
@@ -34,6 +40,7 @@ export default class extends Controller {
   }
 
   disconnect() {
+    this.unsubscribe()
     this.connection = null
     this.scheme?.removeEventListener("change", this.changeScheme)
     this.map?.remove()
@@ -102,5 +109,17 @@ export default class extends Controller {
     const marker = (kind, radius, fill) => ({ id: kind, type: "circle", source: "ends", filter: ["==", ["get", "kind"], kind], paint: { "circle-radius": radius, "circle-color": fill, "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 } })
     this.map.addLayer(marker("end", 9, color("--chart-highlight")))
     this.map.addLayer(marker("start", 5, color("--chart-accent-highlight")))
+    this.map.addSource("cursor", { type: "geojson", data: this.#cursorData() })
+    this.map.addLayer({ id: "cursor-halo", type: "circle", source: "cursor", paint: { "circle-radius": 13, "circle-color": color("--chart-highlight"), "circle-opacity": 0.35 } })
+    this.map.addLayer({ id: "cursor", type: "circle", source: "cursor", paint: { "circle-radius": 6, "circle-color": color("--chart-highlight"), "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 } })
+  }
+
+  #cursorData() {
+    const point = this.cursor == null ? null : routeAt(this.routeValue, this.distancesValue, this.cursor)
+    return { type: "FeatureCollection", features: point ? [{ type: "Feature", properties: {}, geometry: { type: "Point", coordinates: point } }] : [] }
+  }
+
+  #showCursor() {
+    this.map?.getSource("cursor")?.setData(this.#cursorData())
   }
 }
