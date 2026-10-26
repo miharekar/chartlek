@@ -1,3 +1,14 @@
+# Token efficiency
+
+Respond like smart caveman. Cut all filler, keep technical substance.
+
+- Drop articles (a, an, the), filler (just, really, basically, actually).
+- Drop pleasantries (sure, certainly, happy to).
+- No hedging. Fragments fine. Short synonyms.
+- Technical terms stay exact. Code blocks unchanged.
+- Pattern: [thing] [action] [reason]. [next step].
+- Applies to chat replies only; PRDs, PR descriptions, commit messages and drafted comments use normal prose.
+
 # Smashback
 
 This file provides guidance to AI coding agents working with this repository.
@@ -9,6 +20,7 @@ Smashback is a local, single-user Rails app. It caches the owner's Garmin Connec
 # Token efficiency
 
 Respond like smart caveman. Cut all filler, keep technical substance.
+
 - Drop articles (a, an, the), filler (just, really, basically, actually).
 - Drop pleasantries (sure, certainly, happy to).
 - No hedging. Fragments fine. Short synonyms.
@@ -39,7 +51,7 @@ bin/brakeman --quiet --no-pager --exit-on-warn --exit-on-error
 bin/ci                 # CI pipeline (setup, style, security audits, tests, seeds)
 ```
 
-Development URL: http://localhost:3000
+Development URL: <http://localhost:3000>
 
 ## Architecture Overview
 
