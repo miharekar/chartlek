@@ -30,7 +30,7 @@ export default class extends Controller {
     this.svg.selectAll("*").remove()
     if (!bins.length) return
     const bottom = HEIGHT - MARGIN.bottom
-    const x = scaleLinear().domain([bins[0].from, bins.at(-1).to]).range([MARGIN.left, width - MARGIN.right])
+    const x = scaleLinear().domain([bins[0].from, bins.at(-1).to]).range([MARGIN.left, width - MARGIN.right]).clamp(true)
     const y = scaleLinear().domain([0, Math.max(...bins.map(bin => bin.count))]).nice(3).range([bottom, MARGIN.top])
     this.svg.attr("width", width).attr("height", HEIGHT)
     const axes = [
@@ -78,18 +78,25 @@ export default class extends Controller {
   }
 
   tooltip(bin) {
-    const unit = this.metricValue === "pace" ? "min/km" : "km"
-    return tooltipHtml(`${this.format(bin.from)}–${this.format(bin.to)} ${unit}`, [
+    return tooltipHtml(this.range(bin), [
       ["Runs", bin.count],
-      bin.current && ["This run", `${this.format(this.currentValue)} ${unit}`]
+      bin.current && ["This run", `${this.format(this.currentValue)} ${this.unit}`]
     ])
   }
 
+  get unit() {
+    return this.metricValue === "pace" ? "min/km" : "km"
+  }
+
+  range(bin) {
+    if (bin.open === "below") return `<${this.format(bin.to)} ${this.unit}`
+    if (bin.open === "above") return `>${this.format(bin.from)} ${this.unit}`
+    return `${this.format(bin.from)}–${this.format(bin.to)} ${this.unit}`
+  }
+
   summary(bin) {
-    const unit = this.metricValue === "pace" ? "min/km" : "km"
-    const range = `${this.format(bin.from)}–${this.format(bin.to)} ${unit}`
-    const lines = [range, `${bin.count} ${bin.count === 1 ? "run" : "runs"}`]
-    if (bin.current) lines.push(`This run: ${this.format(this.currentValue)} ${unit}`)
+    const lines = [this.range(bin), `${bin.count} ${bin.count === 1 ? "run" : "runs"}`]
+    if (bin.current) lines.push(`This run: ${this.format(this.currentValue)} ${this.unit}`)
     return lines
   }
 }
