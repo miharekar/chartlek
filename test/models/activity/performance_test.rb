@@ -42,4 +42,21 @@ class Activity::PerformanceTest < ActiveSupport::TestCase
   test "pace is seconds per km from the timer" do
     assert_in_delta 300, build(:activity, distance_m: 10_000, timer_s: 3000, elapsed_s: 3500).pace, 1e-9
   end
+
+  test "hill difficulty matches Smashrun's on public calibration runs" do
+    [
+      [42_195, 137, 2], [42_165, 270, 2], [1672, 7, 2], [280, 14, 5], [790, 1, 1], [740, 2, 2], [940, 33, 5], [800, 5, 2],
+      [850, 3, 2], [1680, 7, 2], [1360, 7, 2], [1740, 6, 2], [1630, 3, 2], [1630, 38, 4], [1890, 7, 2], [1920, 8, 2]
+    ].each do |distance_m, gain_m, difficulty|
+      assert_equal difficulty, build(:activity, distance_m:, elevation_gain_m: gain_m).hill_difficulty, "#{distance_m} m, #{gain_m} m gain"
+    end
+  end
+
+  test "hill difficulty is 1 on the flat, capped at 5 and nil without elevation" do
+    assert_equal 1, build(:activity, distance_m: 10_000, elevation_gain_m: 0).hill_difficulty
+    assert_equal 1, build(:activity, distance_m: 10_000, elevation_gain_m: 14).hill_difficulty
+    assert_equal 2, build(:activity, distance_m: 10_000, elevation_gain_m: 15).hill_difficulty
+    assert_equal 5, build(:activity, distance_m: 10_000, elevation_gain_m: 900).hill_difficulty
+    assert_nil build(:activity, distance_m: 10_000, elevation_gain_m: nil).hill_difficulty
+  end
 end

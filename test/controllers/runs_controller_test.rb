@@ -242,4 +242,33 @@ class RunsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :not_found
   end
+  test "the elevation profile card shows the chart, the run's totals and its hill difficulty" do
+    run = run_at(Time.utc(2023, 5, 6, 7), distance_m: 10_000, timer_s: 3000, pace_variability: 6.5, elevation_gain_m: 150.4, elevation_loss_m: 148.2)
+    Track.create!(activity: run, data: {"t" => [0, 30, 60], "d" => [0, 100, 200], "alt" => [100.0, nil, 130.0]})
+
+    get run_path(run)
+
+    assert_select "section:has(h2)" do
+      assert_select "h2", text: /Elevation profile/
+    end
+    assert_select "[data-controller=elevation-profile][data-elevation-profile-distances-value=?]", "[0,100,200]"
+    assert_select "[data-controller=elevation-profile][data-elevation-profile-altitudes-value=?]", "[100.0,null,130.0]"
+    assert_select "dt", text: "Hill difficulty"
+    assert_select "dd", text: "3"
+    assert_select "dd", text: "+150m"
+    assert_select "dd", text: "−148m"
+    assert_select "section.col-span-2.lg\\:col-span-4 h2", text: /fastest for a similar distance/
+  end
+
+  test "without altitude there is no elevation profile card and the fastest tile keeps its width" do
+    run = run_at(Time.utc(2023, 5, 6, 7), pace_variability: 6.5)
+    Track.create!(activity: run, data: {"t" => [0, 30, 60], "d" => [0, 100, 200]})
+
+    get run_path(run)
+
+    assert_select "[data-controller=elevation-profile]", false
+    assert_select "h2", text: /Elevation profile/, count: 0
+    assert_select "section.lg\\:col-span-4", false
+  end
+
 end

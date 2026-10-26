@@ -104,6 +104,7 @@ Development URL: <http://localhost:3000>
 - Pages render an empty state instead of charts when there are no runs.
 - Overview charts share a hover selection through `helpers/linked_selection.js`: the scatter registers its `runs` (sorted by `t`, with `km`, `pace`, `hr`, `vdot`, `elev`) as the canonical run list, each chart `publish`es `{runs: Set of run indexes, span: [from, to) | null, source}` on hover (and `clearSelection`s on leave and `disconnect`), and the others `subscribe` and only restyle their highlight layer; `publish` batches to one `requestAnimationFrame`. Heatmap cells carry `from` (UTC ms) and the payload a `step` in days; streak rows carry `data-from` and `data-to`. The pure rules (`quadrant`, `bucketSpan`, `bucketShares`, `selectionMean`, …) are in the same file and tested with `node --test`.
 - Predictions use the Ruby `Vdot.time_table` plus `predictTime` from `helpers/predictions`.
+- The run page's elevation profile card is the `elevation-profile` controller (pure rules in `helpers/elevation_profile.js`), fed `track.data` `d` and `alt`; hill difficulty is `Activity#hill_difficulty` (1 to 5 from gain per km, fitted to Smashrun's public ratings). Analyze Run gets this run through `Activity#training_point` (marker, timeline edge bar and "race day" label; never part of the averages).
 
 ## Privacy
 
