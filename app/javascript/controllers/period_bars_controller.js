@@ -2,10 +2,10 @@ import { Controller } from "@hotwired/stimulus"
 import { axisBottom, axisLeft } from "d3-axis"
 import { max } from "d3-array"
 import { scaleBand, scaleLinear } from "d3-scale"
-import { pointer, select } from "d3-selection"
+import { select } from "d3-selection"
 import { utcFormat } from "d3-time-format"
 import { formatDate, formatDistance, formatPace } from "helpers/formatters"
-import { bucketShares, clearSelection, getRuns, getTimes, periodsAbove, publish, runsInBuckets, subscribe } from "helpers/linked_selection"
+import { bucketShares, bucketSpan, clearSelection, getRuns, getTimes, publish, spanSelection, subscribe } from "helpers/linked_selection"
 import { observeSize } from "helpers/resize"
 import { parseTime } from "helpers/time"
 import { escapeHtml, hideTooltip, moveTooltip, showTooltip } from "helpers/tooltip"
@@ -145,14 +145,12 @@ export default class extends Controller {
       .attr("fill", "transparent")
       .style("cursor", bucket => (bucket.href ? "pointer" : "default"))
       .on("mouseenter", (event, bucket) => {
-        bars.filter((_, index) => index === buckets.indexOf(bucket)).attr("fill", "var(--chart-accent-highlight)")
+        const index = buckets.indexOf(bucket)
+        bars.filter((_, position) => position === index).attr("fill", "var(--chart-accent-highlight)")
         showTooltip(this.tooltip(bucket, granularity, metric), event)
+        publish(spanSelection(getTimes(), ...bucketSpan(this.view.starts, index, granularity), "bars"))
       })
-      .on("mousemove", event => {
-        moveTooltip(event)
-        const level = y.invert(pointer(event)[1])
-        publish({ runs: new Set(runsInBuckets(getTimes(), this.view.starts, new Set(periodsAbove(values, level)))), span: null, source: "bars" })
-      })
+      .on("mousemove", event => moveTooltip(event))
       .on("mouseleave", () => {
         bars.attr("fill", "var(--chart-accent)")
         hideTooltip()

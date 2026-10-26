@@ -120,7 +120,7 @@ The header row has a **Latest run · date · km →** button linking to the newe
 |---|---|
 | Trailing line, at day d | the runs in the N days ending at d (N is the chart's window, 365, 90 or 7), among the period's runs |
 | Scatter, at the cursor | the runs plotted strictly further right and strictly higher (longer, and faster or higher on the y metric) than the cursor |
-| Distance bars, at the cursor height | every run in the periods whose bar is taller than the cursor |
+| Distance bars, at the cursor | every run of the period whose column is under the cursor (the full chart height counts, and gaps snap to the nearest bar); that bar stays at full opacity and the others dim |
 | Heatmap cell | the runs of that week (all time) or day |
 | Heatmap legend bucket | the runs in every cell of that bucket |
 | Longest / current streak or break | the runs in that span (none for a break) |

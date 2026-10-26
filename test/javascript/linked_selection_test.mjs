@@ -64,13 +64,6 @@ test("the end of a span is exclusive and the start inclusive", () => {
   assert.deepEqual(L.indicesInRange(times, utc(2026, 1, 1) + 1, utc(2026, 1, 3)), [1])
 })
 
-test("periods above the cursor height skip empty periods", () => {
-  assert.deepEqual(L.periodsAbove([5, null, 10, 3, 7], 5), [2, 4])
-  assert.deepEqual(L.periodsAbove([5, 6], 6), [])
-  assert.deepEqual(L.periodsAbove([5, 6], -1), [0, 1])
-  assert.deepEqual(L.periodsAbove([], 0), [])
-})
-
 test("runs map to the last bucket starting at or before them", () => {
   const starts = [utc(2026, 1, 1), utc(2026, 2, 1), utc(2026, 3, 1)]
 
@@ -81,13 +74,15 @@ test("runs map to the last bucket starting at or before them", () => {
   assert.equal(L.bucketOf(starts, utc(2025, 12, 31)), -1)
 })
 
-test("runs in the chosen periods", () => {
-  const starts = [utc(2026, 1, 1), utc(2026, 2, 1), utc(2026, 3, 1)]
-  const times = [utc(2026, 1, 5), utc(2026, 2, 5), utc(2026, 2, 20), utc(2026, 3, 5)]
+test("a period spans to the next period's start, and the last one to the end of its own", () => {
+  const months = [utc(2026, 1, 1), utc(2026, 2, 1), utc(2026, 12, 1)]
+  const weeks = [utc(2026, 10, 19), utc(2026, 10, 26)]
 
-  assert.deepEqual(L.runsInBuckets(times, starts, new Set([1])), [1, 2])
-  assert.deepEqual(L.runsInBuckets(times, starts, new Set([0, 2])), [0, 3])
-  assert.deepEqual(L.runsInBuckets(times, starts, new Set()), [])
+  assert.deepEqual(L.bucketSpan(months, 0, "month"), [utc(2026, 1, 1), utc(2026, 2, 1)])
+  assert.deepEqual(L.bucketSpan(months, 2, "month"), [utc(2026, 12, 1), utc(2027, 1, 1)])
+  assert.deepEqual(L.bucketSpan(weeks, 1, "week"), [utc(2026, 10, 26), utc(2026, 11, 2)])
+  assert.deepEqual(L.bucketSpan([utc(2026, 10, 26)], 0, "day"), [utc(2026, 10, 26), utc(2026, 10, 27)])
+  assert.deepEqual(L.indicesInRange([utc(2026, 12, 31)], ...L.bucketSpan(months, 2, "month")), [0])
 })
 
 test("bucket shares weigh the selected runs inside each bar", () => {

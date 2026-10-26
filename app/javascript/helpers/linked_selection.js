@@ -28,10 +28,6 @@ export function indicesInRange(sorted, from, to) {
   return indexes
 }
 
-export function periodsAbove(values, level) {
-  return values.flatMap((value, index) => (value != null && value > level ? [index] : []))
-}
-
 export function bucketOf(starts, time) {
   let low = 0
   let high = starts.length
@@ -43,8 +39,12 @@ export function bucketOf(starts, time) {
   return low - 1
 }
 
-export function runsInBuckets(sorted, starts, wanted) {
-  return sorted.flatMap((time, index) => (wanted.has(bucketOf(starts, time)) ? [index] : []))
+export function bucketSpan(starts, index, granularity) {
+  const from = starts[index]
+  if (index + 1 < starts.length) return [from, starts[index + 1]]
+  const date = new Date(from)
+  const to = granularity === "month" ? Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 1) : from + (granularity === "week" ? 7 : 1) * DAY
+  return [from, to]
 }
 
 export function bucketShares(list, starts, selected, weight) {
