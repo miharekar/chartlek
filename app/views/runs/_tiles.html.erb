@@ -1,8 +1,8 @@
-<% card = "rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900/50" %>
-<% label = "text-sm font-medium text-zinc-500 dark:text-zinc-400" %>
-<% big = "mt-1 text-4xl font-semibold tabular-nums" %>
-<% unit = "ml-1 text-sm font-normal text-zinc-500 dark:text-zinc-400" %>
-<% small = "mt-1 text-sm tabular-nums text-zinc-600 dark:text-zinc-300" %>
+<% card = WidgetsHelper::CARD %>
+<% label = WidgetsHelper::TILE_LABEL %>
+<% big = WidgetsHelper::TILE_VALUE %>
+<% unit = WidgetsHelper::TILE_UNIT %>
+<% small = WidgetsHelper::TILE_SUB %>
 <% food = Food.for(run.calories) %>
 <% hr_extent = run_extent(run, "hr", run.max_hr) %>
 <% cadence_extent = run_extent(run, "cad", run.max_cadence) %>
@@ -70,49 +70,45 @@
   <section class="<%= card %>">
     <h2 class="<%= label %> flex items-center gap-1.5">VDOT <%= vdot_info %></h2>
     <p class="<%= big %>"><%= run.vdot ? run.vdot.round(1) : "–" %></p>
+    <% if run.finish_times %>
+      <dl class="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 tabular-nums" aria-label="Estimated finish times at this VDOT">
+        <% run.finish_times.each do |name, seconds| %>
+          <div>
+            <dt class="<%= WidgetsHelper::HINT %>"><%= name %></dt>
+            <dd class="text-sm font-semibold"><%= overview_duration(seconds) %></dd>
+          </div>
+        <% end %>
+      </dl>
+    <% end %>
   </section>
 
   <% if run.pace_variability %>
-    <section class="<%= card %> col-span-2">
-      <h2 class="<%= label %> flex items-center gap-1.5">Pace variability <%= overview_info "Average speed deviation across complete 10-second timer windows. A value of 10% means speed typically differs from the average by 10%. Above zero is faster; below is slower. Pauses removed by recording processing are excluded; stops while the timer runs count. Sparse recordings interpolate between samples and can hide changes. The final incomplete window is excluded; at least two complete windows are needed." %></h2>
-      <p class="<%= big %>"><%= run.pace_variability.round(1) %><span class="<%= unit %>">%</span></p>
-      <% windows = run.track&.chart_metrics&.dig("speed_windows") %>
-      <% if windows.present? %>
-        <div class="mt-2" data-controller="recording-bars" data-recording-bars-kind-value="speed" data-recording-bars-samples-value="<%= windows.to_json %>">
-          <div data-recording-bars-target="chart" role="group" aria-label="Chronological speed deviations in complete ten-second timer windows"></div>
+    <section class="<%= card %> col-span-2 sm:col-span-1">
+      <h2 class="<%= label %> flex items-center gap-1.5">Pace variability <%= overview_info "How much your speed varied. Each wedge is 100 metres, clockwise from the start. The longer the wedge, the further that stretch was from your average speed, faster or slower (hover for which). The number is the average gap, measured over 10 second stretches, as a percentage of average speed. Stops with the timer running count; pauses are excluded." %></h2>
+      <% bars = run.track&.wheel_bars %>
+      <% if bars.to_a.size > 1 %>
+        <div class="mt-3" data-controller="pace-variability" data-pace-variability-bars-value="<%= bars.to_json %>" data-pace-variability-percent-value="<%= run.pace_variability.round(1) %>">
+          <div data-pace-variability-target="chart" role="group" aria-label="Pace variability <%= run.pace_variability.round(1) %> percent, one wedge per 100 metres"></div>
         </div>
-        <p class="<%= small %>">Green: faster. Amber: slower. Zero: average speed. Time runs left to right.</p>
       <% else %>
-        <p class="<%= small %>">Recording chart not processed yet.</p>
+        <p class="<%= big %>"><%= run.pace_variability.round(1) %><span class="<%= unit %>">%</span></p>
+        <p class="mt-1 <%= WidgetsHelper::HINT %>">Recording chart not processed yet.</p>
       <% end %>
     </section>
   <% end %>
 
+  <% pair = run.pace_variability ? "" : "lg:col-span-2" %>
   <% rank = run.longest_rank %>
-  <section class="<%= card %> col-span-2 sm:col-span-1">
+  <section class="<%= card %> col-span-2 sm:col-span-1 <%= pair %>">
     <h2 class="<%= label %>"><%= rank.ordinalize %> longest run</h2>
     <p class="<%= small %>">of <%= number_with_delimiter(run.run_count) %> runs</p>
     <%= render "rank_distribution", values: run.distance_distribution, current: run.distance_m / 1000.0, metric: "distance" %>
   </section>
 
   <% similar_rank = run.similar_rank %>
-  <section class="<%= card %> col-span-2 sm:col-span-1">
+  <section class="<%= card %> col-span-2 <%= run.pace_variability ? "" : "sm:col-span-1 lg:col-span-2" %>">
     <h2 class="<%= label %>"><%= similar_rank.ordinalize %> fastest for a similar distance</h2>
     <p class="<%= small %>">of <%= number_with_delimiter(run.similar_count) %> runs within ±10%</p>
     <%= render "rank_distribution", values: run.similar_pace_distribution, current: run.pace, metric: "pace" %>
   </section>
-
-  <% if run.finish_times %>
-    <section class="<%= card %> col-span-2">
-      <h2 class="<%= label %>">Estimated finish times at VDOT <%= run.vdot.round(1) %></h2>
-      <dl class="mt-2 grid grid-cols-4 gap-2 text-center tabular-nums">
-        <% run.finish_times.each do |name, seconds| %>
-          <div>
-            <dt class="text-xs text-zinc-500 dark:text-zinc-400"><%= name %></dt>
-            <dd class="text-lg font-semibold"><%= overview_duration(seconds) %></dd>
-          </div>
-        <% end %>
-      </dl>
-    </section>
-  <% end %>
 </div>

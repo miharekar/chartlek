@@ -9,6 +9,15 @@ class Track < ApplicationRecord
     Metrics.new(Recording.new(rows)).splits(size)
   end
 
+  def wheel_bars
+    start = 0.0
+    bars.filter_map do |bar|
+      from = start
+      start += bar[:distance]
+      {from: (from / 1000).round(3), to: (start / 1000).round(3), distance: bar[:distance], time: bar[:time]} if bar[:distance] >= BAR_M && bar[:time].positive?
+    end
+  end
+
   def route
     data.fetch("lng", []).zip(data.fetch("lat", [])).reject { it.include?(nil) }
   end

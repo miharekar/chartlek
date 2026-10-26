@@ -5,6 +5,20 @@ class TrackTest < ActiveSupport::TestCase
     Track.new(data:)
   end
 
+  test "wheel bars drop the partial last bar and keep each whole bar's own position" do
+    bars = track("t" => [0, 30, 60, 90], "d" => [0, 100, 200, 250]).wheel_bars
+
+    assert_equal [{from: 0.0, to: 0.1, distance: 100.0, time: 30.0}, {from: 0.1, to: 0.2, distance: 100.0, time: 30.0}], bars
+  end
+
+  test "wheel bars skip a zero-time bar without shifting the later ones" do
+    bars = track("t" => [0, 30, 30, 60], "d" => [0, 100, 200, 300]).wheel_bars
+
+    assert_equal [0.0, 0.2], bars.pluck(:from)
+    assert_equal [0.1, 0.3], bars.pluck(:to)
+    assert bars.all? { it[:time].positive? }
+  end
+
   test "bars per 100 m with a partial last bar" do
     bars = track("t" => [0, 30, 60, 90], "d" => [0, 100, 200, 250], "hr" => [140, 150, 160, 170], "cad" => [170, 172, 174, 176]).bars
 

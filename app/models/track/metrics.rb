@@ -27,7 +27,7 @@ class Track::Metrics
   end
 
   def chart_metrics
-    {speed_windows: speed_windows&.map { it.round(2) }, elevation: elevation_bins}
+    {elevation: elevation_bins}
   end
 
   def speed_windows

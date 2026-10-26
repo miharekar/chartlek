@@ -181,9 +181,60 @@ class RunsControllerTest < ActionDispatch::IntegrationTest
 
     get run_path(run)
 
-    assert_select "tr.font-medium", 3
-    assert_select "h2", text: /Estimated finish times/
+    assert_select "tr.font-medium", 4
+    assert_select "h3", text: "All time"
+    assert_select "h2", text: /Estimated finish times/, count: 0
     assert_select "h2", text: /1st longest run/
+  end
+
+  test "the finish times sit inside the VDOT tile as a grid of four" do
+    run = run_at(Time.utc(2023, 5, 6, 7), distance_m: 10_000, timer_s: 3000)
+
+    get run_path(run)
+
+    assert_select "dl[aria-label^='Estimated finish times'] dt", text: "5K"
+    assert_select "dl[aria-label^='Estimated finish times'] dt", text: "Marathon"
+    vdot_tile = css_select("section").find { it.at_css("h2")&.text&.strip&.start_with?("VDOT") }
+    assert vdot_tile.at_css("dl")
+    assert_equal 4, vdot_tile.css("dt").size
+    assert_equal 1, css_select("dl[aria-label^='Estimated finish times']").size
+  end
+
+  test "without a VDOT the tile shows a dash and no grid" do
+    run = run_at(Time.utc(2023, 5, 6, 7), distance_m: 300, timer_s: 100)
+
+    get run_path(run)
+
+    assert_response :success
+    vdot_tile = css_select("section").find { it.at_css("h2")&.text&.strip&.start_with?("VDOT") }
+    assert_equal "–", vdot_tile.at_css("p").text.strip
+    assert_nil vdot_tile.at_css("dl")
+    assert_select "dl[aria-label^='Estimated finish times']", false
+  end
+
+  test "show draws the pace variability wheel from the 100 m bars" do
+    run = run_at(Time.utc(2023, 5, 6, 7), pace_variability: 6.5)
+    Track.create!(activity: run, data: {"t" => [0, 30, 50, 90], "d" => [0, 100, 200, 300]}, chart_metrics: {"elevation" => nil})
+
+    get run_path(run)
+
+    assert_select "[data-controller=pace-variability][data-pace-variability-percent-value='6.5']"
+    assert_select "[data-controller=pace-variability][data-pace-variability-bars-value=?]", [{from: 0.0, to: 0.1, distance: 100.0, time: 30.0}, {from: 0.1, to: 0.2, distance: 100.0, time: 20.0}, {from: 0.2, to: 0.3, distance: 100.0, time: 40.0}].to_json
+    assert_select "[data-pace-variability-target=chart][role=group][aria-label*='100 metres']"
+    assert_select "[data-controller=recording-bars]", false
+    assert_select "p", text: /Green: faster/, count: 0
+    assert_select "section.col-span-2.sm\\:col-span-1 h2", text: /Pace variability/
+  end
+
+  test "show has no wheel when the variability is missing" do
+    run = run_at(Time.utc(2023, 5, 6, 7), pace_variability: nil)
+
+    get run_path(run)
+
+    assert_select "[data-controller=pace-variability]", false
+    assert_select "h2", text: /Pace variability/, count: 0
+    assert_select "section.lg\\:col-span-2 h2", text: /longest run/
+    assert_select "section.sm\\:col-span-1.lg\\:col-span-2 h2", text: /fastest for a similar distance/
   end
 
   test "show is a 404 for an unknown run" do

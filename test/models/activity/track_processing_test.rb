@@ -29,7 +29,7 @@ class Activity::TrackProcessingTest < ActiveSupport::TestCase
     assert_equal [1000.0, 560.0], activity.splits.pluck("distance")
     assert_equal 20, activity.pace_profile.size
     assert_not_nil activity.pace_variability
-    assert_equal 39, activity.track.chart_metrics["speed_windows"].size
+    assert_not activity.track.chart_metrics.key?("speed_windows")
     assert_equal 16, activity.track.chart_metrics["elevation"].size
   end
 
@@ -100,7 +100,6 @@ class Activity::TrackProcessingTest < ActiveSupport::TestCase
 
     assert_equal 2000, activity.track.data["t"].size
     metrics = activity.track.chart_metrics
-    assert_equal Array.new(400, 10.0), metrics["speed_windows"]
     assert_equal 40, metrics["elevation"].size
     assert_equal 10_000, metrics["elevation"].sum { it["gain"] }
     assert_equal 10_000, metrics["elevation"].sum { it["loss"] }
