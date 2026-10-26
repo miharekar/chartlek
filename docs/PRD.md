@@ -127,6 +127,7 @@ This answers "am I getting faster?" by putting all distances on a common scale (
 
 - Below the main chart, a timeline of bars shows each run's duration in hours over the whole history.
 - A `d3-brush` on the timeline selects the window; the default is the last 12 months. The main chart zooms to the window.
+- **Presets:** a row of buttons above the chart sets the window in one click: 3 mo, 6 mo, 1 yr, 2 yr and All time. Each ends at the end of today (the date of the latest run, as for the default) and starts that many calendar months earlier, clamped to the month's length; All time starts at the first run, and a span longer than the history also starts there, in which case the longer preset is the one marked. The preset matching the current window has `aria-pressed`; the default (12 months) marks 1 yr. A preset moves the brush and updates the stats, top runs, regression and finish predictions like a drag. A drag or resize clears the mark unless the new window equals a preset exactly. The window stays in the `from` and `to` URL params, so reloads, links and the filter chips keep it. PR Progress has no presets.
 - The header shows:
   - The date range.
   - "Change in VDOT: **+0.05/week**", the slope × 7, always with two decimals.

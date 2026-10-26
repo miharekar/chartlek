@@ -20,6 +20,23 @@ class PaceTrendsControllerTest < ActionDispatch::IntegrationTest
     assert_select "button[data-controller=info]", minimum: 2
   end
 
+  test "renders the window presets" do
+    create(:activity)
+
+    get pace_trend_path
+
+    assert_select "[role=group][aria-label=Window] button[data-action='pace-trends#preset'][aria-pressed]", count: 5
+    assert_select "button[data-preset='3']", "3 mo"
+    assert_select "button[data-preset='24']", "2 yr"
+    assert_select "button[data-preset=all]", "All time"
+  end
+
+  test "presets are not rendered without runs" do
+    get pace_trend_path
+
+    assert_select "button[data-preset]", false
+  end
+
   test "an old metric parameter is ignored" do
     create(:activity)
 

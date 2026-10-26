@@ -8,6 +8,7 @@ import { curveMonotoneX, line } from "d3-shape"
 import { utcDay } from "d3-time"
 import { formatDate, formatDistance, formatDuration, formatPace } from "helpers/formatters"
 import { formatChange, formatFinishDelta } from "helpers/pace_trends_format"
+import { activePreset, PRESETS, presetWindow } from "helpers/pace_trends_presets"
 import { predictTime } from "helpers/predictions"
 import { linearRegression, weeklyChange } from "helpers/regression"
 import { observeSize } from "helpers/resize"
@@ -21,12 +22,13 @@ const HOVER_RADIUS = 16
 const BY_TIME = bisector(run => run.t)
 
 export default class extends Controller {
-  static targets = ["chart", "timeline", "range", "change", "cut", "verb", "delta", "distance", "message", "link"]
+  static targets = ["chart", "timeline", "range", "change", "cut", "verb", "delta", "distance", "message", "link", "preset"]
   static values = { payload: Object }
 
   connect() {
     const { runs, tables, domain, window: selection } = this.payloadValue
     this.tables = Object.fromEntries(tables.map(({ label, table }) => [label, table]))
+    this.domain = domain.map(parseTime)
     this.distance = this.payloadValue.distance
     this.runs = runs.map(run => ({ ...run, value: run.vdot }))
     this.muted = this.runs.filter(run => !run.top)
@@ -55,6 +57,13 @@ export default class extends Controller {
     this.timeline?.destroy()
     this.svg?.remove()
     hideTooltip()
+  }
+
+  preset(event) {
+    const { months } = PRESETS.find(({ key }) => key === event.currentTarget.dataset.preset)
+    this.timeline.setSelection(presetWindow(months, this.domain))
+    this.#setRange(this.timeline.selection())
+    this.#syncUrl()
   }
 
   changeDistance() {
@@ -160,6 +169,8 @@ export default class extends Controller {
   }
 
   #renderHeader() {
+    const active = activePreset(this.range, this.domain)
+    this.presetTargets.forEach(button => button.setAttribute("aria-pressed", button.dataset.preset === active))
     const [start, end] = this.range
     this.rangeTarget.textContent = `${formatDate(start)} – ${formatDate(utcDay.offset(new Date(end), -1))}`
     this.messageTarget.hidden = Boolean(this.fit)
