@@ -1,17 +1,4 @@
-import { formatDuration, formatPace } from "helpers/formatters"
-
-export function speedWindows(distances) {
-  const mean = distances.reduce((sum, distance) => sum + distance, 0) / distances.length
-  if (distances.length < 2 || !(mean > 0)) return []
-  return distances.map((distance, index) => {
-    const deviation = (distance - mean) / mean * 100
-    return {
-      from: index * 10, to: (index + 1) * 10,
-      up: Math.max(0, deviation), down: Math.max(0, -deviation),
-      lines: [`${formatDuration(index * 10)}–${formatDuration((index + 1) * 10)} timer time`, distance === 0 ? "Stopped" : `${formatPace(10000 / distance)} /km`, `${deviation > 0 ? "+" : ""}${deviation.toFixed(1)}% vs average speed`]
-    }
-  })
-}
+import { formatDistanceRange } from "helpers/formatters"
 
 export function elevationBins(bins, perKm = false) {
   const grouped = []
@@ -30,9 +17,9 @@ export function elevationBins(bins, perKm = false) {
     const from = distance / 1000
     distance += bin.distance
     const to = distance / 1000
-    const lines = [`${from.toFixed(3)}–${to.toFixed(3)} km`]
-    if (bin.gain != null) lines.push(`Gained ${bin.gain.toFixed(1)} m; lost ${bin.loss.toFixed(1)} m`)
-    if (bin.missing) lines.push(bin.gain == null ? "Elevation missing" : "Some elevation missing; known changes only")
-    return { from, to, up: bin.gain, down: bin.loss, lines }
+    const rows = bin.gain == null ? [["Elevation", "missing"]] : [["Gained", `${bin.gain.toFixed(1)} m`], ["Lost", `${bin.loss.toFixed(1)} m`]]
+    if (bin.missing && bin.gain != null) rows.push(["Note", "some elevation missing"])
+    const title = formatDistanceRange(from, to)
+    return { from, to, up: bin.gain, down: bin.loss, title, rows, label: [title, ...rows.map(([name, value]) => `${name} ${value}`)].join(". ") }
   })
 }

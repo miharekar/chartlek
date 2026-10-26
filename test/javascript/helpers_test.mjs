@@ -17,7 +17,7 @@ registerHooks({
   }
 })
 
-const { formatPace, formatDuration, formatDistance, formatDate } = await import("helpers/formatters")
+const { formatPace, formatDuration, formatDistance, formatDistanceRange, formatDate } = await import("helpers/formatters")
 const { parseTime, snapToDays } = await import("helpers/time")
 const { escapeHtml, anchoredPosition, isTooltipFor, showTooltip, showTooltipFor, hideTooltip } = await import("helpers/tooltip")
 const { paceScale } = await import("helpers/pace_scale")
@@ -165,4 +165,15 @@ test("the tooltip knows which anchor it is showing for", () => {
     delete globalThis.document
     delete globalThis.window
   }
+})
+
+test("formatDistanceRange shows a range, or a single value when both ends round alike", () => {
+  assert.equal(formatDistanceRange(5.5, 5.6), "5.5–5.6 km")
+  assert.equal(formatDistanceRange(5, 6), "5.0–6.0 km")
+  assert.equal(formatDistanceRange(0, 0.1), "0.0–0.1 km")
+  assert.equal(formatDistanceRange(5.4, 5.425), "5.4 km")
+  assert.equal(formatDistanceRange(5.401, 5.449), "5.4 km")
+  assert.equal(formatDistanceRange(12.34, 12.349), "12.3 km")
+  assert.equal(formatDistanceRange(5.44, 5.46), "5.4–5.5 km")
+  assert.equal(formatDistanceRange(0, 0), "0.0 km")
 })

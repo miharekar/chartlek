@@ -8,7 +8,7 @@ import { formatDate, formatDistance, formatDuration, formatPace } from "helpers/
 import { histogram, selectRuns, summarize } from "helpers/analyze_run"
 import { observeSize } from "helpers/resize"
 import { parseTime } from "helpers/time"
-import { escapeHtml, hideTooltip, moveTooltip, showTooltip } from "helpers/tooltip"
+import { hideTooltip, moveTooltip, showTooltip, tooltipHtml } from "helpers/tooltip"
 
 const MARGIN = { top: 8, right: 12, bottom: 24, left: 36 }
 const HISTOGRAM_HEIGHT = 176
@@ -168,15 +168,12 @@ export default class extends Controller {
   }
 
   tooltipHtml(run) {
-    const row = (label, value) => `<div class="text-zinc-500 dark:text-zinc-400">${label}</div><div class="text-right">${value}</div>`
-    return `
-      <div class="mb-1 font-medium">${escapeHtml(formatDate(run.t))}</div>
-      <div class="grid grid-cols-[auto_auto] gap-x-4">
-        ${row("Distance", `${formatDistance(run.km)} km`)}
-        ${row("Pace", `${formatPace(run.pace)} /km`)}
-        ${row("Time", formatDuration(run.s))}
-        ${row("HR", run.hr == null ? "–" : run.hr)}
-        ${row("VDOT", run.vdot == null ? "–" : run.vdot.toFixed(1))}
-      </div>`
+    return tooltipHtml(formatDate(run.t), [
+      ["Distance", `${formatDistance(run.km)} km`],
+      ["Pace", `${formatPace(run.pace)} /km`],
+      ["Time", formatDuration(run.s)],
+      ["HR", run.hr == null ? "–" : run.hr],
+      ["VDOT", run.vdot == null ? "–" : run.vdot.toFixed(1)]
+    ])
   }
 }

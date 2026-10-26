@@ -11,6 +11,16 @@ export function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, character => ESCAPES[character])
 }
 
+export function tooltipHtml(title, rows, { heading } = {}) {
+  const grid = rows
+    .filter(Boolean)
+    .map(([label, value]) => `<div class="text-zinc-500 dark:text-zinc-400">${escapeHtml(label)}</div><div class="text-right">${escapeHtml(value)}</div>`)
+    .join("")
+  const top = heading ? `<div class="font-medium">${escapeHtml(heading)}</div>` : ""
+
+  return `${top}<div class="mb-1 text-zinc-500 dark:text-zinc-400">${escapeHtml(title)}</div><div class="grid grid-cols-[auto_auto] gap-x-4">${grid}</div>`
+}
+
 function tooltipElement() {
   if (element?.isConnected) return element
   element = document.createElement("div")

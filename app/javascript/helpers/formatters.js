@@ -21,6 +21,12 @@ export function formatDistance(km) {
   return km.toFixed(1)
 }
 
+export function formatDistanceRange(fromKm, toKm) {
+  const from = formatDistance(fromKm)
+  const to = formatDistance(toKm)
+  return from === to ? `${from} km` : `${from}–${to} km`
+}
+
 export function formatDate(value) {
   const date = parseTime(value)
   return `${date.getUTCDate()} ${MONTHS[date.getUTCMonth()]} ${date.getUTCFullYear()}`

@@ -17,25 +17,7 @@ registerHooks({
   }
 })
 
-const { speedWindows, elevationBins } = await import("helpers/recording_bars")
-
-test("variability uses signed chronological deviations, not a scalar waveform", () => {
-  const samples = speedWindows([20, 60, 20, 60])
-  assert.deepEqual(samples.map(sample => sample.up - sample.down), [-50, 50, -50, 50])
-  assert.deepEqual(samples.map(sample => [sample.from, sample.to]), [[0, 10], [10, 20], [20, 30], [30, 40]])
-  assert.notDeepEqual(samples, speedWindows([60, 20, 60, 20]))
-  assert(samples[0].lines.includes("8:20 /km"))
-  assert(samples[1].lines.includes("+50.0% vs average speed"))
-})
-
-test("steady windows are zero, stopped windows are explicit and insufficient samples are empty", () => {
-  assert(speedWindows([40, 40]).every(sample => sample.up === 0 && sample.down === 0))
-  const stopped = speedWindows([0, 40])[0]
-  assert.equal(stopped.down, 100)
-  assert(stopped.lines.includes("Stopped"))
-  assert.deepEqual(speedWindows([40]), [])
-  assert.deepEqual(speedWindows([0, 0]), [])
-})
+const { elevationBins } = await import("helpers/recording_bars")
 
 test("km elevation bins sum the same gain and loss and keep partial widths", () => {
   const bins = Array.from({ length: 12 }, (_, i) => ({ distance: i === 11 ? 25 : 100, gain: i + 1, loss: 2 }))
@@ -51,10 +33,30 @@ test("km elevation bins sum the same gain and loss and keep partial widths", () 
 test("missing elevation is explicit and aggregation preserves known changes", () => {
   const bins = [{ distance: 100, gain: 5, loss: 3 }, { distance: 100, gain: null, loss: null, missing: true }]
   assert.equal(elevationBins(bins)[1].up, null)
-  assert(elevationBins(bins)[1].lines.includes("Elevation missing"))
+  assert.deepEqual(elevationBins(bins)[1].rows, [["Elevation", "missing"]])
   const combined = elevationBins(bins, true)[0]
   assert.equal(combined.up, 5)
   assert.equal(combined.down, 3)
-  assert(combined.lines.includes("Some elevation missing; known changes only"))
+  assert.deepEqual(combined.rows, [["Gained", "5.0 m"], ["Lost", "3.0 m"], ["Note", "some elevation missing"]])
   assert.equal(elevationBins([{ distance: 25, gain: 0, loss: 0 }])[0].to, 0.025)
+})
+
+test("elevation tooltip ranges use one decimal like the speed chart", () => {
+  const bins = Array.from({ length: 60 }, () => ({ distance: 100, gain: 1.25, loss: 0.5 }))
+
+  assert.equal(elevationBins(bins)[55].title, "5.5–5.6 km")
+  assert.equal(elevationBins(bins, true)[5].title, "5.0–6.0 km")
+  assert.equal(elevationBins(bins)[0].title, "0.0–0.1 km")
+  assert.deepEqual(elevationBins(bins)[55].rows, [["Gained", "1.3 m"], ["Lost", "0.5 m"]])
+  assert.equal(elevationBins(bins)[55].label, "5.5–5.6 km. Gained 1.3 m. Lost 0.5 m")
+})
+
+test("a short last bin whose ends round alike reads as one value", () => {
+  const bins = [...Array.from({ length: 54 }, () => ({ distance: 100, gain: 1, loss: 1 })), { distance: 25, gain: 0.2, loss: 0 }]
+  const small = elevationBins(bins)
+
+  assert.equal(small.at(-1).title, "5.4 km")
+  assert.equal(small.at(-1).label, "5.4 km. Gained 0.2 m. Lost 0.0 m")
+  assert.equal(small.at(-2).title, "5.3–5.4 km")
+  assert.equal(elevationBins(bins, true).at(-1).title, "5.0–5.4 km")
 })

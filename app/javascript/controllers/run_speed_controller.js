@@ -4,11 +4,11 @@ import { bisector, quantile } from "d3-array"
 import { brushX } from "d3-brush"
 import { scaleLinear } from "d3-scale"
 import { pointer, select } from "d3-selection"
-import { formatDistance, formatDuration, formatPace } from "helpers/formatters"
+import { formatDistance, formatDistanceRange, formatDuration, formatPace } from "helpers/formatters"
 import { paceScale } from "helpers/pace_scale"
 import { observeSize } from "helpers/resize"
 import { rangeStats } from "helpers/run_stats"
-import { hideTooltip, moveTooltip, showTooltip } from "helpers/tooltip"
+import { hideTooltip, moveTooltip, showTooltip, tooltipHtml } from "helpers/tooltip"
 
 const MARGIN = { top: 8, right: 24, bottom: 24, left: 44 }
 
@@ -112,13 +112,10 @@ export default class extends Controller {
   }
 
   #tooltipHtml(bar, start) {
-    const row = (label, value) => `<div class="text-zinc-500 dark:text-zinc-400">${label}</div><div class="text-right">${value}</div>`
-    return `
-      <div class="mb-1 text-zinc-500 dark:text-zinc-400">${formatDistance(start / 1000)}–${formatDistance((start + bar.distance) / 1000)} km</div>
-      <div class="grid grid-cols-[auto_auto] gap-x-4">
-        ${row("Pace", `${formatPace(bar.pace)} /km`)}
-        ${bar.hr == null ? "" : row("HR", `${bar.hr} bpm`)}
-        ${bar.cad == null ? "" : row("Cadence", `${bar.cad} spm`)}
-      </div>`
+    return tooltipHtml(formatDistanceRange(start / 1000, (start + bar.distance) / 1000), [
+      ["Pace", `${formatPace(bar.pace)} /km`],
+      bar.hr != null && ["HR", `${bar.hr} bpm`],
+      bar.cad != null && ["Cadence", `${bar.cad} spm`]
+    ])
   }
 }

@@ -14,7 +14,7 @@ import { linearRegression, weeklyChange } from "helpers/regression"
 import { observeSize } from "helpers/resize"
 import { createTimeline } from "helpers/timeline"
 import { parseTime } from "helpers/time"
-import { escapeHtml, hideTooltip, moveTooltip, showTooltip } from "helpers/tooltip"
+import { hideTooltip, moveTooltip, showTooltip, tooltipHtml } from "helpers/tooltip"
 
 const MARGIN = { top: 12, right: 16, bottom: 28, left: 44 }
 const DAY_MS = 86400000
@@ -217,16 +217,12 @@ export default class extends Controller {
   }
 
   #tooltipHtml(run) {
-    const row = (label, value) => `<div class="text-zinc-500 dark:text-zinc-400">${label}</div><div class="text-right">${value}</div>`
-    return `
-      <div class="font-medium">${escapeHtml(run.name || "Untitled run")}</div>
-      <div class="mb-1 text-zinc-500 dark:text-zinc-400">${formatDate(run.t)}</div>
-      <div class="grid grid-cols-[auto_auto] gap-x-4">
-        ${row("VDOT", run.vdot.toFixed(1))}
-        ${row("Distance", `${formatDistance(run.km)} km`)}
-        ${row("Pace", `${formatPace(run.s / run.km)} /km`)}
-        ${row("Time", formatDuration(run.s))}
-      </div>`
+    return tooltipHtml(formatDate(run.t), [
+      ["VDOT", run.vdot.toFixed(1)],
+      ["Distance", `${formatDistance(run.km)} km`],
+      ["Pace", `${formatPace(run.s / run.km)} /km`],
+      ["Time", formatDuration(run.s)]
+    ], { heading: run.name || "Untitled run" })
   }
 
   #syncUrl() {

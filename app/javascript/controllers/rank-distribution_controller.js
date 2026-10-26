@@ -5,7 +5,7 @@ import { select } from "d3-selection"
 import { formatDistance, formatPace } from "helpers/formatters"
 import { distribution } from "helpers/rank_distribution"
 import { observeSize } from "helpers/resize"
-import { escapeHtml, hideTooltip, isTooltipFor, moveTooltip, showTooltipFor } from "helpers/tooltip"
+import { hideTooltip, isTooltipFor, moveTooltip, showTooltipFor, tooltipHtml } from "helpers/tooltip"
 
 const HEIGHT = 150
 const MARGIN = { top: 18, right: 8, bottom: 24, left: 30 }
@@ -78,7 +78,11 @@ export default class extends Controller {
   }
 
   tooltip(bin) {
-    return this.summary(bin).map(text => `<div>${escapeHtml(text)}</div>`).join("")
+    const unit = this.metricValue === "pace" ? "min/km" : "km"
+    return tooltipHtml(`${this.format(bin.from)}–${this.format(bin.to)} ${unit}`, [
+      ["Runs", bin.count],
+      bin.current && ["This run", `${this.format(this.currentValue)} ${unit}`]
+    ])
   }
 
   summary(bin) {
