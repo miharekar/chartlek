@@ -53,6 +53,48 @@ test("buildSegments smooths pace and grade and keeps gaps without GPS", () => {
   assert.deepEqual(segments[2].line, [[14.001, 46.001], [14.003, 46.003]])
 })
 
+const stopped = { t: [0, 30, 90, 120, 150], d: [0, 100, 100, 200, 300], hr: [140, 150, 150, 160, 170] }
+
+test("buildSegments keeps time spent stopped as zero-distance segments", () => {
+  const segments = buildSegments(stopped)
+  assert.equal(segments.length, 4)
+  assert.deepEqual([segments[1].from, segments[1].to, segments[1].distance, segments[1].time, segments[1].kmh, segments[1].line], [100, 100, 0, 60, 0, null])
+  assert.equal(segments[1].hr, 150)
+  assert.equal(selectionStats(segments, null).time, 150)
+  assert.equal(buildSegments({ t: [0, 30, 30], d: [0, 100, 100] }).length, 1)
+})
+
+test("a stop falls in the slowest pace bucket and counts in the distribution", () => {
+  const segments = buildSegments(stopped)
+  const buckets = segments.map(segment => bucketOf("pace", segment.kmh, []))
+  assert.equal(buckets[1], 0)
+  assert.equal(distribution(segments, buckets, 40)[0].time, 60)
+})
+
+test("a stop is selected by the metre range its point lies in", () => {
+  const segments = buildSegments(stopped)
+  assert.deepEqual(selectionWeights(segments, [], { from: 50, to: 150 }), [0.5, 1, 0.5, 0])
+  assert.equal(selectionWeights(segments, [], { from: 150, to: 250 })[1], 0)
+  const stats = selectionStats(segments, selectionWeights(segments, [], { from: 0, to: 100 }))
+  assert.equal(stats.distance, 100)
+  assert.equal(stats.time, 90)
+})
+
+test("bins give a stop's time to the bin it ends, and keep a bin with no time at null pace", () => {
+  const result = bins(buildSegments(stopped), null)
+  assert.equal(result.length, 3)
+  assert.equal(result[0].time, 90)
+  assert.ok(Math.abs(result[0].pace - 900) < 1e-9)
+  assert.equal(result.reduce((sum, bin) => sum + bin.time, 0), 150)
+
+  const atStart = bins(buildSegments({ t: [0, 20, 50], d: [0, 0, 100] }), null)
+  assert.equal(atStart[0].time, 50)
+
+  const end = bins(buildSegments({ t: [0, 30, 60], d: [0, 100, 100] }), null)
+  assert.equal(end.length, 1)
+  assert.equal(end[0].time, 60)
+})
+
 test("nextSelection runs the four-click cycle and restarts on another bucket", () => {
   let selection = nextSelection(null, 3)
   assert.deepEqual(selection, { bucket: 3, step: 1 })

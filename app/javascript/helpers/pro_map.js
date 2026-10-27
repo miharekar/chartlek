@@ -70,19 +70,19 @@ export function buildSegments(data) {
 
   for (let index = 1; index < d.length; index++) {
     const distance = d[index] - d[index - 1]
-    if (distance <= 0) continue
-
     const time = t[index] - t[index - 1]
-    const pace = average(paces, index) ?? time / distance
+    if (distance < 0 || (distance === 0 && time <= 0)) continue
+
+    const pace = distance > 0 ? average(paces, index) ?? time / distance : null
     const grade = average(grades, index)
-    const line = located(index) && previous != null ? [[lng[previous], lat[previous]], [lng[index], lat[index]]] : null
-    if (located(index)) previous = index
+    const line = distance > 0 && located(index) && previous != null ? [[lng[previous], lat[previous]], [lng[index], lat[index]]] : null
+    if (distance > 0 && located(index)) previous = index
     segments.push({
       from: d[index - 1],
       to: d[index],
       distance,
       time,
-      kmh: pace > 0 ? 3.6 / pace : null,
+      kmh: distance === 0 ? 0 : pace > 0 ? 3.6 / pace : null,
       grade: grade == null ? null : grade * 100,
       hr: average(hr, index),
       cad: average(cad, index),
@@ -112,7 +112,10 @@ export function bucketSelected(selection, bucket) {
 export function selectionWeights(segments, buckets, selection) {
   if (!selection) return null
   if (selection.bucket != null) return buckets.map(bucket => (bucket != null && bucketSelected(selection, bucket) ? 1 : 0))
-  return segments.map(segment => Math.max(0, Math.min(selection.to, segment.to) - Math.max(selection.from, segment.from)) / segment.distance)
+  return segments.map(segment => {
+    if (segment.distance === 0) return segment.from >= selection.from && segment.from <= selection.to ? 1 : 0
+    return Math.max(0, Math.min(selection.to, segment.to) - Math.max(selection.from, segment.from)) / segment.distance
+  })
 }
 
 export function distribution(segments, buckets, count) {
@@ -147,16 +150,27 @@ export function selectionStats(segments, weights) {
   return { distance, time, pace: distance > 0 ? time / (distance / 1000) : null, hr: mean(weighted.hr), cad: mean(weighted.cad) }
 }
 
+function emptyBin(bin, size) {
+  return { from: bin * size, distance: 0, time: 0, selected: 0, sums: { hr: [0, 0], cad: [0, 0], grade: [0, 0] } }
+}
+
 export function bins(segments, weights, size = BIN_M) {
   const result = []
 
   segments.forEach((segment, index) => {
     const weight = weights ? weights[index] : 1
+    if (segment.distance === 0) {
+      const bin = Math.max(0, Math.ceil(segment.from / size) - 1)
+      const entry = (result[bin] ??= emptyBin(bin, size))
+      entry.time += segment.time
+      return
+    }
+
     for (let bin = Math.floor(segment.from / size); bin * size < segment.to; bin++) {
       const share = (Math.min(segment.to, (bin + 1) * size) - Math.max(segment.from, bin * size)) / segment.distance
       if (share <= 0) continue
 
-      const entry = (result[bin] ??= { from: bin * size, distance: 0, time: 0, selected: 0, sums: { hr: [0, 0], cad: [0, 0], grade: [0, 0] } })
+      const entry = (result[bin] ??= emptyBin(bin, size))
       entry.distance += segment.distance * share
       entry.time += segment.time * share
       entry.selected += segment.distance * share * weight
@@ -174,7 +188,7 @@ export function bins(segments, weights, size = BIN_M) {
     to: from + distance,
     distance,
     time,
-    pace: time > 0 ? time / (distance / 1000) : null,
+    pace: time > 0 && distance > 0 ? time / (distance / 1000) : null,
     hr: mean(sums.hr),
     cad: mean(sums.cad),
     grade: mean(sums.grade),
