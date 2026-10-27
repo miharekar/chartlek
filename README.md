@@ -8,11 +8,9 @@ Smashback is a local, single-user Rails app for runners. It caches your Garmin C
 
 ## Why it exists
 
-**Smashrun** is a running-stats site with a distinctive set of charts: an Overview with a pace-vs-distance scatter and weekly heatmap, Pace Trends, PR Progress, Training Bands, a Pro Map, "notables" on every run, and Progress Towards Goal. It is effectively abandonware now, but its charts are still the best way to look at a long running history, and nothing else has them.
+[Smashrun](https://smashrun.com) had the best charts for a long running history, but it is abandonware. [Dreeve](https://github.com/dreeveapp/dreeve), a self-hosted multi-sport dashboard, is too cycling-focused: its maintainer [found Smashrun's charts too runner-focused](https://github.com/dreeveapp/dreeve/issues/2880) to add.
 
-**[Dreeve](https://github.com/dreeveapp/dreeve)** (formerly "Statistics for Strava") is a self-hosted, open-source dashboard for sports and fitness data. It imports FIT, TCX and GPX files or syncs from Garmin, Polar, Wahoo, Apple Health and Strava, and offers a dashboard, activity list, monthly calendar, Eddington number, segments and efforts, a heatmap, gear with maintenance tracking, milestones and a yearly rewind. It is a general multi-sport app, and when the owner of this project [asked for Smashrun-style charts](https://github.com/dreeveapp/dreeve/issues/2880), its maintainer found a lot of the charts too runner-focused, and only the longest streak and break stats were added (#2888). That is a fair call for a general app, but for a runner it means the charts that matter most are missing.
-
-So Smashback is a **running-first, self-hosted replacement**: only running, so every runner-specific chart can be in. One user, your own machine, your own data.
+So Smashback is a running-first, self-hosted replacement for your own data.
 
 ## Interactive by design
 
