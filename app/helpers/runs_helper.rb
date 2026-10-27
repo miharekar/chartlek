@@ -64,6 +64,7 @@ module RunsHelper
   def run_tags(run)
     safe_join([
       (chip("race", :race) if run.race),
+      (chip("PR", :pr) if run.garmin_pr?),
       (chip("treadmill", :treadmill) if run.indoor)
     ].compact, " ")
   end

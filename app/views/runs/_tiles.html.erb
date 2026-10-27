@@ -26,6 +26,10 @@
     <h2 class="<%= label %>">Average pace</h2>
     <p class="<%= big %>"><%= overview_pace(run.pace) %><span class="<%= unit %>">/km</span></p>
     <p class="<%= small %>"><%= format("%.2f", run.distance_m / run.timer_s * 3.6) %> km/h</p>
+    <% gap = run.grade_adjusted_pace %>
+    <% if gap %>
+      <p class="<%= small %> flex items-center gap-1.5">GAP <%= overview_pace(gap) %> /km <%= overview_info "Grade-adjusted pace: the flat-ground pace Garmin estimates your effort on the hills was worth. Uphill makes it faster than your actual pace, downhill slower." %></p>
+    <% end %>
   </section>
 
   <section class="<%= card %>">

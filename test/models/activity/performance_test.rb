@@ -82,4 +82,24 @@ class Activity::PerformanceTest < ActiveSupport::TestCase
     assert_equal best.performance_zone + 1, range.end
     assert_nil build(:activity, vdot: nil).performance_zone_range
   end
+
+  test "grade adjusted pace is seconds per km from the summary speed" do
+    assert_in_delta 300.0, build(:activity, summary: {"avgGradeAdjustedSpeed" => 1000 / 300.0}).grade_adjusted_pace, 1e-9
+  end
+
+  test "grade adjusted pace is nil without a positive speed" do
+    assert_nil build(:activity, summary: nil).grade_adjusted_pace
+    assert_nil build(:activity, summary: {}).grade_adjusted_pace
+    assert_nil build(:activity, summary: {"avgGradeAdjustedSpeed" => 0.0}).grade_adjusted_pace
+  end
+
+  test "garmin pr flag reads the summary, or the listed column" do
+    assert build(:activity, summary: {"pr" => true}).garmin_pr?
+    assert_not build(:activity, summary: {"pr" => false}).garmin_pr?
+    assert_not build(:activity, summary: nil).garmin_pr?
+
+    activity = create(:activity, summary: {"pr" => true})
+    assert Activity.listed.find(activity.id).garmin_pr?
+    assert_not Activity.listed.find(create(:activity, summary: {"pr" => false}).id).garmin_pr?
+  end
 end

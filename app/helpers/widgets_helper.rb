@@ -29,6 +29,7 @@ module WidgetsHelper
   CHIP = "rounded px-1.5 py-0.5 text-xs font-medium"
   CHIPS = {
     race: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
+    pr: "bg-lime-100 text-lime-900 dark:bg-lime-900/30 dark:text-lime-300",
     treadmill: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300",
     notable: "bg-lime-100 text-lime-900 dark:bg-lime-900/30 dark:text-lime-300",
     gear: "bg-zinc-100 text-zinc-600 hover:text-lime-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:text-[#9CFF44]",

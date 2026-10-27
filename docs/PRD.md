@@ -214,7 +214,7 @@ A button group above the main chart chooses None (default), Resting HR or HRV, d
 **Runs list (`/runs`, filterable by year and month)**
 
 - Sortable table: date, name, km, time, pace, HR, elevation, VDOT. The VDOT header carries the explanation (§6).
-- Race and treadmill tags.
+- Race, PR (Garmin's own personal-record flag, `pr` in the summary) and treadmill tags.
 - Phase 3 adds a Gear column and a `gear` filter (§5.7).
 
 **Run page (`/runs/:id`)**, top to bottom:
@@ -228,7 +228,7 @@ A button group above the main chart chooses None (default), Resting HR or HRV, d
    - A Smashrun-style date navigator: every year with runs (newest first), the 12 months of the run's year, and every day of its month, with the run's year, month and day selected. A year or month with runs opens its latest run, and a day opens its first run; the others are inert. Weekends look distinct, race days are amber, and hovering or focusing a day shows its weekday, date and distance in the shared tooltip. (Smashrun's own year and month buttons open its overview pages instead.)
    - **Notables** (§6) as compact chips right under the header, above the tiles, wrapping on narrow screens; each chip carries the notable's full text, and a run with none shows nothing.
 2. **Tiles and cards**, a grid of 4 columns on wide screens and 2 on narrow ones:
-   - Distance, elapsed/timer/moving time, average pace and speed.
+   - Distance, elapsed/timer/moving time, average pace and speed. Runs whose Garmin summary has a positive `avgGradeAdjustedSpeed` (1,077 of 2,515, from 2022-06) add a "GAP 5:02 /km" line under the speed, with an ⓘ explaining grade-adjusted pace (`Activity::Performance#grade_adjusted_pace`, s/km). The run title carries a PR chip next to the race chip when Garmin flagged the run (5 runs).
    - Calories with a food equivalent ("A bunch of bananas… or a kremšnita").
    - Average HR (min-max) and average cadence (min-max).
    - **Performance index and estimated finish** (W1). One card, two columns wide, in two halves. It replaces the VDOT tile and its 2×2 grid of finish times. Smashrun's version is built on its SPI; ours is built on VDOT.

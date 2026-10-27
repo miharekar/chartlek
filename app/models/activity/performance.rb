@@ -18,6 +18,15 @@ module Activity::Performance
     timer_s / distance_m * 1000
   end
 
+  def grade_adjusted_pace
+    speed = summary&.dig("avgGradeAdjustedSpeed")
+    1000 / speed if speed.to_f.positive?
+  end
+
+  def garmin_pr?
+    has_attribute?(:garmin_pr) ? garmin_pr == 1 : summary&.dig("pr") == true
+  end
+
   def performance_zone
     PaceZones.zone_for_vdot(vdot) if vdot
   end
