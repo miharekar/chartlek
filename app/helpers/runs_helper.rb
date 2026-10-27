@@ -69,6 +69,8 @@ module RunsHelper
   end
 
   def run_gear_tag(run)
+    return unless sync_profile.strava_gear_ready?
+
     if run.strava_gear_id
       link_to run.gear&.display_name || run.strava_gear_id, runs_path(gear: run.strava_gear_id, year: "all"), class: [WidgetsHelper::CHIP, WidgetsHelper::CHIPS[:gear]]
     elsif run.strava_id
@@ -77,7 +79,7 @@ module RunsHelper
   end
 
   def run_gear_line(run)
-    tag.p safe_join([gear_icon, tag.span("Gear ", class: "sr-only"), run_gear_link(run)]), class: "mt-1 flex items-center gap-1.5 #{WidgetsHelper::HEADER_LINE}" if run.strava_id
+    tag.p safe_join([gear_icon, tag.span("Gear ", class: "sr-only"), run_gear_link(run)]), class: "mt-1 flex items-center gap-1.5 #{WidgetsHelper::HEADER_LINE}" if run.strava_id && sync_profile.strava_gear_ready?
   end
 
   def run_clock(run)

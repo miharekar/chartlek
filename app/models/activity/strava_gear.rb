@@ -53,6 +53,19 @@ module Activity::StravaGear
       end
     end
 
+    def sync_strava_gear_after_link(full:, client:, summaries:)
+      profile = Profile.instance
+
+      if profile.strava_gear_access?
+        everything = full || profile.strava_gear_synced_at.nil?
+        sync_strava_gear_now(full: everything, client:, summaries: (summaries if full))
+      end
+    rescue Strava::Client::NotConnected
+      raise
+    rescue Strava::Client::Error => error
+      Rails.logger.warn("Strava gear pass skipped: #{error.class}")
+    end
+
     def read_strava_gear_ids(summaries)
       summaries.select { it.key?("gear_id") }.group_by { it["gear_id"] }.each do |gear_id, group|
         where(strava_id: group.pluck("id")).where("strava_gear_id IS NOT ?", gear_id).find_each { it.update!(strava_gear_id: gear_id) }

@@ -3,7 +3,7 @@
 <% end %>
 
 <% if @gear == "none" %>
-  <p class="mt-2 max-w-3xl <%= WidgetsHelper::HINT %>">Runs linked to Strava with no gear set. Set the gear on Strava; a run leaves this list after the next hourly scan or a refresh on the <%= link_to "Gear page", gears_path, class: WidgetsHelper::LINK %>.</p>
+  <p class="mt-2 max-w-3xl <%= WidgetsHelper::HINT %>">Runs linked to Strava with no gear set. Set the gear on Strava; a recent run leaves this list after the next hourly scan, an older one after Refresh from Strava on the <%= link_to "Gear page", gears_path, class: WidgetsHelper::LINK %>.</p>
 <% elsif @filter_gear %>
   <p class="mt-2 text-sm <%= WidgetsHelper::MUTED %>">Gear: <span class="font-medium text-zinc-900 dark:text-zinc-100"><%= @filter_gear.display_name %></span> · <%= link_to "Show all gear", runs_path(year: @year || "all", month: @month), class: WidgetsHelper::LINK %></p>
 <% end %>

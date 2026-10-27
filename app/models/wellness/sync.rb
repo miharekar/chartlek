@@ -3,6 +3,7 @@ class Wellness::Sync
   REFRESH_DAYS = 3
   CHUNK_DAYS = 30
   STOP_AFTER = 6
+  MARKER_FINAL_AFTER = 7.days
 
   delegate :request_count, to: :@client
 
@@ -50,7 +51,7 @@ class Wellness::Sync
   end
 
   def collect_summaries(from, to, resume:)
-    known = resume ? WellnessDay.where(date: from..to).select { it.raw.key?("summary") }.map(&:date) : []
+    known = resume ? WellnessDay.where(date: from..to).select { settled?(it) }.map(&:date) : []
 
     ((from..to).to_a - known).each do |date|
       payload = @client.daily_summary(date)
@@ -60,6 +61,12 @@ class Wellness::Sync
     end
 
     WellnessDay.where(date: from..to).count { it.raw["summary"].present? }
+  end
+
+  def settled?(day)
+    summary = day.raw["summary"]
+
+    summary.present? || (summary == {} && day.updated_at > day.date.in_time_zone("UTC") + MARKER_FINAL_AFTER)
   end
 
   def collect_hrv(from, to)
@@ -101,10 +108,17 @@ class Wellness::Sync
   end
 
   def store(date, key, payload, attributes)
-    day = WellnessDay.find_or_initialize_by(date:)
+    day = WellnessDay.find_by(date:) || claim(date)
     merged = day.raw[key].to_h.merge(payload.to_h.compact)
 
     day.update!(attributes.compact.merge(raw: day.raw.merge(key => merged)))
+    day.saved_changes? || day.update!(updated_at: Time.current)
+  end
+
+  def claim(date)
+    WellnessDay.create!(date:)
+  rescue ActiveRecord::RecordNotUnique, ActiveRecord::RecordInvalid
+    WellnessDay.find_by!(date:)
   end
 
   def sync_hr_zones

@@ -46,6 +46,17 @@ class Activity::GarminSyncTest < ActiveSupport::TestCase
     assert_equal 1, Activity.count
   end
 
+  test "a sync queues one Strava job, which links and runs the gear pass, so they never refresh the token together" do
+    Profile.instance.store_strava_tokens(access_token: "a", refresh_token: "r", expires_at: 6.hours.from_now.to_i)
+    Profile.instance.update!(strava_scope: "read,activity:read_all,profile:read_all")
+    stub_page(0, [garmin_summary])
+
+    Activity.sync_now
+
+    assert_enqueued_jobs 1, only: Activity::StravaLinkJob
+    assert_no_enqueued_jobs only: Activity::StravaGearJob
+  end
+
   test "maps summary fields" do
     stub_page(0, [garmin_summary(eventType: {typeKey: "race"})])
 

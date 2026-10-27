@@ -339,11 +339,17 @@ class RunsControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-controller=analyze-run]", false
   end
 
+  def gear_scanned
+    Profile.instance.store_strava_tokens(access_token: "a", refresh_token: "r", expires_at: 6.hours.from_now.to_i)
+    Profile.instance.update!(strava_scope: "read,activity:read_all,profile:read_all", strava_gear_synced_at: Time.current)
+  end
+
   def linked_run(at, gear_id: nil, **attrs)
     run_at(at, strava_id: rand(1_000_000) + 1, strava_gear_id: gear_id, **attrs)
   end
 
   test "gear none lists only linked runs without gear, with suggestions and Open in Strava" do
+    gear_scanned
     Gear.create!(strava_id: "g1", name: "Synthetic Shoe")
     fixable = linked_run(Time.utc(2023, 5, 6, 7), name: "Fix Me")
     linked_run(Time.utc(2023, 5, 5, 7), gear_id: "g1", name: "Has Gear")
@@ -375,6 +381,7 @@ class RunsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "the gear column shows gear, No gear, or nothing for an unlinked run" do
+    gear_scanned
     Gear.create!(strava_id: "g1", name: "Synthetic Shoe")
     linked_run(Time.utc(2023, 5, 6, 7), gear_id: "g1")
     linked_run(Time.utc(2023, 5, 7, 7))
@@ -388,6 +395,7 @@ class RunsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "the run header has a gear line under the date and above the weather, an amber No gear, or nothing" do
+    gear_scanned
     Gear.create!(strava_id: "g1", name: "Synthetic Shoe")
     geared = linked_run(Time.utc(2023, 5, 6, 7), gear_id: "g1", weather: {"temperature" => 14.2})
     bare = linked_run(Time.utc(2023, 5, 7, 7))
@@ -405,6 +413,29 @@ class RunsControllerTest < ActionDispatch::IntegrationTest
 
     get run_path(unlinked)
     assert_select "header a[href*=gear]", false
+  end
+
+  test "no gear tag or gear line and no amber No gear before the first full gear scan" do
+    run = linked_run(Time.utc(2023, 5, 6, 7), gear_id: "g1")
+    bare = linked_run(Time.utc(2023, 5, 7, 7))
+
+    get "/runs", params: {year: 2023}
+
+    assert_select "tbody a[href*=gear]", false
+    assert_select "tbody td a", text: "No gear", count: 0
+
+    get run_path(run)
+    assert_select "header a[href*=gear]", false
+
+    get run_path(bare)
+    assert_select "header a[href*=gear]", false
+    assert_select "header svg[aria-hidden=true]", false
+  end
+
+  test "the gear none hint says older runs need Refresh from Strava" do
+    get "/runs", params: {gear: "none"}
+
+    assert_select "p", text: /a recent run leaves this list after the next hourly scan, an older one after Refresh from Strava/
   end
 
   test "Show all gear from an all-time gear list keeps all time" do

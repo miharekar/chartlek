@@ -48,6 +48,10 @@ class Profile < ApplicationRecord
     strava_connected? && strava_scope.to_s.split(",").include?(Strava::Client::GEAR_SCOPE)
   end
 
+  def strava_gear_ready?
+    strava_gear_access? && strava_gear_synced_at.present?
+  end
+
   def strava_reconnect?
     strava_connected? && !strava_gear_access?
   end

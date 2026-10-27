@@ -1,7 +1,7 @@
 class GearsController < ApplicationController
   def index
     @profile = sync_profile
-    @ready = @profile.strava_gear_access? && @profile.strava_gear_synced_at.present?
+    @ready = @profile.strava_gear_ready?
 
     if @ready
       @usage = Gear.usage

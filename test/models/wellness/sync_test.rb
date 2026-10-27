@@ -143,15 +143,91 @@ class Wellness::SyncTest < ActiveSupport::TestCase
     stub_weight([])
     stub_zones
 
-    @sync.backfill(from: @today - 9, to: @today)
+    travel_to(@today.in_time_zone("UTC") + 20.days) { @sync.backfill(from: @today - 9, to: @today) }
     assert_requested empty, times: 10
     assert_equal [nil], WellnessDay.distinct.pluck(:resting_hr)
 
-    @sync.backfill(from: @today - 9, to: @today)
+    travel_to(@today.in_time_zone("UTC") + 20.days) { @sync.backfill(from: @today - 9, to: @today) }
     assert_requested empty, times: 10
 
     @sync.refresh(today: @today)
     assert_requested empty, times: 14
+  end
+
+  test "an empty marker is fetched again until it is a week older than its date, and then it is final" do
+    noon = @today.in_time_zone("UTC").noon
+    empty = stub_request(:get, SUMMARY_URL).with(query: hash_including("calendarDate")).to_return(status: 204)
+    stub_hrv([])
+    stub_weight([])
+    stub_zones
+
+    travel_to(noon) { @sync.backfill(from: @today - 1, to: @today) }
+    assert_requested empty, times: 2
+
+    travel_to(noon + 2.days) { @sync.backfill(from: @today - 1, to: @today) }
+    assert_requested empty, times: 4
+
+    travel_to(noon + 9.days) { @sync.backfill(from: @today - 1, to: @today) }
+    assert_requested empty, times: 6
+
+    travel_to(noon + 10.days) { @sync.backfill(from: @today - 1, to: @today) }
+    assert_requested empty, times: 6
+  end
+
+  test "a young empty marker is filled once Garmin has the day" do
+    stub_request(:get, SUMMARY_URL).with(query: hash_including("calendarDate")).to_return(status: 204)
+    stub_hrv([])
+    stub_weight([])
+    stub_zones
+    noon = @today.in_time_zone("UTC").noon
+    travel_to(noon) { @sync.backfill(from: @today - 1, to: @today) }
+
+    stub_summaries
+    travel_to(noon + 1.day) { @sync.backfill(from: @today - 1, to: @today) }
+
+    assert_equal [50, 50], WellnessDay.order(:date).pluck(:resting_hr)
+  end
+
+  test "a marker that is still empty is touched so it can become final" do
+    stub_request(:get, SUMMARY_URL).with(query: hash_including("calendarDate")).to_return(status: 204)
+    stub_hrv([])
+    stub_weight([])
+    stub_zones
+    noon = @today.in_time_zone("UTC").noon
+
+    travel_to(noon) { @sync.backfill(from: @today, to: @today) }
+    travel_to(noon + 9.days) { @sync.backfill(from: @today, to: @today) }
+
+    assert_in_delta (noon + 9.days).to_f, WellnessDay.find_by!(date: @today).updated_at.to_f, 1
+  end
+
+  test "a day created by another writer in between is updated, not a duplicate" do
+    WellnessDay.create!(date: @today, resting_hr: 40)
+    stub_summary(@today, summary)
+    (1..3).each { stub_summary(@today - it, nil, status: 204) }
+    stub_hrv([])
+    stub_weight([])
+    stub_zones
+
+    original = WellnessDay.method(:find_by)
+    missed = false
+    today = @today
+    WellnessDay.define_singleton_method(:find_by) do |*args, **options|
+      lookup = args.first.is_a?(Hash) ? args.first : options
+      next original.call(*args, **options) if missed || lookup[:date] != today
+
+      missed = true
+      nil
+    end
+    begin
+      @sync.refresh(today: @today)
+    ensure
+      WellnessDay.singleton_class.remove_method(:find_by)
+    end
+
+    assert missed
+    assert_equal 1, WellnessDay.where(date: @today).count
+    assert_equal 50, WellnessDay.find_by!(date: @today).resting_hr
   end
 
   test "resuming a backfill reaches unfetched days past many stored chunks" do

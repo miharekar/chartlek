@@ -188,6 +188,48 @@ class Activity::StravaGearTest < ActiveSupport::TestCase
     assert_equal ["g1"], Gear.pluck(:strava_id)
   end
 
+  test "a gear error in the link job's gear step leaves the links saved and the scan pending" do
+    @run.update!(strava_id: nil)
+    summaries({"id" => 555, "sport_type" => "Run", "start_date" => @run.started_at.iso8601, "gear_id" => "g1"})
+    stub_request(:get, ATHLETE_URL).to_return(body: "{}")
+    stub_request(:get, GEAR_URL).to_return(status: 500, body: "{}")
+
+    assert_nothing_raised { assert_equal 1, Activity.link_strava_now(full: true) }
+
+    assert_equal 555, @run.reload.strava_id
+    assert_nil @profile.reload.strava_gear_synced_at
+  end
+
+  test "a 401 in the link job's gear step still disconnects" do
+    @run.update!(strava_id: nil)
+    summaries({"id" => 555, "sport_type" => "Run", "start_date" => @run.started_at.iso8601, "gear_id" => "g1"})
+    stub_request(:get, ATHLETE_URL).to_return(body: "{}")
+    stub_request(:get, GEAR_URL).to_return(status: 401, body: "{}")
+
+    assert_raises(Strava::Client::NotConnected) { Activity.link_strava_now(full: true) }
+  end
+
+  test "the hourly link job runs the full gear pass until the first scan finished, then the recent one" do
+    @run.update!(strava_id: nil)
+    summaries({"id" => 555, "gear_id" => "g1"})
+    stub_request(:get, ATHLETE_URL).to_return(body: "{}")
+    gear
+
+    Activity.link_strava_now
+
+    assert_requested :get, ATHLETE_URL
+    assert_not_nil @profile.reload.strava_gear_synced_at
+
+    WebMock.reset_executed_requests!
+    stub_request(:get, ACTIVITIES_URL).with(query: hash_including("page" => "1", "after" => /\d+/)).to_return(body: "[]")
+    stub_request(:get, ACTIVITIES_URL).with(query: hash_including("page" => "2")).to_return(body: "[]")
+
+    Activity.link_strava_now
+
+    assert_not_requested :get, ATHLETE_URL
+    assert_requested :get, ACTIVITIES_URL, query: hash_including("after" => /\d+/)
+  end
+
   test "the gear job is queued after a sync" do
     assert_enqueued_with(job: Activity::StravaGearJob, args: [{full: false}]) { Activity.sync_strava_gear_later }
   end
