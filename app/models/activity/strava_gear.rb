@@ -2,8 +2,42 @@ module Activity::StravaGear
   extend ActiveSupport::Concern
 
   GEAR_WINDOW = 30.days
+  SUGGESTION_WINDOW = 14.days
+
+  included do
+    belongs_to :gear, foreign_key: :strava_gear_id, primary_key: :strava_id, optional: true, inverse_of: false
+  end
 
   class_methods do
+    def gear_unset
+      where.not(strava_id: nil).where(strava_gear_id: nil)
+    end
+
+    def with_gear(gear)
+      if gear == "none"
+        gear_unset
+      elsif gear.present?
+        where(strava_gear_id: gear)
+      else
+        all
+      end
+    end
+
+    def suggested_gear(runs)
+      window = SUGGESTION_WINDOW.to_i
+      used = unscoped.where.not(strava_gear_id: nil).order(:local_started_at).pluck(:local_started_at, :strava_gear_id).map { [it[0].to_i, it[1]] }
+      times = used.map(&:first)
+      ids = runs.to_h do |run|
+        at = run.local_started_at.to_i
+        nearby = used[(times.bsearch_index { it >= at - window } || used.size)...(times.bsearch_index { it > at + window } || used.size)]
+
+        [run.id, nearby.sort_by { (it[0] - at).abs }.map(&:last).tally.max_by(&:last)&.first]
+      end
+      gears = Gear.where(strava_id: ids.values.compact.uniq).index_by(&:strava_id)
+
+      ids.transform_values { gears[it] || (Gear.new(strava_id: it) if it) }
+    end
+
     def sync_strava_gear_later(full: false)
       Activity::StravaGearJob.perform_later(full:)
     end

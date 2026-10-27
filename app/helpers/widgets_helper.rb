@@ -10,9 +10,11 @@ module WidgetsHelper
   TILE_UNIT = "ml-1 text-sm font-normal #{MUTED}"
   TILE_SUB = "mt-1 text-sm tabular-nums text-zinc-600 dark:text-zinc-300"
   HINT = "text-xs #{MUTED}"
-  META = "flex flex-wrap items-center gap-x-4 gap-y-1 text-sm #{MUTED}"
+  HEADER_LINE = "text-sm tabular-nums text-zinc-600 dark:text-zinc-300"
+  META = "flex flex-wrap items-center gap-x-4 gap-y-1 #{HEADER_LINE}"
   META_ITEM = "inline-flex items-center gap-1.5"
   LEGEND = "flex flex-wrap items-center gap-x-4 gap-y-1 #{HINT}"
+  WARNING = "font-medium text-amber-700 hover:underline dark:text-amber-300"
   PLACEHOLDER = "text-zinc-400"
   ACCENT = "text-lime-700 dark:text-[#9CFF44]"
   LINK = "underline decoration-zinc-300 hover:text-lime-700 dark:decoration-zinc-600 dark:hover:text-[#9CFF44]"
@@ -27,7 +29,9 @@ module WidgetsHelper
   CHIP = "rounded px-1.5 py-0.5 text-xs font-medium"
   CHIPS = {
     race: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
-    treadmill: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
+    treadmill: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300",
+    gear: "bg-zinc-100 text-zinc-600 hover:text-lime-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:text-[#9CFF44]",
+    no_gear: "bg-amber-100 text-amber-800 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:hover:bg-amber-900/70"
   }.freeze
 
   def page_header(title, info: nil, &block)

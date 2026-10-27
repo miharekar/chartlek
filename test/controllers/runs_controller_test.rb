@@ -321,4 +321,127 @@ class RunsControllerTest < ActionDispatch::IntegrationTest
     assert_select "p", text: "No runs in the 90 days before this one."
     assert_select "[data-controller=analyze-run]", false
   end
+
+  def linked_run(at, gear_id: nil, **attrs)
+    run_at(at, strava_id: rand(1_000_000) + 1, strava_gear_id: gear_id, **attrs)
+  end
+
+  test "gear none lists only linked runs without gear, with suggestions and Open in Strava" do
+    Gear.create!(strava_id: "g1", name: "Synthetic Shoe")
+    fixable = linked_run(Time.utc(2023, 5, 6, 7), name: "Fix Me")
+    linked_run(Time.utc(2023, 5, 5, 7), gear_id: "g1", name: "Has Gear")
+    run_at(Time.utc(2023, 5, 7, 7), name: "Unlinked")
+
+    get "/runs", params: {year: 2023, gear: "none"}
+
+    assert_response :success
+    assert_select "tbody tr", 1
+    assert_select "a", text: "Fix Me"
+    assert_select "th", text: "Suggested"
+    assert_select "tbody td a[href=?]", runs_path(gear: "g1", year: "all"), text: "Synthetic Shoe"
+    assert_select "tbody td a[href=?][target=_blank]", fixable.strava_url, text: "Open in Strava"
+    assert_select "tbody td a", text: "No gear"
+  end
+
+  test "gear filter keeps one gear and the period links keep the filter" do
+    Gear.create!(strava_id: "g1", name: "Synthetic Shoe")
+    linked_run(Time.utc(2023, 5, 6, 7), gear_id: "g1", name: "On It")
+    linked_run(Time.utc(2023, 5, 7, 7), name: "Off It")
+
+    get "/runs", params: {year: 2023, gear: "g1"}
+
+    assert_select "tbody tr", 1
+    assert_select "a", text: "On It"
+    assert_select "th", text: "Suggested", count: 0
+    assert_select "span", text: "Synthetic Shoe"
+    assert_select "a[href=?]", runs_path(year: "all", gear: "g1"), text: "All"
+  end
+
+  test "the gear column shows gear, No gear, or nothing for an unlinked run" do
+    Gear.create!(strava_id: "g1", name: "Synthetic Shoe")
+    linked_run(Time.utc(2023, 5, 6, 7), gear_id: "g1")
+    linked_run(Time.utc(2023, 5, 7, 7))
+    run_at(Time.utc(2023, 5, 8, 7))
+
+    get "/runs", params: {year: 2023}
+
+    assert_select "tbody tr:nth-child(3) td:nth-last-child(2) a", text: "Synthetic Shoe"
+    assert_select "tbody tr:nth-child(2) td:nth-last-child(2) a", text: "No gear"
+    assert_select "tbody tr:nth-child(1) td:nth-last-child(2) a", false
+  end
+
+  test "the run header has a gear line under the date and above the weather, an amber No gear, or nothing" do
+    Gear.create!(strava_id: "g1", name: "Synthetic Shoe")
+    geared = linked_run(Time.utc(2023, 5, 6, 7), gear_id: "g1", weather: {"temperature" => 14.2})
+    bare = linked_run(Time.utc(2023, 5, 7, 7))
+    unlinked = run_at(Time.utc(2023, 5, 8, 7))
+
+    get run_path(geared)
+    assert_select "header p:nth-of-type(2) a[href=?]", runs_path(gear: "g1", year: "all"), text: "Synthetic Shoe"
+    assert_select "header p:nth-of-type(2) svg[aria-hidden=true]"
+    assert_select "header p:nth-of-type(3) span", text: "14°C"
+    assert_select "header nav a", text: "Synthetic Shoe", count: 0
+    assert_select "header p.text-zinc-600", 3
+
+    get run_path(bare)
+    assert_select "header p:nth-of-type(2) a[href=?].text-amber-700", runs_path(gear: "none", year: "all"), text: "No gear"
+
+    get run_path(unlinked)
+    assert_select "header a[href*=gear]", false
+  end
+
+  test "Show all gear from an all-time gear list keeps all time" do
+    linked_run(Time.utc(2019, 5, 6, 7), gear_id: "g1")
+
+    get "/runs", params: {gear: "g1"}
+
+    assert_select "a[href=?]", runs_path(year: "all"), text: "Show all gear"
+  end
+
+  test "a non-scalar gear param is ignored instead of failing" do
+    run_at(Time.utc(2023, 5, 6, 7), name: "Plain")
+
+    get "/runs?year=2023&gear[a]=b"
+
+    assert_response :success
+    assert_select "a", text: "Plain"
+  end
+
+  test "gear none with nothing to fix says so" do
+    linked_run(Time.utc(2023, 5, 6, 7), gear_id: "g1")
+
+    get "/runs", params: {gear: "none"}
+
+    assert_response :success
+    assert_select "p", text: "Every run linked to Strava has gear set."
+    assert_select "table", false
+  end
+
+  test "gear none defaults to all time so older unset runs are listed" do
+    linked_run(Time.utc(2019, 5, 6, 7), name: "Old Unset")
+
+    get "/runs", params: {gear: "none"}
+
+    assert_select "a", text: "Old Unset"
+    assert_select "p", text: /Every run linked to Strava has gear set/, count: 0
+  end
+
+  test "a gear filter with no runs in the chosen year keeps the filter on Show all time" do
+    linked_run(Time.utc(2019, 5, 6, 7), gear_id: "g1")
+
+    get "/runs", params: {gear: "g1", year: 2023}
+
+    assert_select "p", text: /No runs in 2023/
+    assert_select "a[href=?]", runs_path(year: "all", gear: "g1"), text: "Show all time"
+    assert_select "p", text: /Every run linked to Strava/, count: 0
+  end
+
+  test "gear none for a past year with nothing unset shows the period empty state, not the all-clear" do
+    linked_run(Time.utc(2019, 5, 6, 7))
+
+    get "/runs", params: {gear: "none", year: 2023}
+
+    assert_select "p", text: /No runs in 2023/
+    assert_select "p", text: /Every run linked to Strava/, count: 0
+  end
 end

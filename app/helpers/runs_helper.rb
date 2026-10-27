@@ -1,5 +1,6 @@
 module RunsHelper
   COLUMNS = [%w[Date date left], %w[Name name left], %w[km km right], %w[Time time right], %w[Pace pace right], %w[HR hr right], %w[Elev elevation right], %w[VDOT vdot right]].freeze
+  GEAR_ICON = '<path d="M1.75 12.25V9.5c0-.5.3-.8.8-.9L5.25 8l1.25-2.75 1.5 1.1c.9.7 1.9 1.4 3.4 1.9 2.1.6 3.1 1.1 3.1 2.5v1.5Z"/><path d="M1.75 10.5h12.5M6.75 8.25l1-1.5"/>'.html_safe.freeze
   DAY = "inline-flex size-8 items-center justify-center rounded-md text-sm tabular-nums"
   DAY_STATES = {
     selected: "font-medium #{ControlsHelper::SELECTED}",
@@ -30,7 +31,7 @@ module RunsHelper
     next_dir = (current == key && descending) ? "asc" : "desc"
 
     tag.th class: "#{WidgetsHelper::CELL} font-medium text-#{align}", aria: {sort: (current == key) ? (descending ? "descending" : "ascending") : nil} do
-      link = link_to "#{label}#{arrow}", runs_path(request.query_parameters.slice("year", "month").merge("sort" => key, "dir" => next_dir)), class: "hover:text-zinc-900 dark:hover:text-zinc-100"
+      link = link_to "#{label}#{arrow}", runs_path(request.query_parameters.slice("year", "month", "gear").select { |_, value| value.is_a?(String) }.merge("sort" => key, "dir" => next_dir)), class: "hover:text-zinc-900 dark:hover:text-zinc-100"
 
       if info
         tag.span safe_join([link, vdot_info]), class: "inline-flex items-center gap-1"
@@ -67,9 +68,33 @@ module RunsHelper
     ].compact, " ")
   end
 
+  def run_gear_tag(run)
+    if run.strava_gear_id
+      link_to run.gear&.display_name || run.strava_gear_id, runs_path(gear: run.strava_gear_id, year: "all"), class: [WidgetsHelper::CHIP, WidgetsHelper::CHIPS[:gear]]
+    elsif run.strava_id
+      link_to "No gear", runs_path(gear: "none", year: "all"), class: [WidgetsHelper::CHIP, WidgetsHelper::CHIPS[:no_gear]]
+    end
+  end
+
+  def run_gear_line(run)
+    tag.p safe_join([gear_icon, tag.span("Gear ", class: "sr-only"), run_gear_link(run)]), class: "mt-1 flex items-center gap-1.5 #{WidgetsHelper::HEADER_LINE}" if run.strava_id
+  end
+
   def run_clock(run)
     finish = run.local_started_at + (run.elapsed_s || run.timer_s)
     "#{run.local_started_at.strftime("%H:%M")}–#{finish.strftime("%H:%M")}"
+  end
+
+  def run_gear_link(run)
+    if run.strava_gear_id
+      link_to run.gear&.display_name || run.strava_gear_id, runs_path(gear: run.strava_gear_id, year: "all"), class: WidgetsHelper::TABLE_LINK
+    else
+      link_to "No gear", runs_path(gear: "none", year: "all"), class: WidgetsHelper::WARNING
+    end
+  end
+
+  def gear_icon
+    tag.svg(GEAR_ICON, viewBox: "0 0 16 16", class: "size-4 shrink-0", fill: "none", stroke: "currentColor", "stroke-width": 1.5, "stroke-linecap": "round", "stroke-linejoin": "round", aria: {hidden: true})
   end
 
   def run_extent(run, series, fallback_max)

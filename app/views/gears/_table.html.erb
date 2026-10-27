@@ -1,0 +1,47 @@
+<div class="overflow-x-auto">
+  <table class="<%= WidgetsHelper::TABLE %>">
+    <thead class="<%= WidgetsHelper::TABLE_HEAD %>">
+      <tr class="<%= WidgetsHelper::TABLE_HEAD_ROW %>">
+        <th class="<%= WidgetsHelper::CELL %> text-left font-medium">Gear</th>
+        <th class="<%= WidgetsHelper::CELL %> text-right font-medium">Runs</th>
+        <th class="<%= WidgetsHelper::CELL %> text-right font-medium">Distance</th>
+        <th class="<%= WidgetsHelper::CELL %> text-right font-medium">Time</th>
+        <th class="<%= WidgetsHelper::CELL %> text-right font-medium">Last 12 months</th>
+        <th class="<%= WidgetsHelper::CELL %> text-right font-medium">Last used</th>
+      </tr>
+    </thead>
+    <tbody class="<%= WidgetsHelper::TABLE_BODY %>">
+      <% rows.each do |row| %>
+        <% gear = row.gear %>
+        <tr class="<%= WidgetsHelper::TABLE_ROW %>">
+          <td class="<%= WidgetsHelper::CELL %>">
+            <%= link_to gear.display_name, runs_path(gear: gear.strava_id, year: "all"), class: "font-medium #{WidgetsHelper::TABLE_LINK}" %>
+            <% if gear.dead? %>
+              <p class="<%= WidgetsHelper::HINT %>">Gear no longer on Strava</p>
+            <% elsif gear.description.present? && gear.description != gear.name %>
+              <p class="<%= WidgetsHelper::HINT %>"><%= gear.description %></p>
+            <% end %>
+          </td>
+          <td class="<%= WidgetsHelper::CELL %> text-right"><%= row.runs %></td>
+          <td class="<%= WidgetsHelper::CELL %> text-right"><%= overview_distance(row.km) %> km</td>
+          <td class="<%= WidgetsHelper::CELL %> text-right"><%= overview_duration(row.seconds) %></td>
+          <td class="<%= WidgetsHelper::CELL %> text-right"><%= overview_distance(row.recent_km) %> km</td>
+          <td class="<%= WidgetsHelper::CELL %> text-right"><%= overview_date(row.last_used) %></td>
+        </tr>
+      <% end %>
+      <% if unset %>
+        <tr class="bg-amber-50 dark:bg-amber-900/20">
+          <td class="<%= WidgetsHelper::CELL %>">
+            <%= link_to "No gear set", runs_path(gear: "none", year: "all"), class: "font-medium text-amber-800 hover:underline dark:text-amber-300" %>
+            <p class="<%= WidgetsHelper::HINT %>">Linked runs to fix on Strava</p>
+          </td>
+          <td class="<%= WidgetsHelper::CELL %> text-right"><%= unset.runs %></td>
+          <td class="<%= WidgetsHelper::CELL %> text-right"><%= overview_distance(unset.km) %> km</td>
+          <td class="<%= WidgetsHelper::CELL %> text-right"><%= overview_duration(unset.seconds) %></td>
+          <td class="<%= WidgetsHelper::CELL %> text-right"><%= overview_distance(unset.recent_km) %> km</td>
+          <td class="<%= WidgetsHelper::CELL %> text-right"><%= overview_date(unset.last_used) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

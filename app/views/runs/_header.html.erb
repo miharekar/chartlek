@@ -5,10 +5,11 @@
   <div class="<%= WidgetsHelper::PAGE_HEADER %>">
     <div>
       <h1 class="<%= WidgetsHelper::PAGE_TITLE %>"><%= run.name.presence || "Run" %> <%= run_tags(run) %></h1>
-      <p class="mt-1 text-sm tabular-nums text-zinc-600 dark:text-zinc-300">
+      <p class="mt-1 <%= WidgetsHelper::HEADER_LINE %>">
         <%= run.local_started_at.strftime("%A, %-d %B %Y") %> · <%= run_clock(run) %>
         <% if run.location_name.present? %>· <%= run.location_name %><% end %>
       </p>
+      <%= run_gear_line(run) %>
       <% if run.weather.present? %>
         <p class="mt-1 <%= WidgetsHelper::META %>"><%= run_weather(run) %></p>
       <% end %>

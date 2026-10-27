@@ -8,6 +8,8 @@ Rails.application.routes.draw do
   resources :runs, only: %i[index show]
   resource :pace_trend, only: :show
   resource :pr_progress, only: :show
+  resources :gears, path: "gear", only: :index
+  resource :gear_sync, only: :create
   resource :sync, only: :create
   resource :theme, only: :update
   resource :strava_connection, only: %i[show create]

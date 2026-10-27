@@ -2,12 +2,22 @@
   <p class="text-sm tabular-nums <%= WidgetsHelper::MUTED %>"><%= pluralize(number_with_delimiter(@runs.size), "run") %></p>
 <% end %>
 
-<%= render "selector", year: @year, month: @month %>
+<% if @gear == "none" %>
+  <p class="mt-2 max-w-3xl <%= WidgetsHelper::HINT %>">Runs linked to Strava with no gear set. Set the gear on Strava; a run leaves this list after the next hourly scan or a refresh on the <%= link_to "Gear page", gears_path, class: WidgetsHelper::LINK %>.</p>
+<% elsif @filter_gear %>
+  <p class="mt-2 text-sm <%= WidgetsHelper::MUTED %>">Gear: <span class="font-medium text-zinc-900 dark:text-zinc-100"><%= @filter_gear.display_name %></span> · <%= link_to "Show all gear", runs_path(year: @year || "all", month: @month), class: WidgetsHelper::LINK %></p>
+<% end %>
 
-<% if @runs.empty? %>
+<%= render "selector", year: @year, month: @month, gear: @gear %>
+
+<% if @runs.empty? && @gear == "none" && @year.nil? %>
+  <%= empty_state "Every run linked to Strava has gear set." do %>
+    <%= link_to "Show all gear", gears_path, class: WidgetsHelper::LINK %>
+  <% end %>
+<% elsif @runs.empty? %>
   <%= empty_state "No runs in #{runs_period_title(@year, @month).downcase.sub("all time", "your history")} yet." do %>
     <% if @year %>
-      <%= link_to "Show all time", runs_path(year: "all"), class: WidgetsHelper::LINK %>
+      <%= link_to "Show all time", runs_path(year: "all", gear: @gear), class: WidgetsHelper::LINK %>
     <% end %>
   <% end %>
 <% else %>
@@ -18,6 +28,10 @@
           <tr class="<%= WidgetsHelper::TABLE_HEAD_ROW %>">
             <% RunsHelper::COLUMNS.each do |label, key, align| %>
               <%= runs_sort_header label, key, align, info: (key == "vdot") %>
+            <% end %>
+            <th class="<%= WidgetsHelper::CELL %> text-left font-medium">Gear</th>
+            <% if @suggestions %>
+              <th class="<%= WidgetsHelper::CELL %> text-left font-medium">Suggested</th>
             <% end %>
             <th class="<%= WidgetsHelper::CELL %>"></th>
           </tr>
@@ -33,7 +47,17 @@
               <td class="<%= WidgetsHelper::CELL %> text-right"><%= run.avg_hr %></td>
               <td class="<%= WidgetsHelper::CELL %> text-right"><%= run.elevation_gain_m&.round %></td>
               <td class="<%= WidgetsHelper::CELL %> text-right"><%= run.vdot&.round(1) %></td>
-              <td class="<%= WidgetsHelper::CELL %>"><%= run_tags(run) %></td>
+              <td class="<%= WidgetsHelper::CELL %>"><%= run_gear_tag(run) %></td>
+              <% if @suggestions %>
+                <% suggested = @suggestions[run.id] %>
+                <td class="<%= WidgetsHelper::CELL %>"><%= link_to suggested.display_name, runs_path(gear: suggested.strava_id, year: "all"), class: WidgetsHelper::TABLE_LINK if suggested %></td>
+              <% end %>
+              <td class="<%= WidgetsHelper::CELL %>">
+                <div class="flex flex-wrap items-center gap-2">
+                  <%= run_tags(run) %>
+                  <%= action_button "Open in Strava", run.strava_url, target: "_blank", rel: "noopener" if @suggestions %>
+                </div>
+              </td>
             </tr>
           <% end %>
         </tbody>

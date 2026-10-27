@@ -220,9 +220,10 @@ A button group above the main chart chooses None, Resting HR, HRV or VO2max, dra
 **Run page (`/runs/:id`)**, top to bottom:
 
 1. **Header**
-   - Local date and time, start-end clock time.
+   - Local date and time, start-end clock time. The date line, the gear line and the weather line share one type and colour (`WidgetsHelper::HEADER_LINE`).
+   - Gear (§5.7), on its own line under the date and above the weather: a small sneaker icon and the gear name linking to that gear's runs list, or an amber "No gear" prompt for a linked run with no gear. Runs without a `strava_id` have no gear line.
    - Weather, from Open-Meteo at the run's midpoint hour, as one line of icon and value items (`run_weather`): the condition from the WMO code with its label (clear, partly cloudy, cloudy, fog, drizzle, rain, showers, snow, thunderstorm; clear and partly cloudy turn to a moon when the midpoint is outside sunrise to sunset), then temperature, humidity, wind and, only above 0, rain, each as an icon and its value (`14°C`, `60%`, `8 km/h`, `1.2 mm`); the words "humidity", "wind" and "rain" are `sr-only` text for screen readers. The icons are inline SVG and decorative, the text carries the meaning, and a missing field leaves no item. Runs without weather show nothing.
-   - Location name (Garmin only), previous/next run, and Open in Garmin and Open in Strava buttons side by side. Garmin shows for Garmin runs; Strava shows for runs with a `strava_id` (§7.6). A Smashrun-only run has neither. Phase 3 adds the gear tag (§5.7).
+   - Location name (Garmin only), previous/next run, and Open in Garmin and Open in Strava buttons side by side. Garmin shows for Garmin runs; Strava shows for runs with a `strava_id` (§7.6). A Smashrun-only run has neither. The gear line is above.
    - If there were several runs that day, a switcher between them.
    - A Smashrun-style date navigator: every year with runs (newest first), the 12 months of the run's year, and every day of its month, with the run's year, month and day selected. A year or month with runs opens its latest run, and a day opens its first run; the others are inert. Weekends look distinct, race days are amber, and hovering or focusing a day shows its weekday, date and distance in the shared tooltip. (Smashrun's own year and month buttons open its overview pages instead.)
 2. **Tiles and cards**, a grid of 4 columns on wide screens and 2 on narrow ones:
@@ -282,7 +283,7 @@ Some of it needs no new endpoint, because the stored activity summaries already 
 
 **Pace Trends overlay:** the button group above the main chart (None, Resting HR, HRV, VO2max) draws the chosen series on a secondary right-hand axis in a muted colour. It follows the window and adds a line to the tooltip; the regression, stats and predictions don't change.
 
-### 5.7 Gear (Phase 3, planned)
+### 5.7 Gear (Phase 3, built)
 
 Strava gear, read-only (§2). Modelled on the Gear page of the owner's Dreeve instance (strava.rekar.eu/gear), but for running shoes only.
 
@@ -298,7 +299,7 @@ Strava gear, read-only (§2). Modelled on the Gear page of the owner's Dreeve in
 - **Fixing runs with no gear:** `/runs?gear=none` is the runs list limited to those runs, with an extra **Suggested** column (the gear used most in the 14 days either side) and an Open in Strava button on each row. You set the gear on Strava; the run leaves the list after the next hourly recent scan (the last 30 days) or a manual refresh.
 - **Runs list and run page:**
   - the list gets a Gear column and the `gear` filter (one gear, or `none`);
-  - the run header shows the gear name as a tag linking to that gear's filtered list, or an amber "No gear" tag next to Open in Strava;
+  - the run header has a gear line (sneaker icon and the gear name linking to that gear's filtered list, or an amber "No gear" link to `/runs?gear=none`) under the date and above the weather;
   - runs without a Strava link show neither, since their gear is unknown rather than unset.
 
 ### 5.8 Pro Map (Phase 4, planned)
@@ -604,7 +605,7 @@ Garmin profile settings (JSON), HR zones (Phase 3), `synced_at`, `sync_started_a
   - View constants for cards, type and controls live in helpers (`WidgetsHelper` and `ControlsHelper`, §10).
 - **Routes:** REST resources only:
   - Built: `resource :overview` (with `:year`/`:month`), `resource :pace_trend`, `resource :pr_progress`, `resources :runs` (index and show), `resource :sync` (`create` = Sync now), `resource :theme` (`update`), `resource :strava_connection` and the OAuth callback.
-  - Phase 3: `resource :wellness`, `resources :gears` (index), `resource :gear_sync` (`create` = Refresh from Strava), and a `gear` filter param on `/runs`.
+  - Phase 3: `resource :wellness`, `resources :gears` (index, served at `/gear`), `resource :gear_sync` (`create` = Refresh from Strava), and a `gear` filter param on `/runs`.
   - Phase 4: `runs/:run_id/map` (`resource :map`, show), `resource :training_bands`, `resources :goals`.
 - **Charts:**
   - One Stimulus controller per chart type (kebab-case files in `app/javascript/controllers`): `period-bars`, `trailing-line`, `pace-scatter`, `heatmap`, `streaks`, `pace-trends`, `pr-progress`, `run-speed`, `run-profiles`, `run-map`, `pace-variability`, `elevation-profile`, `rank-distribution`, `analyze-run`, `day-tip`, `info`, and so on.
@@ -764,7 +765,7 @@ Work in this order. Items marked "parallel" touch different files and can run at
 - [ ] **W9: Wellness page (§5.6).** The nav item, the shared window and brush, the day cursor, and the charts the probe allows, with empty states. Done when the performance targets in §12 are met. Depends on W7. Parallel with W10.
 - [ ] **W10: Pace Trends overlay (§5.3, §5.6).** The overlay button group and secondary axis. Depends on W7. Parallel with W9.
 - [x] **W11: Strava gear sync (§7.6, §8).** The `profile:read_all` scope, `profiles.strava_scope` and the Reconnect prompt, `gears` and `activities.strava_gear_id`, the Strava client's gear calls, `gear_id` read in the link scans, the weekly gear refresh, the full pass on connect and the hourly recent pass. Done when: WebMock tests cover a missing scope, a gear without a row yet, null gear, an absent `retired` and 401 handling. Owner action after the deploy: click Reconnect Strava. Then check on the live connection, printing counts only. Parallel with W6.
-- [ ] **W12: Gear page and gear on runs (§5.7).** The table, the "No gear set" row, the two charts, the Refresh button, the runs list column and `gear` filter with the Suggested column, and the header tag. Done when: per-gear distance matches Strava's gear distance within 1% where a gear was only used for runs, every linked run without gear is listed, and tests and the browser check pass. Depends on W11.
+- [x] **W12: Gear page and gear on runs (§5.7).** The table, the "No gear set" row, the two charts, the Refresh button, the runs list column and `gear` filter with the Suggested column, and the header tag. Done when: per-gear distance matches Strava's gear distance within 1% where a gear was only used for runs, every linked run without gear is listed, and tests and the browser check pass. Depends on W11.
 - [ ] **W13: Phase 3 close-out.** Check the new pages against the design system (§10), update this document and `AGENTS.md`, tick this checklist, rebuild and deploy the container.
 
 ### Phase 4: Pro analytics
