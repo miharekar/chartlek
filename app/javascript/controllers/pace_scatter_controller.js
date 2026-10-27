@@ -80,6 +80,7 @@ export default class extends Controller {
       for (const index of previous) if (!next.has(index)) paint(view.byRun.get(index), "dim")
     }
     this.active = next
+    view.lastDot?.attr("display", next ? "none" : null)
 
     if (view.ring) {
       view.ring.attr("stroke-width", next ? 3 : 2)
@@ -142,9 +143,10 @@ export default class extends Controller {
       .attr("fill-opacity", 0.5)
 
     const lastRun = runs[last]
+    let lastDot
     if (value(lastRun) != null) {
       const [lastX, lastY] = position(lastRun)
-      chart.append("circle").attr("cx", lastX).attr("cy", lastY).attr("r", 5).attr("fill", "var(--chart-highlight)").attr("stroke", "currentColor").attr("stroke-width", 2)
+      lastDot = chart.append("circle").attr("cx", lastX).attr("cy", lastY).attr("r", 4.5).attr("fill", "var(--chart-highlight)")
     }
     let ring
     if (average[key]) {
@@ -159,7 +161,7 @@ export default class extends Controller {
     }
 
     const nodes = dots.nodes()
-    this.view = { key, x, y, average, ring, byRun: new Map(shown.map(({ index }, position) => [index, nodes[position]])) }
+    this.view = { key, x, y, average, ring, lastDot, byRun: new Map(shown.map(({ index }, position) => [index, nodes[position]])) }
     this.active = null
     this.addHover(chart, shown, points, innerWidth, innerHeight)
   }
