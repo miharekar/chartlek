@@ -9,6 +9,7 @@ Rails.application.routes.draw do
   resource :pace_trend, only: :show
   resource :pr_progress, only: :show
   resource :wellness, only: :show
+  resource :training_bands, only: :show
   resources :gears, path: "gear", only: :index
   resource :gear_sync, only: :create
   resource :sync, only: :create

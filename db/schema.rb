@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_28_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_28_140000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -72,6 +72,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_28_120000) do
     t.json "weather"
     t.bigint "strava_id"
     t.string "strava_gear_id"
+    t.json "bands"
     t.index ["local_started_at"], name: "index_activities_on_local_started_at"
     t.index ["source", "external_id"], name: "index_activities_on_source_and_external_id", unique: true
     t.index ["strava_gear_id"], name: "index_activities_on_strava_gear_id"

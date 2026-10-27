@@ -79,7 +79,7 @@ Phase 3 does not depend on Phase 4. Phase 4 depends on Phase 3 for HR zones.
 
 ### 5.1 Global (built)
 
-- **Nav:** Overview, Runs, Pace Trends, PR Progress. Phase 3 adds Wellness and Gear; Phase 4 adds Training Bands and Goals (the Pro Map opens from a run). Items wrap instead of overflowing, and there are no dropdown menus. On the right: the sync status, **Sync now**, **Connect Strava** (or **Reconnect Strava** when the stored grant lacks gear access, §7.6) and the theme switch.
+- **Nav:** Overview, Runs, Pace Trends, PR Progress. Phase 3 adds Wellness and Gear; Phase 4 adds Training Bands (between Wellness and Gear) and Goals (the Pro Map opens from a run). Items wrap instead of overflowing, and there are no dropdown menus. On the right: the sync status, **Sync now**, **Connect Strava** (or **Reconnect Strava** when the stored grant lacks gear access, §7.6) and the theme switch.
 - **Sync status in the nav:**
   - Shows "Synced 12 min ago" and a **Sync now** button.
   - A sync runs every hour in the background (a Solid Queue recurring task in the container), and on the **Sync now** button. Opening a page does not sync.
@@ -319,14 +319,19 @@ A full-page view at `/runs/:id/map`, opened from the run page's route map ("Open
 - **Splits** per km for pace, elevation, HR or cadence, following the current metric. Clicking a split isolates it.
 - **Change-in-pace graph** under the map. Hovering another metric's filter overlays that metric on a secondary axis.
 
-### 5.9 Training Bands (Phase 4, planned)
+### 5.9 Training Bands (Phase 4, built, W15)
 
-- Each run is precomputed into seconds per pace zone, HR zone and grade bucket.
-- These are shown as a stacked area chart per week across all history:
-  - Category toggle (a button group): pace, HR or grade.
-  - Absolute or % view.
-  - Band filters, for example "tempo and faster" or "HR zone 4+".
-  - Timeline brush to zoom.
+- **Precomputed per run:** `activities.bands` (JSON) holds seconds per pace zone (the 37 zones of §6), per HR zone (1 to 5, `HrZones.current`) and per grade bucket, computed by `Track::Bands` from the stored track (`tracks.data`: `t`, `d`, `alt`, `hr`), never from the originals. `process_original` sets it for new runs and `bin/rails activities:bands` backfills it from the stored tracks in a few seconds (the originals would take hours). A run with a rebuilt distance (§6) has no bands, like its splits.
+- **How a run is cut:** the track is walked in windows that close at 100 m or 30 s, whichever comes first, so stopped time lands in the walk zone. A window's speed gives its pace zone; its mean HR (missing HR is skipped, a bpm under zone 1's floor counts as zone 1) gives the HR zone with today's boundaries; its altitude change over its distance gives the grade bucket (windows under 20 m, or without altitude, are left out). The 100 m window is the smoothing, so GPS altitude noise within about a metre doesn't leave the flat bucket. Grade buckets: below −8%, −8 to −4, −4 to −1, −1 to +1, +1 to +4, +4 to +8, above +8%.
+- **Page (`/training_bands`, nav item Training Bands between Wellness and Gear):** one stacked area chart of time per week (weeks start on Monday, `local_started_at`) across all history.
+  - **Category** (button group): Pace, Heart rate, Grade; Heart rate is only offered when some run has HR bands.
+  - **View** (button group): Absolute (hours per week) or % (each band's share of the week's total running, so hiding bands leaves the shown share rather than rescaling to 100%).
+  - **Band filters:** one toggle button per group, all on by default, with a swatch of the group's colours. Pace groups: Walk (under 5.5 km/h), Easy (slower than 6:00 /km), Steady (6:00 to 5:00), Tempo (5:00 to 4:17), Fast (faster than 4:17), the boundaries fixed, not personal; so "tempo and faster" is Walk, Easy and Steady turned off. HR groups are the five zones ("zone 4+" is zones 1 to 3 turned off), grade groups the seven buckets. Filters are kept per category for the visit, not in the URL.
+  - **Window:** the Pace Trends presets (3 mo, 6 mo, 1 yr, 2 yr, All time, default All time) and a brush on a timeline of weekly hours (`createTimeline` and the preset helpers are reused). `from`, `to`, `category` and `view` are URL params, updated in place.
+  - **Colours:** pace bands use `--pace-zone-N`, HR bands `--hr-zone-N` and grade `--grade-0` to `--grade-6` (blue for descents through grey to orange and red for climbs), so a colour means the same as on the run page and the Pro Map.
+  - **Tooltip:** hovering a week (or Left, Right, Home, End and Escape on the chart's Tab stop) lists each shown group's time and share of the week, then the week's total.
+  - **ⓘ:** explains the groups and says the HR zones are today's, as on the run page.
+- **Performance:** the payload is columnar, one dense array of weekly seconds per band (bands with no time left out), about 170 KB on the full history, summed in Ruby from one query. The page took about 50 ms server-side once warm (161 ms the first request) and a window change or filter toggle redraws in about 5 ms.
 
 ### 5.10 Progress Towards Goal (Phase 4, planned)
 
@@ -582,7 +587,7 @@ Index on `local_started_at`. All of history is about 2,900 rows. Aggregations lo
 
 ### Phase 4 additions (planned)
 
-- `activities.bands`: JSON of seconds per pace zone, HR zone and grade bucket.
+- `activities.bands` (built, W15): JSON `{"pace": [37 seconds], "hr": [5], "grade": [7]}` of whole seconds per pace zone, HR zone (zone 1 first) and grade bucket (steepest descent first), computed from the stored track (§5.9). An array whose total is 0 (no HR, no altitude) is nil, and the whole column is nil for rebuilt distances and runs without a track. HR bands use the zones in force when they were computed.
 - `goals`: `period` (month or year), `starts_on`, `distance_m`.
 - `efforts` (fastest segments for the Pro Map).
 
@@ -617,11 +622,11 @@ Garmin profile settings (JSON), HR zones (Phase 3), `synced_at`, `sync_started_a
 - **Routes:** REST resources only:
   - Built: `resource :overview` (with `:year`/`:month`), `resource :pace_trend`, `resource :pr_progress`, `resource :wellness` (show, with `from` and `to`), `resources :runs` (index and show), `resource :sync` (`create` = Sync now), `resource :theme` (`update`), `resource :strava_connection` and the OAuth callback.
   - Phase 3: `resources :gears` (index, served at `/gear`), `resource :gear_sync` (`create` = Refresh from Strava), and a `gear` filter param on `/runs`.
-  - Phase 4: `runs/:run_id/map` (`resource :map`, show), `resource :training_bands`, `resources :goals`.
+  - Phase 4: `runs/:run_id/map` (`resource :map`, show), `resource :training_bands` (show, built), `resources :goals`.
 - **Charts:**
-  - One Stimulus controller per chart type (kebab-case files in `app/javascript/controllers`): `period-bars`, `trailing-line`, `pace-scatter`, `heatmap`, `streaks`, `pace-trends`, `pr-progress`, `run-speed`, `run-profiles`, `run-map`, `wellness`, `pace-variability`, `elevation-profile`, `rank-distribution`, `analyze-run`, `day-tip`, `info`, and so on.
+  - One Stimulus controller per chart type (kebab-case files in `app/javascript/controllers`): `period-bars`, `trailing-line`, `pace-scatter`, `heatmap`, `streaks`, `pace-trends`, `pr-progress`, `run-speed`, `run-profiles`, `run-map`, `wellness`, `training-bands`, `pace-variability`, `elevation-profile`, `rank-distribution`, `analyze-run`, `day-tip`, `info`, and so on.
   - The server renders chart data as JSON into Stimulus values, so no JSON endpoints are needed.
-  - Shared helpers live in `app/javascript/helpers/`: formatters, tooltip (`tooltipHtml`), resize, time, regression, `linked_selection` (Overview hover), `run_cursor` (run page distance cursor, and the Wellness day cursor) and `route_point`, `wellness` (moving means, zone stacking, step windows), roving focus, and the pure logic of each chart.
+  - Shared helpers live in `app/javascript/helpers/`: formatters, tooltip (`tooltipHtml`), resize, time, regression, `linked_selection` (Overview hover), `run_cursor` (run page distance cursor, and the Wellness day cursor) and `route_point`, `wellness` (moving means, zone stacking, step windows), `training_bands` (week stacking, filters, tooltip rows), roving focus, and the pure logic of each chart.
   - Charts redraw on `ResizeObserver`.
   - Theme comes from CSS variables (`--chart-accent`, `--chart-muted`, `--chart-grid`, …), so a light/dark switch needs no redraw. The variables, Tailwind's `dark:` variant and `color-scheme` all key off `<html data-theme>`.
 
@@ -780,7 +785,7 @@ Work in this order. Items marked "parallel" touch different files and can run at
 ### Phase 4: Pro analytics
 
 - [ ] **W14: Pro Map (§5.8).** Route colouring from the pace zones and HR zones, distribution bars with the click cycle, fastest segments (`efforts`), splits, and the change-in-pace graph. Depends on W1 and W8. Parallel with W15 and W16.
-- [ ] **W15: Training Bands (§5.9).** `activities.bands`, computed in `process_original` and backfilled with `activities:reprocess`, and the page. Depends on W8. Parallel with W14 and W16.
+- [x] **W15: Training Bands (§5.9).** `activities.bands`, computed in `process_original` and backfilled from the stored tracks with `activities:bands`, and the page. Depends on W8. Parallel with W14 and W16.
 - [ ] **W16: Progress Towards Goal (§5.10).** `goals` with CRUD, the chart, and the Overview widgets. Parallel with W14 and W15.
 - [ ] **W17: final close-out.** Update this document and `AGENTS.md`, rebuild and deploy the container, and re-check the golden values.
 

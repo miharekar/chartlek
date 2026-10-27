@@ -30,6 +30,8 @@ class Activity::TrackProcessingTest < ActiveSupport::TestCase
     assert_not_nil activity.pace_variability
     assert_not activity.track.chart_metrics.key?("speed_windows")
     assert_equal 16, activity.track.chart_metrics["elevation"].size
+    assert_in_delta 390, activity.bands["pace"].sum, 3
+    assert_equal 3, activity.bands.keys.size
   end
 
   test "clips a Garmin recording to the summary timer" do
@@ -79,6 +81,19 @@ class Activity::TrackProcessingTest < ActiveSupport::TestCase
     assert_nil activity.splits
     assert_nil activity.pace_variability
     assert_nil activity.track.chart_metrics
+    assert_nil activity.bands
+  end
+
+  test "backfills bands from stored tracks and skips runs without splits" do
+    run = create(:activity, splits: [{}])
+    Track.create!(activity: run, data: {"t" => [0, 10, 20], "d" => [0, 30, 60]})
+    rebuilt = create(:activity)
+    Track.create!(activity: rebuilt, data: {"t" => [0, 10, 20], "d" => [0, 30, 60]})
+    create(:activity)
+
+    assert_equal 1, Activity.backfill_bands
+    assert_equal [20], run.reload.bands["pace"].compact.select(&:positive?)
+    assert_nil rebuilt.reload.bands
   end
 
   test "processing again replaces the track" do

@@ -40,6 +40,11 @@ namespace :activities do
     failures.each { |id, reason| puts "Failed #{id} (#{reason})" }
   end
 
+  desc "Compute training bands from every stored track"
+  task bands: :environment do
+    puts "Computed bands for #{Activity.backfill_bands} runs"
+  end
+
   desc "Download and process the Garmin original of every run that lacks one"
   task download: :environment do
     report = Activity.download_originals do |progress|

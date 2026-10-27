@@ -1,0 +1,27 @@
+<%= tag.div data: (@bands.data? ? {controller: "training-bands", training_bands_payload_value: @bands.payload} : {}) do %>
+<%= page_header "Training Bands", info: overview_info(training_bands_info) %>
+
+<% if @bands.data? %>
+  <div class="mt-6 flex flex-wrap items-center gap-x-4 gap-y-3">
+    <%= training_bands_categories @bands %>
+    <%= training_bands_views @bands %>
+  </div>
+  <div class="mt-3 flex flex-col gap-2">
+    <%= training_bands_filters @bands %>
+  </div>
+  <div class="mt-6">
+    <div class="text-sm font-semibold tabular-nums" data-training-bands-target="range"></div>
+    <div class="<%= WidgetsHelper::HINT %>">Pick a span or drag the timeline below to change the window.</div>
+    <div class="mt-2"><%= training_bands_presets %></div>
+  </div>
+  <section class="mt-4 <%= WidgetsHelper::CARD %>">
+    <h2 class="<%= WidgetsHelper::CARD_TITLE %>">Training time per week</h2>
+    <div class="mt-3 w-full" data-training-bands-target="chart" data-label="Training time per week chart"></div>
+  </section>
+  <div data-training-bands-target="timeline" class="mt-3 w-full"></div>
+<% else %>
+  <%= empty_state "No training bands yet." do %>
+    New runs get their bands when their track is processed. To compute them for the history now, run bin/rails activities:bands.
+  <% end %>
+<% end %>
+<% end %>

@@ -125,6 +125,9 @@ Rails:
   Enabled: true
 Rails/I18nLocaleTexts:
   Enabled: false
+Rails/SkipsModelValidations:
+  Exclude:
+    - app/models/activity/track_processing.rb
 Style/Alias:
   EnforcedStyle: prefer_alias_method
 Style/Documentation:
