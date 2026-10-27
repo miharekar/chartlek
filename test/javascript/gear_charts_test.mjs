@@ -78,6 +78,15 @@ test("a lead month is kept for the cumulative chart but never before the first m
   assert.deepEqual(zoom(months, [old], 1).months, ["m0", "m1"])
 })
 
+test("a lead zoom spans at least two months even when use is only in the first month", () => {
+  const first = { id: "f", km: [4, 0, 0, 0, 0, 0] }
+
+  assert.deepEqual(zoom(months, [first], 1).months, ["m0", "m1"])
+  assert.deepEqual(zoom(months, [first], 1).gears[0].km, [4, 0])
+  assert.deepEqual(zoom(months, [first]).months, ["m0"])
+  assert.deepEqual(zoom(["m0"], [{ id: "f", km: [4] }], 1).months, ["m0"])
+})
+
 test("with nothing visible the full range stays", () => {
   assert.deepEqual(zoom(months, []), { months, gears: [] })
 })

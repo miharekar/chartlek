@@ -44,6 +44,6 @@ export function zoom(months, gears, lead = 0) {
   if (!span) return { months, gears }
 
   const from = Math.max(0, span[0] - lead)
-  const to = span[1] + 1
+  const to = lead > 0 ? Math.min(months.length, Math.max(span[1] + 1, from + 2)) : span[1] + 1
   return { months: months.slice(from, to), gears: gears.map(gear => ({ ...gear, km: gear.km.slice(from, to) })) }
 }
