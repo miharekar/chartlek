@@ -1,13 +1,16 @@
 # Smashback: Product Requirements Document
 
-- **Status:** Draft v2
-- **Date:** 2026-10-25
+- **Status:** Draft v3. Phases 0 and 1 are done. Phase 2 is built and is being finished (W1 to W5, §14). Phase 3 (Wellness and gear) and Phase 4 (Pro analytics) are planned.
+- **Date:** 2026-10-27
 - **Owner:** Miha Rekar
 - **Repo:** `~/Projects/Personal/smashback`
+- **Production:** https://run.rekar.eu (a Docker container, §9)
+
+This document is the source of truth for scope. §14 is the ordered work queue with dependencies. Coding conventions are in `AGENTS.md` and `STYLE.md`. Each feature heading says whether it is built or planned.
 
 ## 1. Summary
 
-Smashback is a local, single-user Rails app. It caches your Garmin Connect running history in SQLite and rebuilds Smashrun's charts, free and Pro, with a modern Tailwind UI and charts built directly on D3.
+Smashback is a local, single-user Rails app. It caches your Garmin Connect running history in SQLite and rebuilds Smashrun's charts, free and Pro, with a modern Tailwind UI and charts built directly on D3. It runs as a container at run.rekar.eu. Next it brings Garmin health data (HR zones, HRV, sleep, recovery) and Strava gear next to the runs, and after that the Pro analytics.
 
 Why: Smashrun (smashrun.com/miharekar) is effectively abandonware, but its charts are still the best way to look at a long running history. The ask in [dreeveapp/dreeve#2880](https://github.com/dreeveapp/dreeve/issues/2880) was turned down because most of these charts are too runner-specific for a general-purpose app. Smashback is only about running, so it can include all of them.
 
@@ -15,11 +18,12 @@ Why: Smashrun (smashrun.com/miharekar) is effectively abandonware, but its chart
 
 ### Goals
 
-- **G1:** Rebuild every Smashrun overview chart and the Pro analytics: Pace Trends, PR Progress, Training Bands, Progress Towards Goal, Pro Map, and the run page.
+- **G1:** Rebuild every Smashrun overview chart and the Pro analytics: Pace Trends, PR Progress, Training Bands, Progress Towards Goal, Pro Map, and the run page. Overview, Pace Trends, PR Progress and the run page are built; the rest is Phase 4.
 - **G2:** Use the Garmin Connect Personal API as the primary source and cache everything in SQLite. The UI never waits on Garmin.
 - **G3:** Fill the years before Garmin from the Strava API; take their tracks, and any Smashrun-only runs, from the Smashrun API.
-- **G4:** Make the UI fast and modern: Tailwind, a System / Light / Dark theme switch, and D3 charts as Stimulus controllers.
-- **G5:** Show Garmin wellness trends (resting HR, VO2max, HRV, weight, sleep, Body Battery/stress) next to running performance.
+- **G4:** Make the UI fast, modern and consistent: Tailwind, a System / Light / Dark theme switch, D3 charts as Stimulus controllers, and one design system (§10) in which every choice among options is a group of buttons.
+- **G5:** Show Garmin health data on runs and in trends: HR zones, training effect and load, resting HR, HRV, sleep, Body Battery, stress, weight, VO2max, and recovery metrics where the API exposes them (§5.6).
+- **G6:** Show Strava gear, read-only: usage per shoe, and the runs that have no gear set, so they can be fixed on Strava (§5.7).
 
 ### Non-goals
 
@@ -33,7 +37,9 @@ These are explicitly out of scope:
 - Running power (Stryd or native).
 - Multi-user support and authentication. (It is deployed for the owner alone: a Docker container on their machine, §9.)
 - Imperial units, including mile benchmarks.
-- Writing anything back to Garmin.
+- Writing anything back to Garmin or Strava, including gear.
+- Gear maintenance, recording devices, bikes and shoe mileage alerts.
+- Smashrun's SPI score and its trailing 90-day SPI comparison card. VDOT replaces SPI, and the VDOT view of "Runs in the prior 90 days" covers the comparison.
 - A mobile app.
 
 ## 3. Decisions log
@@ -41,56 +47,59 @@ These are explicitly out of scope:
 | Topic | Decision |
 |---|---|
 | Users | Just you. Single user, no accounts. |
-| Hosting | Your machine, reachable over Tailscale (`bin/dev` binds 0.0.0.0; hosts `framework:3000`, `test.rekar.eu`). No auth. |
+| Hosting | One Docker container on your machine (port 9295), served at https://run.rekar.eu by Caddy on the Pi over Tailscale. `bin/dev` (0.0.0.0:3000, hosts `framework:3000` and `test.rekar.eu`) is for development. Both use the same SQLite dataset. No auth: the tailnet is the boundary (§9, §11). |
+| Order of work | Finish Phase 2 (W1 to W5), then Phase 3 Wellness and gear, then Phase 4 Pro analytics. Wellness moved ahead of the Pro analytics because the Pro Map's HR colouring and Training Bands' HR category need the HR zones that Phase 3 stores. |
 | Garmin access | [Garmin Connect Personal API](https://developer.garmin.com/gc-developer-program/personal/personal-api/). The key is in `.env` as `GARMIN_API_TOKEN`. |
 | History gaps | Strava API (archive as fallback) for runs before Garmin, plus Smashrun for their tracks and the one Smashrun-only run. |
 | FIT parser | `fit4ruby` from your fork `miharekar/fit4ruby`. `fit_kit` doesn't build on Ruby 4.0.9. The fork prefixes its BinData struct field names, so it works with bindata 2.4.10 and newer (CVE-2021-32823); bindata 2.3.1 made `type` a reserved name. An initializer quiets its logger and no-ops `Fit4Ruby::Activity#check`, its post-read validation, which rejects every 2024+ file and at least one older one. About 2,000 records/s. |
-| Map | Mapbox GL JS for every map (run map now, Pro Map in Phase 3), loaded through Importmap (vendored UMD build, CSS vendored), with the `mapbox/light-v11` and `mapbox/dark-v11` styles following the chosen theme (the OS under System). The public `MAPBOX_TOKEN` from `.env` is rendered into the page. |
+| Map | Mapbox GL JS for every map (run map now, Pro Map in Phase 4), loaded through Importmap (vendored UMD build, CSS vendored), with the `mapbox/light-v11` and `mapbox/dark-v11` styles following the chosen theme (the OS under System) and terrain layers on top (§5.5). The public `MAPBOX_TOKEN` from `.env` is rendered into the page. |
 | Activity types | All running subtypes: road, trail, track, treadmill, indoor, virtual, ultra. Treadmill, indoor and virtual runs are flagged so they can be filtered out. |
-| v1 scope | Overview dashboard, Pace Trends, PR Progress (with predictions and Magic PRs). |
-| Eventually | Everything except badges: run page, Pro Map, Training Bands, Goals, wellness. |
-| Extras | Notables, food equivalents, Garmin wellness data (resting HR, VO2max, HRV, weight, sleep, Body Battery/stress). |
-| Performance index | VDOT only. SPI (Smashrun's 1–1000 score on a 1974 world-record curve) was dropped: its number has no physical meaning, and on the owner's PRs VDOT predicted other distances more accurately (§6). |
+| Performance index | VDOT only. SPI (Smashrun's 1 to 1000 score on a 1974 world-record curve) was dropped: its number has no physical meaning, and on the owner's PRs VDOT predicted other distances more accurately (§6). It is presented the Smashrun way: a zone strip and an estimated finish time you can step through the distances (§5.5). |
+| Controls | Every choice among options is a group of buttons (a segmented control with `aria-pressed`). There are no `<select>` dropdowns anywhere (§10). |
+| Gear | From Strava, read-only. Smashback never writes to Strava. Linked runs with no gear are flagged so you can fix them on Strava (§5.7). |
+| Health data | Garmin Personal API, found out by a probe first (W6). What the API doesn't offer is cut from scope. Time in HR zones, training effect and training load come from the activity summaries already stored. |
 | Units | Metric only: km, min/km, m, °C, 24h clock, weeks start Monday. |
 | Look | Light and dark. A System / Light / Dark switch in the nav; System follows the OS, and the choice lives in a long-lived cookie rendered on `<html>` by the server. |
 | Name | `smashback` |
-| Stack | `rails new` (Rails 8.1.4, Ruby 4.0.9 via mise), SQLite, Tailwind, Importmap, Hotwire, D3. Follows Visualizer's `STYLE.md` conventions. |
+| Stack | `rails new` (Rails 8.1.4, Ruby 4.0.9 via mise), SQLite, Tailwind, Importmap, Hotwire, D3, Solid Queue, Cache and Cable. Follows Visualizer's `STYLE.md` conventions. |
 
 ## 4. Phasing
 
-| Phase | Ships | Exit criteria |
-|---|---|---|
-| **0: Foundation** | App skeleton, Garmin client, activity sync from summaries, Strava archive import, nav and sync status | `Sync now` imports all Garmin runs. The Strava task imports only gap runs. Tests pass. |
-| **1: v1** | Overview (§5.2), Pace Trends (§5.3), PR Progress (§5.4) | All widgets per spec. Golden values (§12) within tolerance. Light and dark both verified. |
-| **2: Runs** | Original download and parsing (FIT, TCX, Smashrun recordings), runs list, run page (§5.5), weather, notables, food equivalents, PR sparklines, Analyze Run View | Every run has a parsed track (Garmin original or Smashrun recording). Run page complete. |
-| **3: Pro analytics** | Pro Map (§5.6), Training Bands (§5.7), Progress Towards Goal (§5.8) | Per spec. |
-| **4: Wellness** | Wellness page and overlays (§5.9) | Per spec. Phase 4 doesn't depend on Phases 2–3 and can be pulled earlier. |
+| Phase | Ships | Exit criteria | Status |
+|---|---|---|---|
+| **0: Foundation** | App skeleton, Garmin client, activity sync from summaries, Strava archive import, nav and sync status | `Sync now` imports all Garmin runs. The Strava task imports only gap runs. Tests pass. | Done |
+| **1: v1** | Overview (§5.2), Pace Trends (§5.3), PR Progress (§5.4) | All widgets per spec. Golden values (§12) within tolerance. Light and dark both verified. | Done |
+| **2: Runs** | Original download and parsing (FIT, TCX, Smashrun recordings), runs list, run page (§5.5), weather, notables, food equivalents, PR sparklines, Strava connection and run links, theme switch, linked hover, container deployment | Every run has a parsed track (Garmin original or Smashrun recording; two Smashrun details have none). Run page complete. | Built. Finishing in W1 to W5: performance index and dynamic estimated finish, buttons instead of dropdowns, the rebuilt "Runs in the prior 90 days", one design system |
+| **3: Wellness and gear** | Garmin health data (probe first), HR zones and recovery on the run page, Wellness page, Pace Trends overlays, Strava gear sync and the Gear page (§5.6, §5.7) | Probe results are recorded in §7.1. Every run with HR shows its zones. The Wellness page shows every metric the API offers, for the whole history. Gear totals match Strava's and every linked run without gear is listed. | Planned (W6 to W13) |
+| **4: Pro analytics** | Pro Map (§5.8), Training Bands (§5.9), Progress Towards Goal (§5.10) | Per spec. | Planned (W14 to W17) |
 
-**Phase 1 needs only activity summaries.** The Personal API's activity search returns distance, duration, HR, elevation, local start time, type and event type. That's enough for everything in Phase 1 except the PR sparklines, which move to Phase 2. Phase 1 therefore doesn't download or parse originals.
+Phase 3 does not depend on Phase 4. Phase 4 depends on Phase 3 for HR zones.
 
 ## 5. Feature specs
 
-### 5.1 Global
+### 5.1 Global (built)
 
-- **Nav:** Overview, Runs, Pace Trends, PR Progress. Later phases add Training Bands, Goals and Wellness.
+- **Nav:** Overview, Runs, Pace Trends, PR Progress. Phase 3 adds Wellness and Gear; Phase 4 adds Training Bands and Goals (the Pro Map opens from a run). Items wrap instead of overflowing, and there are no dropdown menus. On the right: the sync status, **Sync now**, **Connect Strava** (or **Reconnect Strava** when the stored grant lacks gear access, §7.6) and the theme switch.
 - **Sync status in the nav:**
   - Shows "Synced 12 min ago" and a **Sync now** button.
   - A sync runs every hour in the background (a Solid Queue recurring task in the container), and on the **Sync now** button. Opening a page does not sync.
   - A sync that created, changed or deleted runs, or that changed the error state, refreshes the page with a Turbo `:replace` refresh (`turbo_refreshes_with method: :replace`). Morphing would wipe the D3-drawn SVGs; a full replace makes the chart controllers reconnect and redraw.
   - Any other sync only replaces the nav sync status in place. The status also shows "Syncing…" live when a sync starts, and no page state (modes, selections, brushed windows) is lost.
   - If the Garmin key has expired, a banner explains how to rotate it (§11).
+- **Theme:** System, Light or Dark. The choice is stored in a long-lived cookie and rendered on `<html data-theme>` by the server, so nothing flashes; a switch is a full page load, because Turbo doesn't update `<html>` attributes.
+- **Controls:** a choice among options (metric, window, mode, distance) is a group of buttons with `aria-pressed`; independent filters are toggle buttons; actions are buttons. There is no `<select>` (§10).
 - **Formatting:**
   - Pace: `m:ss /km`.
   - Durations: `h:mm:ss`.
-  - Distances: 1 decimal place in km.
+  - Distances: 1 decimal place in km, everywhere (tooltips included).
   - Dates: `21 Apr 2020`.
   - Numbers use `tabular-nums`.
-- **Links:**
-  - Phase 1: clicking a run in any chart opened it on Garmin Connect (`connect.garmin.com/app/activity/:id`, verified) or on Strava for gap runs.
-  - Phase 2: clicks open the run page in the same tab instead. The run page links out to Garmin or Strava.
+- **Links:** clicking a run in any chart opens its run page in the same tab. The run page links out to Garmin or Strava.
 - **Chart info:** every chart has an ⓘ button explaining how to read it, adapted from Smashrun's FAQ. The text shows in the shared tooltip on hover, keyboard focus or tap, and Escape or a click elsewhere hides it.
+- **Empty states:** a page with no runs or no data shows an empty state instead of charts.
+- **Keyboard and focus:** a chart's interactive elements are one Tab stop with Arrow, Home, End and Escape. A mouse click on a chart that has no click action never leaves a focus outline or pins a tooltip; keyboard focus (`:focus-visible`) shows a ring.
 
-### 5.2 Overview (Phase 1)
+### 5.2 Overview (Phase 1, built)
 
 Routes: `/` → `/overview`, `/overview/:year`, `/overview/:year/:month`.
 
@@ -107,12 +116,12 @@ The header row has a **Latest run · date · km →** button linking to the newe
 | 5 | Time of day | % of runs starting after noon (local time), with a small AM/PM donut. |
 | 6 | Average pace | Total timer time ÷ total distance. |
 | 7 | Longest run | km and date; links to the run. |
-| 8 | Distance per period | Bars: per month (all time), per week (year), per day (month). The metric in the title is switchable: **Distance** / Elevation gained / Avg distance / Avg pace / Avg VDOT. Hover shows value and run count. Clicking a bar drills into that period. |
+| 8 | Distance per period | Bars: per month (all time), per week (year), per day (month). A button group beside the title chooses the metric: **Distance**, Elevation gained, Avg distance, Avg pace, Avg VDOT, and the title follows it. Hover shows value and run count. Clicking a bar drills into that period. |
 | 9 | Trailing days | Daily rolling sum of distance: 365 days (all-time view), 90 (year), 7 (month). |
-| 10 | Runs pace vs distance | Scatter of runs in the period. x = km. y = pace on a speed-linear axis labeled as pace (ticks 4:00, 5:00, 6:00, 7:30, 10:00, 15:00, 30:00). The last run is highlighted and the average is a ring marker. The y metric is switchable: **Pace** / Avg HR / VDOT. |
+| 10 | Runs pace vs distance | Scatter of runs in the period. x = km. y = pace on a speed-linear axis labeled as pace (ticks 4:00, 5:00, 6:00, 7:30, 10:00, 15:00, 30:00). The last run is highlighted and the average is a ring marker. A button group chooses the y metric: **Pace**, Avg HR, VDOT. |
 | 11 | Consecutive days run | Longest streak and longest break with dates, plus the current streak or break. |
 | 12 | Weekly stats for each year | All-time view: heatmap with years as rows and Monday-start weeks as columns. Weekly km buckets: >1, >20, >40, >50, >60 (ring), >80 (dot). Year and month views show a day calendar colored by daily km instead. |
-| 13 | Personal records | Benchmarks: 3 km, 5 km, 10 km, 15 km, 20 km, half marathon, 40 km, marathon, 50 km, 100 km. Only benchmarks with qualifying runs in the period are shown. Each row: date, pace, km/h, time, number of runs in the bucket, and a race tag. Phase 2 adds a pace sparkline per row (20-segment pace profile). |
+| 13 | Personal records | Benchmarks: 3 km, 5 km, 10 km, 15 km, 20 km, half marathon, 40 km, marathon, 50 km, 100 km. Only benchmarks with qualifying runs in the period are shown. Each row: date, pace, km/h, time, number of runs in the bucket, a race tag, and a pace sparkline (the 20-segment pace profile). |
 
 **Linked hover (Smashrun-style).** Hovering one of the charts below selects a set of the period's runs and highlights them in the others; leaving clears it. The chart under the pointer keeps its own tooltip and click. Hover also works over a chart's axes and their margins: the bars and the trailing line treat the bottom axis as the nearest column or day. On the scatter, selected runs are drawn larger in amber, the others muted grey, and the mean ring (the legend's lime ring) thickens; with no selection the chart looks as usual.
 
@@ -135,7 +144,7 @@ The header row has a **Latest run · date · km →** button linking to the newe
 
 The selection is only for the current view, is published through one shared module that redraws just the highlight layers once per animation frame, and is mouse driven.
 
-### 5.3 Pace Trends (Phase 1)
+### 5.3 Pace Trends (Phase 1, built)
 
 This answers "am I getting faster?" by putting all distances on a common scale (VDOT).
 
@@ -150,16 +159,16 @@ This answers "am I getting faster?" by putting all distances on a common scale (
 
 - Below the main chart, a timeline of bars shows each run's duration in hours over the whole history.
 - A `d3-brush` on the timeline selects the window; the default is the last 12 months. The main chart zooms to the window.
-- **Presets:** a row of buttons above the chart sets the window in one click: 3 mo, 6 mo, 1 yr, 2 yr and All time. Each ends at the end of today (the date of the latest run, as for the default) and starts that many calendar months earlier, clamped to the month's length; All time starts at the first run, and a span longer than the history also starts there, in which case the longer preset is the one marked. The preset matching the current window has `aria-pressed`; the default (12 months) marks 1 yr. A preset moves the brush and updates the stats, top runs, regression and finish predictions like a drag. A drag or resize clears the mark unless the new window equals a preset exactly. The window stays in the `from` and `to` URL params, so reloads, links and the filter chips keep it. PR Progress has no presets.
+- **Presets:** a button group above the chart sets the window in one click: 3 mo, 6 mo, 1 yr, 2 yr and All time. Each ends at the end of today (the date of the latest run, as for the default) and starts that many calendar months earlier, clamped to the month's length; All time starts at the first run, and a span longer than the history also starts there, in which case the longer preset is the one marked. The preset matching the current window has `aria-pressed`; the default (12 months) marks 1 yr. A preset moves the brush and updates the stats, top runs, regression and finish predictions like a drag. A drag or resize clears the mark unless the new window equals a preset exactly. The window stays in the `from` and `to` URL params, so reloads, links and the filter chips keep it. PR Progress has no presets.
 - The header shows:
   - The date range.
   - "Change in VDOT: **+0.05/week**", the slope × 7, always with two decimals.
-  - "Cut **34:28** from your estimated **[Marathon ▾]** finish time". This is the predicted time at the chosen distance (5K, 10K, half, marathon), using the regression VDOT at the start of the window versus the end. If the result is negative, it reads "Added".
+  - "Cut **34:28** from your estimated **5K / 10K / Half / Marathon** finish time", where the distance is a button group. This is the predicted time at the chosen distance, using the regression VDOT at the start of the window versus the end. If the result is negative, it reads "Added".
 - The regression and header are recomputed in the browser while dragging, with no server round trip.
 
 **Filters**
 
-Toggle chips:
+Toggle buttons:
 
 - Exclude runs with pauses.
 - Exclude treadmill/indoor/virtual.
@@ -167,13 +176,13 @@ Toggle chips:
 
 **Tooltip**
 
-Shows date, name, VDOT, distance, pace and time. Clicking a run opens its run page, which includes the Analyze Run View: the 90 days of training before that run.
+Shows date, name, VDOT, distance, pace and time. Clicking a run opens its run page, which includes the 90 days of training before that run.
 
-**Later**
+**Overlay (Phase 3)**
 
-Phase 4 adds a secondary-axis overlay toggle for resting HR or VO2max.
+A button group above the main chart chooses None, Resting HR, HRV or VO2max, drawn on a secondary axis (§5.6).
 
-### 5.4 PR Progress (Phase 1)
+### 5.4 PR Progress (Phase 1, built)
 
 **Main chart**
 
@@ -201,53 +210,107 @@ Phase 4 adds a secondary-axis overlay toggle for resting HR or VO2max.
 3. The 3 targets with the smallest % gap are shown as pulsing markers, with tooltips like "Sub-3:15 marathon: shave 5:32 (2.8%)".
 4. The step table is a constant and easy to tune.
 
-### 5.5 Runs list and run page (Phase 2)
+### 5.5 Runs list and run page (Phase 2, built; finished by W1 to W4)
 
 **Runs list (`/runs`, filterable by year and month)**
 
 - Sortable table: date, name, km, time, pace, HR, elevation, VDOT. The VDOT header carries the explanation (§6).
 - Race and treadmill tags.
+- Phase 3 adds a Gear column and a `gear` filter (§5.7).
 
-**Run page (`/runs/:id`)**
+**Run page (`/runs/:id`)**, top to bottom:
 
-- **Header:**
-  - Local date and time, start–end clock time.
-  - Weather: temperature, humidity, wind, from Open-Meteo at the run's midpoint hour.
-  - Location name (Garmin only), previous/next run, and Open in Garmin and Open in Strava buttons side by side. Garmin shows for Garmin runs; Strava shows for runs with a `strava_id` (§7.6). A Smashrun-only run has neither.
-  - If there were several runs that day, a switcher between them.
-  - A Smashrun-style date navigator: every year with runs (newest first), the 12 months of the run's year, and every day of its month, with the run's year, month and day selected. A year or month with runs opens its latest run, and a day opens its first run; the others are inert. Weekends look distinct, race days are amber, and hovering or focusing a day shows its weekday, date and distance in the shared tooltip. (Smashrun's own year and month buttons open its overview pages instead.)
-- **Tiles:**
-  - Distance, elapsed/timer/moving time, average pace and speed.
-  - Calories with a food equivalent ("A bunch of bananas… or a kremšnita").
-  - Average HR (min–max), average cadence (min–max), elevation gain and loss.
-  - VDOT, with the explanation in an ⓘ, and under the number the **estimated finish times** for 5K, 10K, half and marathon at that VDOT as a compact 2×2 grid (label above value). Without a VDOT the tile shows a dash and no grid.
-  - **Pace variability**, drawn as Smashrun's wheel: a ring of equal-angle wedges, clockwise from 12 o'clock, one per 100 m of the run (the same 100 m bars as the speed chart; a final bar shorter than 100 m is dropped, and there is no grouping or cap, so a 10 km run has 100 wedges and a marathon about 422), all in the accent colour, with the stored variability % (the average speed deviation across complete 10 s windows, not computed from the wedges) in the hole. A wedge's outer radius is the bar's |speed − mean| / mean (mean over the wedges) plus a 0.25 base, over a domain of 0 to the larger of 0.75 and the largest value, so a longer wedge means a speed further from the average, faster or slower. Hover or focus shows the wedge's distance range, its pace and the signed "Speed vs average" (for example +8.3%); the wheel is one Tab stop with Arrow, Home, End and Escape. An ⓘ explains it. The wheel needs at least two whole 100 m bars; runs without a track show the percentage and "Recording chart not processed yet." On a wide screen the row reads variability (1 column), Nth longest (1) and Nth fastest (2).
-  - **Nth longest run** and **Nth fastest for a similar distance** (±10%), each with a histogram: distance in km across all runs, or pace in min/km across the same similar-distance cohort. Bar height is run count; amber marks the current bucket and exact value. Hover shows the range, count and current value. Ties share a rank; cohorts include all dates.
-  - **Elevation profile** (runs with altitude only; otherwise the card is omitted): a compact card with a 70 px line chart of altitude against distance on the left (about two thirds) and, on the right, gained (+m), lost (−m) and **hill difficulty**. There are no axes or grid; the y domain is the low point − 5 m up to the larger of the low point + 150 m and the high point, so a flat run looks flat, and an amber dot marks the highest point. Hovering snaps a dot to the nearest sample and shows its elevation and distance. Gained and lost are the run's stored totals, the same as the Elevation tile. Hill difficulty is an integer from 1 to 5 defined by us, since Smashrun's formula is not public: 1 when the run climbs under 1.5 m per km, otherwise 1 plus one step per 8 m per km (rounded up), capped at 5. It was fitted against 16 public Smashrun runs (15 match) and is explained in the card's ⓘ. At wide widths the card sits beside the variability wheel and longest-run histograms, and the fastest histogram takes the full row below.
-- **Route map:** immediately after the tiles, a Mapbox GL JS route line, 600 px tall on desktop and 320 px on phones. Requires a GPS route and public Mapbox token. Under the light or dark base style (following the theme) it shows terrain for trail runs: subtle hillshading, contour lines (stronger index contours with elevation labels in metres), and mountain peaks as ▲ with name and elevation in metres. The terrain sits below the roads and labels, and the route and its start and end markers stay on top. No toggle. The Pro Map comes in Phase 3, also on Mapbox GL JS.
-- **Change in speed over route:** follows the map, only for tracks with splits, with the 100 m / per km toggle and a brush for summarising a stretch. There is no separate elevation-change chart; elevation lives in the elevation profile card and the profiles chart below.
-- **One distance cursor across the run page:** hovering the speed chart, the profiles (elevation, heart rate and cadence share one line and their readouts) or the elevation profile card draws a vertical amber line at that distance on all three, and moves a small amber marker with a halo along the route on the map (no panning or zoom). The marker sits on the route point recorded at that distance, interpolated between neighbouring points; where GPS had no fix for more than 100 m, or before the first and after the last fix, the marker is hidden rather than invented. Each chart keeps its own tooltip, and leaving any of them clears the line and the marker. Runs without a map (indoor) still sync the charts.
-  - Bars per 100 m, switchable to per-km splits using two keyboard-accessible buttons with a pressed state.
-  - Brushing a range shows a summary of the selection: distance, time, pace, HR, cadence.
-- **Elevation, HR and cadence charts:** follow the speed chart, 180 px each, sharing the x-axis (distance) and a synced hover. Chart sections require a track.
-- **Notables** as of the run's date (§6).
-- **Fastest runs for this distance:** for the last 90, 180 and 365 days and for all time (five rows each, the current run highlighted when it is listed).
-- **Analyze Run View (training in the prior 90 days):**
-  - A histogram of the 90 days before the run, by distance, pace, HR or VDOT (selectable), above a timeline of those runs.
-  - Brushing the histogram highlights the matching runs in the timeline.
-  - Shows run count, distance, duration, and % of total training for the selection.
-  - This run is marked in amber: a marker at its value on the histogram for the chosen metric, and a bar at the right edge of the timeline. It is not part of the averages or the summary.
-  - A dashed line marks the mean of the other runs for the chosen metric (runs without it are skipped); it is hidden while a brush is active.
-  - The timeline axis reads "90 days before", "60 days before", "30 days before" and "run day" ("race day" for races). Runs on the same day are grouped in one tooltip titled "N days before", and clicking a bar hides the tooltip as it opens that run.
-  - A small legend names "This run", "Average" and "Previous runs".
-- **Overview:** the PR sparklines (§5.2 #13) light up once tracks are parsed.
+1. **Header**
+   - Local date and time, start-end clock time.
+   - Weather: temperature, humidity, wind, from Open-Meteo at the run's midpoint hour.
+   - Location name (Garmin only), previous/next run, and Open in Garmin and Open in Strava buttons side by side. Garmin shows for Garmin runs; Strava shows for runs with a `strava_id` (§7.6). A Smashrun-only run has neither. Phase 3 adds the gear tag (§5.7).
+   - If there were several runs that day, a switcher between them.
+   - A Smashrun-style date navigator: every year with runs (newest first), the 12 months of the run's year, and every day of its month, with the run's year, month and day selected. A year or month with runs opens its latest run, and a day opens its first run; the others are inert. Weekends look distinct, race days are amber, and hovering or focusing a day shows its weekday, date and distance in the shared tooltip. (Smashrun's own year and month buttons open its overview pages instead.)
+2. **Tiles and cards**, a grid of 4 columns on wide screens and 2 on narrow ones:
+   - Distance, elapsed/timer/moving time, average pace and speed.
+   - Calories with a food equivalent ("A bunch of bananas… or a kremšnita").
+   - Average HR (min-max), average cadence (min-max), elevation gain and loss.
+   - **Performance index and estimated finish** (W1). One card, two columns wide, in two halves. It replaces the VDOT tile and its 2×2 grid of finish times. Smashrun's version is built on its SPI; ours is built on VDOT.
+     - **Performance index** (ⓘ with the VDOT explanation, §6): the run's VDOT as the big number (one decimal, a dash when the run has none) and under it a strip of the 37 pace zones (§6) in the shared colour ramp. A dot marks the zone of the pace at which this VDOT would run a 5K, labelled with that pace ("5K pace 4:52 /km"); a zone's own label shows on hover.
+     - **Estimated finish:** the predicted time at this VDOT for one distance at a time: the time big (h:mm:ss), the distance label (5K, 10K, Half, Marathon, the same list as Pace Trends) and the pace it implies. A ▶ button next to the label steps to the next distance and wraps from Marathon back to 5K; the default is 5K, and the time is announced with `aria-live="polite"`. All four times are already on the page, so stepping makes no request.
+     - A run without a VDOT (under 400 m) shows dashes and no strip.
+   - **Pace variability**, drawn as Smashrun's wheel: a ring of equal-angle wedges, clockwise from 12 o'clock, one per 100 m of the run (the same 100 m bars as the speed chart; a final bar shorter than 100 m is dropped, and there is no grouping or cap, so a 10 km run has 100 wedges and a marathon about 422), all in the accent colour, with the stored variability % (the average speed deviation across complete 10 s windows, not computed from the wedges) in the hole. A wedge's outer radius is the bar's |speed − mean| / mean (mean over the wedges) plus a 0.25 base, over a domain of 0 to the larger of 0.75 and the largest value, so a longer wedge means a speed further from the average, faster or slower. Hover or focus shows the wedge's distance range, its pace and the signed "Speed vs average" (for example +8.3%); the wheel is one Tab stop with Arrow, Home, End and Escape. An ⓘ explains it. The wheel needs at least two whole 100 m bars; runs without a track show the percentage and "Recording chart not processed yet."
+   - **Nth longest run** and **Nth fastest for a similar distance** (±10%), each with a histogram: distance in km across all runs, or pace in min/km across the same similar-distance cohort. Bar height is run count; amber marks the current bucket and exact value. Hover shows the range, count and current value. Ties share a rank; cohorts include all dates. The histogram spans the 2nd to the 98th percentile in equal-width bins (at most 12), and the tails fold into open-ended first and last bins labelled "<x" and ">y", so a few extreme runs can't squash the rest (§6).
+   - **Elevation profile** (runs with altitude only; otherwise the card is omitted): a compact card with a 70 px line chart of altitude against distance on the left (about two thirds) and, on the right, gained (+m), lost (−m) and **hill difficulty**. There are no axes or grid; the y domain is the low point − 5 m up to the larger of the low point + 150 m and the high point, so a flat run looks flat, and an amber dot marks the highest point. Hovering snaps a dot to the nearest sample and shows its elevation and distance. Gained and lost are the run's stored totals, the same as the Elevation tile. Hill difficulty is explained in §6 and in the card's ⓘ.
+   - **Packing rule:** the grid must pack without empty cells at the base, `sm` and `lg` breakpoints, with or without HR, cadence, altitude (the elevation profile card), pace variability and VDOT; the implementer chooses spans per combination. The Elevation tile may fold into the elevation profile card, which already shows gained and lost.
+3. **Route map:** immediately after the tiles, a Mapbox GL JS route line, 600 px tall on desktop and 320 px on phones. Requires a GPS route and the public Mapbox token. Under the light or dark base style (following the theme) it shows terrain for trail runs: subtle hillshading, contour lines (stronger index contours with elevation labels in metres), and mountain peaks as ▲ with name and elevation in metres. The terrain sits below the roads and labels, and the route and its start and end markers stay on top. No toggle. The Pro Map comes in Phase 4 (§5.8), also on Mapbox GL JS.
+4. **Change in speed over route:** only for tracks with splits. Bars per 100 m, switchable to per-km splits with a two-button toggle (pressed state, keyboard accessible). Brushing a range shows a summary of the selection: distance, time, pace, HR, cadence. There is no separate elevation-change chart: elevation lives in the elevation profile card and the profiles chart.
+5. **Elevation, HR and cadence charts:** 180 px each, sharing the distance x-axis. Chart sections require a track. **One distance cursor** ties the run page together: hovering the speed chart, the profiles (elevation, heart rate and cadence share one line and their readouts) or the elevation profile card draws a vertical amber line at that distance on all of them, and moves a small amber marker with a halo along the route on the map (no panning or zoom). Each chart keeps its own tooltip, and leaving any of them clears the line and the marker. Runs without a map (indoor) still sync the charts.
+6. **Heart rate zones and effort, Going in** (Phase 3, §5.6).
+7. **Notables** as of the run's date (§6).
+8. **Fastest runs for this distance:** for the last 90, 180 and 365 days and for all time (five rows each, the current run highlighted when it is listed).
+9. **Runs in the prior 90 days** (the Analyze Run View; rebuilt in W3 to follow Smashrun's layout, which the owner likes: https://smashrun.com/jacklyn.giron/run/14325559, read-only, nothing from it is stored). The window runs from midnight 90 days before the run's day up to the run's start. This run is never part of the averages or readouts. Top to bottom:
+   - **Title row:** the title with an ⓘ, and a button group for the metric: Distance (default), Pace, VDOT, Heart rate.
+   - **Dot strip:** a one-dimensional dot plot across the full width. Each previous run is a semi-transparent circle placed on the chosen metric's axis, so overlaps read as density. This run is a smaller amber dot drawn on top. A thin accent bar marks the mean of the previous runs; runs without the metric are skipped, and a zero or missing HR counts as missing. Axes: distance from 0 to the longest run rounded up, plus 1 km; pace as speed, from 4 km/h to the fastest speed plus 1 km/h, labelled as pace, faster to the right; VDOT from the lowest minus 1 to the highest plus 1; heart rate from the lowest to the highest, rounded out to 10 bpm. About seven ticks. Switching the metric glides the dots to their new positions (about 400 ms); runs without the new metric fade out.
+   - **Brush:** dragging across the strip selects the runs whose value is inside it. The others dim, the mean bar hides, the axis shows only the two edge values, and the matching days light up in the timeline. A readout floats above the brush with a small pointer; clicking it cycles four views: share of the previous runs (a whole percent, the default), hours, distance and run count. Clicking outside the brush, or Escape, clears it. A summary line stays under the title: run count, distance, duration and share of the window's training distance, for the selection or for all runs. It is also the text equivalent for assistive tech.
+   - **Timeline:** one mark per run day from 90 days before to the run's day, each one day wide and full height (no height encoding); this run's mark is amber at the right edge. Ticks read "90 days before", "60 days before", "30 days before" and "run day" ("race day" for races). Hovering a day highlights it and shows a tooltip: the date, "N days before" (or "yesterday"), and each run that day with its distance and pace. The matching dots in the strip light up too, and with a brush active only the runs inside it do. Clicking a day opens its first run (the run page's same-day switcher reaches the others) and hides the tooltip.
+   - **Dots:** hovering a dot shows its date, distance, pace, HR and VDOT; clicking opens that run. The strip is one Tab stop; Left and Right move between dots in value order and Enter opens the run.
+   - **Legend** (hint style): a dot for "This run", a bar for "Average" and a large dot for "Previous runs".
+   - **Empty:** with no runs in the window it says "No runs in the 90 days before this one."
 
-### 5.6 Pro Map (Phase 3)
+### 5.6 Wellness (Phase 3, planned)
+
+Garmin health data next to the runs, in three places: the run page, a Wellness page and Pace Trends. What exists depends on what the Personal API exposes, which W6 finds out before anything is built; what the API doesn't offer is cut from scope.
+
+Some of it needs no new endpoint, because the stored activity summaries already carry it (checked on a recent run): time in each of the five HR zones, aerobic and anaerobic training effect with its label, training load, Body Battery change, intensity minutes, VO2max, and running dynamics when the watch records them (ground contact time, vertical oscillation, stride length, vertical ratio).
+
+**HR zones**
+
+- Zone boundaries (bpm) and max HR live on the profile (`profiles.hr_zones`), read from the API when it exposes them. If it doesn't, zones are Garmin's default %max bands (50, 60, 70, 80 and 90% of the highest max HR recorded), and the pages say so. One small PORO (`HrZones`) turns a bpm into a zone and a zone into its bpm range, so the run page, the HR profile and the Phase 4 features agree.
+
+**On the run page** (new sections after the elevation, HR and cadence charts)
+
+- **Heart rate zones and effort:** one stacked bar of time in zones 1 to 5 (minutes and percent, the bpm range under each label), then the training effect (aerobic and anaerobic, 0 to 5, with Garmin's label), training load, Body Battery change, intensity minutes, and a running dynamics row when recorded. Fields a run lacks are left out; a run without HR, and every pre-Garmin run, has no section. The HR chart in the profiles section also gets faint horizontal bands for the zones.
+- **Going in:** the wellness values of the run's local day: resting HR next to its 7-day average, last night's HRV (with its status when known), sleep duration and score, Body Battery at the start of the day, and training readiness and recovery time when the API has them. Values that don't exist for that day are left out; with none, the section is omitted.
+
+**Wellness page (`/wellness`)**
+
+- A shared window: the Pace Trends presets (3 mo, 6 mo, 1 yr, 2 yr, All time) and a brush on a compact daily resting HR timeline, with `from` and `to` in the URL. Every chart below follows it. Hovering any chart draws a vertical line at that day on all of them (the run page's distance cursor idea, keyed by day).
+- Charts, each shown only when its data exists:
+  - **Resting HR:** daily dots with a 7-day average line.
+  - **HRV:** nightly average line over Garmin's baseline band (low to high), with the status colour on each night.
+  - **Sleep:** duration per night as bars, the stage split in the tooltip, the score as a line.
+  - **Body Battery:** daily high and low as a range bar.
+  - **Stress:** daily average.
+  - **Weight:** measurements as dots with a trend line.
+  - **VO2max and VDOT:** Garmin's VO2max as a step line (from the run summaries) over the Pace Trends top-run VDOT line.
+  - **Time in HR zones per week:** stacked bars (zones 1 to 5, minutes), from the run summaries.
+  - **Training readiness, status and load:** only if the probe finds them.
+- Missing days are gaps, not zeros. Before a device recorded a metric, its chart simply starts later.
+
+**Pace Trends overlay:** the button group above the main chart (None, Resting HR, HRV, VO2max) draws the chosen series on a secondary right-hand axis in a muted colour. It follows the window and adds a line to the tooltip; the regression, stats and predictions don't change.
+
+### 5.7 Gear (Phase 3, planned)
+
+Strava gear, read-only (§2). Modelled on the Gear page of the owner's Dreeve instance (strava.rekar.eu/gear), but for running shoes only.
+
+- **Source:** each Strava run carries a `gear_id` (null when no gear is set), and each gear has a name, brand, model and description (§7.6). Gear reaches our runs through the existing `strava_id` link, so only runs linked to Strava have gear information.
+- **Gear page (`/gear`):**
+  - **Active gear table:** one row per gear, most used first: name (brand and model under it), runs, distance, moving time, distance in the last 12 months and last used date. Retired gear sits under a collapsed "Retired (n)" toggle button. Distance and time are summed from our runs, not taken from Strava's gear totals.
+  - **No gear set:** a separate amber row for linked runs with no gear (count, distance, last run), linking to the runs list filtered to them.
+  - **Distance per month per gear:** stacked bars over all time.
+  - **Distance over time per gear:** cumulative lines. In both charts a toggle button per gear turns it on or off; retired gear starts off.
+  - **Refresh from Strava:** a button that starts a full gear scan (about 15 requests).
+  - Until the first gear scan has finished, the page says so, instead of listing every run as having no gear.
+- **Fixing runs with no gear:** `/runs?gear=none` is the runs list limited to those runs, with an extra **Suggested** column (the gear used most in the 14 days either side) and an Open in Strava button on each row. You set the gear on Strava; the run leaves the list after the next hourly recent scan (the last 30 days) or a manual refresh.
+- **Runs list and run page:**
+  - the list gets a Gear column and the `gear` filter (one gear, or `none`);
+  - the run header shows the gear name as a tag linking to that gear's filtered list, or an amber "No gear" tag next to Open in Strava;
+  - runs without a Strava link show neither, since their gear is unknown rather than unset.
+
+### 5.8 Pro Map (Phase 4, planned)
+
+A full-page view at `/runs/:id/map`, opened from the run page's route map ("Open Pro Map").
 
 - **Route coloring:**
   - The route is split into segments and colored by the selected metric:
-    - **Pace:** absolute buckets from walking (dark red) to "super fast" (white), fixed across all runs so that improvement is visible.
-    - **HR:** your Garmin HR zones.
+    - **Pace:** the 37 pace zones (§6) in the shared colour ramp, from walking (dark red) to "zoom" (white), fixed across all runs so that improvement is visible.
+    - **HR:** your HR zones (§5.6).
     - **Grade:** −10% to +10%.
     - **Cadence:** cadence ranges.
   - Map tiles follow the chosen theme (the OS under System).
@@ -256,16 +319,16 @@ Phase 4 adds a secondary-axis overlay toggle for resting HR or VO2max.
 - **Splits** per km for pace, elevation, HR or cadence, following the current metric. Clicking a split isolates it.
 - **Change-in-pace graph** under the map. Hovering another metric's filter overlays that metric on a secondary axis.
 
-### 5.7 Training Bands (Phase 3)
+### 5.9 Training Bands (Phase 4, planned)
 
-- Each run is precomputed into seconds per pace bucket, HR zone and grade bucket.
+- Each run is precomputed into seconds per pace zone, HR zone and grade bucket.
 - These are shown as a stacked area chart per week across all history:
-  - Category toggle: pace, HR or grade.
+  - Category toggle (a button group): pace, HR or grade.
   - Absolute or % view.
   - Band filters, for example "tempo and faster" or "HR zone 4+".
   - Timeline brush to zoom.
 
-### 5.8 Progress Towards Goal (Phase 3)
+### 5.10 Progress Towards Goal (Phase 4, planned)
 
 **Goals**
 
@@ -279,21 +342,9 @@ Phase 4 adds a secondary-axis overlay toggle for resting HR or VO2max.
 - When you're behind, a red catch-up line appears. Its intensity is the required daily distance relative to your recent daily average.
 - The x-axis has ticks on run days with daily totals; clicking one opens that run.
 
-### 5.9 Wellness (Phase 4)
-
-- **Page `/wellness`:**
-  - Resting HR (daily, with a 7-day average).
-  - HRV (nightly average with Garmin's baseline band).
-  - VO2max: step line from activity summaries, overlaid on the VDOT trend.
-  - Weight (measurements with a trend line).
-  - Sleep (duration and score).
-  - Body Battery (daily high/low) and stress (daily average).
-- **Shared controls:** a shared date range and the same brush pattern as Pace Trends.
-- **Overlays:** resting HR and VO2max can be overlaid on Pace Trends (§5.3).
-
 ## 6. Metrics and formulas
 
-All metric math lives in Ruby and is unit-tested. The only JS math is interactive recomputation (regression, brush stats), and it has `node --test` tests.
+All metric math lives in Ruby and is unit-tested. The only JS math is interactive recomputation (regression, brush stats, cycling, hover selection), and it has `node --test` tests.
 
 - **Run eligibility:** an activity counts if its type is a running subtype and its distance is ≥ 0.1 km. Treadmill, indoor and virtual runs are counted but flagged.
 - **Time basis:**
@@ -307,11 +358,16 @@ All metric math lives in Ruby and is unit-tested. The only JS math is interactiv
   - %max = 0.8 + 0.1894393·e^(−0.012778·t) + 0.2989558·e^(−0.1932605·t)
   - VDOT = VO2 / %max
   - `nil` for runs under 400 m or a time ≤ 0.
-  - The explanation shown in the app (an ⓘ next to the run page's VDOT tile, the Pace Trends title and the runs table's VDOT header): "VDOT is Jack Daniels' estimate of the VO2max a run implies, on the same scale as your watch's VO2max. It puts every distance on one scale, and one point is worth about 2% of race time. Easy runs score lower because they aren't all-out." followed by example times for VDOT 45 and 50, computed from `Vdot.time_for` so they can't drift from the model (VDOT 45 ≈ 5K 21:49, 10K 45:13, half 1:40:14, marathon 3:28:16; VDOT 50 ≈ 19:56, 41:20, 1:31:31, 3:10:40).
-  - **Why VDOT and not SPI:** VDOT (Jack Daniels, 1979, still the basis of *Daniels' Running Formula*) is the VO2max a run implies, on the same scale as the VO2max a watch shows. SPI is Smashrun's 1–1000 score, built on a 1974 world-record curve, and its number has no physical meaning. Predicting each of the owner's 10K, half and marathon PRs from the other two, VDOT was off by 2.0% on average and SPI by 4.8%. From the 10K PR, SPI predicted a 3:31 marathon and VDOT 3:17; the actual PR is 3:20:40.
-- **Predictions:**
+  - The explanation shown in the app (an ⓘ next to the run page's performance index, the Pace Trends title and the runs table's VDOT header): "VDOT is Jack Daniels' estimate of the VO2max a run implies, on the same scale as your watch's VO2max. It puts every distance on one scale, and one point is worth about 2% of race time. Easy runs score lower because they aren't all-out." followed by example times for VDOT 45 and 50, computed from `Vdot.time_for` so they can't drift from the model (VDOT 45 ≈ 5K 21:49, 10K 45:13, half 1:40:14, marathon 3:28:16; VDOT 50 ≈ 19:56, 41:20, 1:31:31, 3:10:40).
+  - **Why VDOT and not SPI:** VDOT (Jack Daniels, 1979, still the basis of *Daniels' Running Formula*) is the VO2max a run implies, on the same scale as the VO2max a watch shows. SPI is Smashrun's 1 to 1000 score, built on a 1974 world-record curve, and its number has no physical meaning. Predicting each of the owner's 10K, half and marathon PRs from the other two, VDOT was off by 2.0% on average and SPI by 4.8%. From the 10K PR, SPI predicted a 3:31 marathon and VDOT 3:17; the actual PR is 3:20:40.
+- **Predictions and estimated finish:**
   - Time at distance D for a given VDOT comes from inverting the VDOT formula numerically (`Vdot.time_for`, bisection).
-  - `Vdot.time_table(distance)` ships a lookup table per distance (VDOT 10–90, finer steps at low values), and the browser interpolates it linearly.
+  - `Vdot.time_table(distance)` ships a lookup table per distance (VDOT 10 to 90, finer steps at low values), and the browser interpolates it linearly.
+  - The estimated finish on the run page uses `Vdot.time_for` at the Pace Trends distances: 5K (5,000 m), 10K (10,000 m), Half (21,097.5 m) and Marathon (42,195 m).
+- **Pace zones (Phase 2, W1):** 37 fixed zones, shared by the performance index, the Pro Map's pace colouring and Training Bands' pace category, so a colour means the same thing everywhere. Zone 0 is "walk": below 5.5 km/h. Zones 1 to 35 are each 0.5 km/h wide, from 5.5 km/h up to 23.0 km/h, labelled with the pace at the zone's upper edge, seconds rounded down (zone 1 "10:00", zone 2 "9:13", zone 35 "2:36"). Zone 36 is "zoom": 23.0 km/h and up. The colour ramp runs from dark red (walk) through orange, yellow, green and blue to white (zoom), as CSS variables so light and dark can differ at the ends, and the top end stays visible on a card background.
+- **Performance zone:** the pace at which the run's VDOT would run a 5K (`Vdot.time_for(5000, vdot)`, converted to km/h), looked up in the pace zones. Smashrun built its SPI zones the same way, from the SPI of a 5K at each speed.
+- **Hill difficulty:** an integer from 1 to 5, nil without elevation gain. 1 when the run climbs under 1.5 m per km, otherwise 1 plus one step per 8 m per km (rounded up), capped at 5. Smashrun's own formula is not public; this was fitted against 16 public Smashrun ratings (15 match).
+- **Rank histograms:** the cohort is all runs (distance) or the runs within ±10% of this run's distance (pace). Bins are equal-width over the 2nd to the 98th percentile, at most 12; both edges trim the same number of runs, `round(0.02 × (n − 1))`, so trimming starts at 26 runs; values beyond the domain fold into the first or last bin, which is labelled open-ended only when something folded in. Smaller cohorts, and cohorts where every value is equal, use the full range as one or a few bins. Ranks use the true values.
 - **PRs (Smashrun rule):**
   - For benchmark D, qualifying runs have D ≤ distance < D + 1 km.
   - PR time = `timer_s × D / distance` (time interpolated at constant pace).
@@ -327,9 +383,10 @@ All metric math lives in Ruby and is unit-tested. The only JS math is interactiv
   - The band is ±1 SD of the residuals.
   - Weekly change = slope × 7.
 - **Pace axes:** linear in speed, labeled as pace. This matches Smashrun's 4:17 / 5:00 / 6:00 / 7:30 / 10:00 / 15:00 / 30:00 axis.
-- **Pace variability (Phase 2):** distance covered in consecutive complete 10 s windows while the timer is running (stops count, the final partial window doesn't, and at least two windows are needed), then mean absolute deviation ÷ mean, as a %. The windows use linear interpolation between samples, so sparse recordings can hide changes. The percentage is stored on the run; the wheel is drawn separately from the 100 m bars, each a wedge whose radius is its |speed − mean| ÷ mean plus 0.25.
-- **Elevation change bins (Phase 2):** computed from the full-resolution recording before the 2,000-point downsampling. Per 100 m bin, gain and loss are summed with the same 1 m hysteresis as the splits. The turning point carries across bin and km boundaries, and a change is attributed to the segment where it passes the threshold, split by distance when that segment spans bins. A missing altitude resets the turning point and marks its bins as missing. The per-km splits' gain and loss are sums of the same bins, so the splits' gain and loss agree with the bins. Totals come from the recording and can differ from Garmin's summary.
-- **Tracks (Phase 2):**
+- **Pace variability:** distance covered in consecutive complete 10 s windows while the timer is running (stops count, the final partial window doesn't, and at least two windows are needed), then mean absolute deviation ÷ mean, as a %. The windows use linear interpolation between samples, so sparse recordings can hide changes. The percentage is stored on the run; the wheel is drawn separately from the 100 m bars, each a wedge whose radius is its |speed − mean| ÷ mean plus 0.25.
+- **Runs in the prior 90 days:** the window is `[local midnight of the run's day − 90 days, the run's start)`. The mean is over previous runs that have the metric (a zero or missing HR counts as missing). Brush readouts: share = brushed runs ÷ previous runs; hours = Σ `timer_s`; distance = Σ `distance_m`; count. A brush selects values inside its range, edges included.
+- **Elevation change bins:** computed from the full-resolution recording before the 2,000-point downsampling. Per 100 m bin, gain and loss are summed with the same 1 m hysteresis as the splits. The turning point carries across bin and km boundaries, and a change is attributed to the segment where it passes the threshold, split by distance when that segment spans bins. A missing altitude resets the turning point and marks its bins as missing. The per-km splits' gain and loss are sums of the same bins. Totals come from the recording and can differ from Garmin's summary.
+- **Tracks:**
   - Garmin originals are untrimmed: Garmin applies trims only to the summary. FIT recordings are clipped: records before `started_at` (−2 s) are dropped, then records whose timer time exceeds `timer_s` (+2 s). Clipping to `elapsed_s` cut real data off runs with long pauses, because Garmin's `elapsed_s` can be shorter than the file's wall-clock span. Every FIT track is within 1% of its summary's distance and timer.
   - TCX isn't clipped, because the TCX parser keeps no per-row timestamps. It removes pauses per lap instead: the lap's excess (the time the lap adds to `t`, namely its own gaps plus the gap into its first trackpoint unless that is over 10 s, minus `TotalTimeSeconds`) is taken out of stall gaps (over 10 s, distance advancing under 0.5 m/s), largest first. Garmin's `timer_s` for these imports equals the sum of the laps' `TotalTimeSeconds`; 57 of the 64 TCX runs end within 0.5% of it.
   - `t` is timer seconds with pauses removed, `d` is cumulative metres, and cadence is steps/min for both legs.
@@ -338,8 +395,8 @@ All metric math lives in Ruby and is unit-tested. The only JS math is interactiv
   - Smashrun's no-GPS marker (`latitude` = `longitude` = −1.0; 1,588 points in 80 of 352 details) becomes a missing position, so route lines don't shoot out to (−1, −1).
   - Smashrun `clock` includes stopped time. The excess of `t` over the row's `timer_s` is removed from stopped intervals (distance advancing under 0.5 m/s), largest first and never more than the excess, with final `d` unchanged. This takes tracks within 2% of `timer_s` from 269 to 332 of 352, and tracks over 15% past it from 31 to 1. `timer_s` is the budget rather than the detail's `duration`, which was the worse match in 54 of the 63 runs where the two differ by over 2%.
   - Per-split elevation gain and loss use a 1 m hysteresis, which is close to Garmin's totals across the sampled runs (single runs are off by up to about 28 m).
-  - `Track#bars(100)` gives the 100 m bars of the speed chart.
-- **Notables (Phase 2):**
+  - `Track#bars(100)` gives the 100 m bars of the speed chart and the wheel; `Track#route` and `Track#route_distances` are parallel lists for the map and its cursor marker.
+- **Notables:**
   - Computed on the fly by `Notables.for(activity, runs)`, with no stored column, as of the run's date. Each one shows the largest window that holds ("in 6 months", "ever").
   - The set:
     - Longest run.
@@ -355,7 +412,11 @@ All metric math lives in Ruby and is unit-tested. The only JS math is interactiv
     - Lifetime distance milestones (every 1,000 km).
     - Race.
   - Windows: 1, 3, 6 and 12 months, and ever.
-- **Food equivalents (Phase 2):** a static list of foods with kcal (`Food::ITEMS`), from a banana up to a kremšnita and a pizza. `Food.for(calories)` picks the food whose multiple (1–12) best matches the run's Garmin or Smashrun calories.
+- **Food equivalents:** a static list of foods with kcal (`Food::ITEMS`), from a banana up to a kremšnita and a pizza. `Food.for(calories)` picks the food whose multiple (1 to 12) best matches the run's Garmin or Smashrun calories.
+- **HR zones (Phase 3):** five zones from the boundaries on the profile (§5.6). Time in zone for a run is Garmin's `hrTimeInZone_1` to `hrTimeInZone_5` from its stored summary, in seconds.
+- **7-day average (Phase 3):** the mean of the values in the 7 calendar days ending on the day, shown from the fourth value on; days without a value are skipped, not counted as zero.
+- **Weight trend (Phase 3):** a 30-day centred moving average of the daily mean weight.
+- **Gear stats (Phase 3):** distance = Σ `distance_m` and time = Σ `timer_s` of the runs with that gear; "last 12 months" = runs in the 365 days ending on the latest run's date; last used = the latest `local_started_at`. The suggested gear for a run with none is the gear used on most runs in the 14 days either side.
 
 ## 7. Data sources and sync
 
@@ -376,34 +437,40 @@ All metric math lives in Ruby and is unit-tested. The only JS math is interactiv
 - **Client:** a thin `Net::HTTP` wrapper in `app/lib/garmin/client.rb`. No gem; the reference implementation is [garmin/connect-personal-api-python](https://github.com/garmin/connect-personal-api-python).
 - **Throttling:** at most 1 request/s, with exponential backoff on 429 or 5xx (up to 5 tries). The rate limits are undocumented and no rate-limit headers were observed. The page size is 100: `limit=250` returns HTTP 500. All writes are idempotent upserts, so restarting is always safe.
 
-| Endpoint | Used for | Phase |
-|---|---|---|
-| `GET /activitylist-service/activities/search/activities?activityType=running&start&limit&startDate&endDate` | All run summaries (paged, page size 100) | 0 |
-| `GET /activity-service/activity/{id}` | Summary refresh when needed | 0 |
-| `GET /userprofile-service/userprofile/settings` | Profile (birth date for notables) | 0 |
-| `GET /download-service/files/activity/{id}` | Original file as a ZIP: one `.fit` (watch runs) or one `.tcx` (2017 bulk imports). Untrimmed, so FIT recordings are clipped (§6). | 2 |
-| `GET /biometric-service/heartRateZones/v2` | HR zones (Pro Map, Training Bands) | 3 |
-| `GET /usersummary-service/v2/dailysummaries?startDate&endDate` | Resting HR | 4 |
-| `GET /hrv-service/hrv/daily/{from}/{to}` | HRV | 4 |
-| `GET /sleep-service/sleep/dailySleepSummariesByDate?startDate&endDate` | Sleep | 4 |
-| `GET /weight-service/weight/range/{start}/{end}?includeAll=true` | Weight | 4 |
-| `GET /wellness-service/wellness/bodyBattery/reports/daily?startDate&endDate` | Body Battery | 4 |
-| `GET /usersummary-service/stats/stress/daily/{start}/{end}` | Stress | 4 |
+| Endpoint | Used for | Phase | Status |
+|---|---|---|---|
+| `GET /activitylist-service/activities/search/activities?activityType=running&start&limit` | All run summaries (paged, page size 100) | 0 | Verified |
+| `GET /userprofile-service/userprofile/settings` | Profile settings | 0 | Verified |
+| `GET /download-service/files/activity/{id}` | Original file as a ZIP: one `.fit` (watch runs) or one `.tcx` (2017 bulk imports). Untrimmed, so FIT recordings are clipped (§6). | 2 | Verified |
+| `GET /biometric-service/heartRateZones` (or `/v2`) | HR zone boundaries and max HR | 3 | Unverified, W6 |
+| `GET /userprofile-service/socialProfile` | Display name, needed by some paths below | 3 | Unverified, W6 |
+| `GET /usersummary-service/usersummary/daily/{displayName}?calendarDate=` | Resting HR, stress, Body Battery, intensity minutes (one day) | 3 | Unverified, W6 |
+| `GET /usersummary-service/stats/stress/daily/{start}/{end}` | Stress (range) | 3 | Unverified, W6 |
+| `GET /wellness-service/wellness/dailyHeartRate/{displayName}?date=` | Resting HR | 3 | Unverified, W6 |
+| `GET /wellness-service/wellness/bodyBattery/reports/daily?startDate&endDate` | Body Battery | 3 | Unverified, W6 |
+| `GET /hrv-service/hrv/{date}` and `/hrv-service/hrv/daily/{from}/{to}` | HRV: nightly average, baseline band, status | 3 | Unverified, W6 |
+| `GET /sleep-service/sleep/dailySleepData?date=` | Sleep duration, stages, score | 3 | Unverified, W6 |
+| `GET /weight-service/weight/range/{start}/{end}?includeAll=true` | Weight | 3 | Unverified, W6 |
+| `GET /metrics-service/metrics/trainingreadiness/{date}` | Training readiness, recovery time | 3 | Unverified, W6 |
+| `GET /metrics-service/metrics/trainingstatus/daily/{date}` | Training status and load | 3 | Unverified, W6 |
+| `GET /metrics-service/metrics/maxmet/daily/{start}/{end}` | VO2max by day | 3 | Unverified, W6 |
 
-The Personal API has **no** time-series, splits, laps, weather or HR-time-in-zone endpoints. Everything per-second comes from the original file (Phase 2), or from Smashrun for the years before Garmin (§7.5), and weather comes from Open-Meteo.
+The Phase 3 paths are Garmin Connect's web paths as best known. None has been tried against the Personal API, and the probe (W6) corrects them and fills the Status column with Verified, Not available, or the real path.
+
+The Personal API has **no** time-series, splits, laps or weather endpoints. Everything per-second comes from the original file, or from Smashrun for the years before Garmin (§7.5), and weather comes from Open-Meteo. The activity summaries do carry, per run, the time in each HR zone, training effect, training load, Body Battery change, intensity minutes and running dynamics.
 
 ### 7.2 Sync flow
 
 - **Backfill:** page through the activity search newest to oldest until a page comes back empty, upserting by `(source, external_id)`. About 30 requests cover the whole history.
 - **Incremental:** page newest-first until a full page is all already-known IDs.
 - **Full resync:** a rare manual action. It re-pages everything, picks up edits to old activities, and deletes local Garmin runs that no longer exist on Garmin.
-- **Triggers:** the hourly `garmin_sync` recurring task (`config/recurring.yml`, production) and the **Sync now** button. Both run `Activity::SyncJob` → `Activity.sync_now` (the button through `Activity.sync_later`). In development `bin/dev` syncs only on the button, with the default job adapter; the sync is idempotent.
-- **Originals (Phase 2):**
-  - `bin/rails activities:download` is the one-time backfill: about 2,514 files at ≤ 1 request/s (about 45 min of downloads), in the foreground with progress output. FIT parsing is slower than the download (2–8 s per file), so the whole run takes hours single-process. The class methods respect relation scoping, so split it across processes, for example `Activity.where("activities.id % 4 = ?", k).download_originals` in 4 `bin/rails runner` processes. Each process throttles itself to 1 request/s, so together they exceed 1 request/s: the real backfill averaged about 1.6 requests/s with 4 processes and saw no errors.
+- **Triggers:** the hourly `garmin_sync` recurring task (`config/recurring.yml`, production) and the **Sync now** button. Both run `Activity::SyncJob` → `Activity.sync_now` (the button through `Activity.sync_later`). In development `bin/dev` syncs only on the button, with the default job adapter; the sync is idempotent. After a successful sync the Strava link job queues a recent pass (§7.6).
+- **Originals:**
+  - `bin/rails activities:download` is the one-time backfill: about 2,514 files at ≤ 1 request/s (about 45 min of downloads), in the foreground with progress output. FIT parsing is slower than the download (2 to 8 s per file), so the whole run takes hours single-process. The class methods respect relation scoping, so split it across processes, for example `Activity.where("activities.id % 4 = ?", k).download_originals` in 4 `bin/rails runner` processes. Each process throttles itself to 1 request/s, so together they exceed 1 request/s: the real backfill averaged about 1.6 requests/s with 4 processes and saw no errors.
   - The sync downloads the original of every run it pages through that has none, processes a run that has an original but no track, and reprocesses a run whose `started_at`, `timer_s` or `distance_m` changed, which picks up trims. A failure for one run is logged and skipped, and the next sync retries it. The sync refreshes `sync_started_at` after each run, so a long sync keeps counting as running.
   - `bin/rails activities:reprocess` rebuilds all derived data from stored originals whenever the algorithms change.
-- **Weather:** each sync also fetches weather for runs 6–60 days old that still have none, because the archive lags about 5 days. `bin/rails weather:fetch` is the full backfill.
-- **Phase 4 wellness:** date-range endpoints in 30-day chunks, from the first run date onward. Incremental syncs re-fetch from the last stored date − 3 days, because Garmin fills in late data.
+- **Weather:** each sync also fetches weather for runs 6 to 60 days old that still have none, because the archive lags about 5 days. `bin/rails weather:fetch` is the full backfill.
+- **Wellness (Phase 3):** a separate hourly recurring job (`Wellness::SyncJob`), so a wellness failure never blocks run syncing. It refreshes today and the last 3 days, because Garmin fills in late data. `bin/rails wellness:backfill` is the one-time backfill from the first run date onward: throttled to 1 request/s, newest first so recent data appears first, resumable, idempotent upserts, in 30-day chunks where the endpoint takes a range and per day where it doesn't.
 
 ### 7.3 Strava gap fill (Phase 0, one-time)
 
@@ -412,13 +479,6 @@ The Personal API has **no** time-series, splits, laps, weather or HR-time-in-zon
 1. **Cutoff:** Garmin is authoritative from its first run on. Rows that start later than 10 minutes before the first Garmin run are skipped, so sync Garmin first; the tasks refuse to run without Garmin runs. Matching each Strava run against Garmin runs was tried first, but every Strava-only "run" inside Garmin's history turned out to be a hike Garmin recorded as hiking (78) or a second copy of a run (1). The task prints a report of imported and skipped rows.
 2. Imported runs get `source: "strava"` and link out to Strava.
 3. Tracks come from Smashrun (§7.5).
-
-### 7.6 Strava connection and run links (Phase 2)
-
-- **Connection:** the nav's Connect Strava button (shown only while disconnected) starts Strava's OAuth with scope `activity:read_all` and a session `state`. The callback is `GET /strava/callback` on whichever host serves the app (`http://localhost:3000` locally, `https://run.rekar.eu` in production). It checks the state and that the grant includes activity access (otherwise it shows a fixed alert and stores nothing), then stores the access token, refresh token and expiry on the singleton `Profile` (both tokens encrypted with Active Record encryption), shows a notice and queues a full link.
-- **Refresh:** `Strava::Client` refreshes when the token expires within 5 minutes and saves the rotated refresh token. A 401 or a revoked refresh clears the connection so the button shows again. There are no retries.
-- **Links:** `activities.strava_id` is matched to the run whose `started_at` is within ±10 minutes of the Strava run's start, nearest first, and is never overwritten. The connect queues a full scan (about 15 requests at 200 per page); each Garmin sync then links recent unlinked runs from the newest activities only. The Strava `external_id` field (upload file name, or `garmin_push_N`) is not used.
-- **Not tested against the live API:** the first real connect and link happen after deploy.
 
 ### 7.4 Weather (Phase 2)
 
@@ -451,6 +511,18 @@ Smashrun supplies tracks for the runs before Garmin, and the one run that exists
 - **Garmin-era cutoff:** Smashrun runs from Garmin's first run onward are ignored. Garmin is the source of truth there: 75 are Smashrun-only (71 Garmin hikes, 3 runs under 100 m, 1 file deleted from Garmin).
 - **Known data quirk:** the 2017 iSmoothRun treadmill TCX imports have sparse trackpoints and inconsistent Garmin summaries. For example, `1757716207` ends with track `t` 2,501 s against `timer_s` 2,830.
 
+### 7.6 Strava connection, run links and gear (Phase 2 built; gear is Phase 3)
+
+- **Connection:** the nav's Connect Strava button (shown only while disconnected) starts Strava's OAuth with a session `state`. The callback is `GET /strava/callback` on whichever host serves the app (`http://localhost:3000` locally, `https://run.rekar.eu` in production). It checks the state and that the grant includes activity access (otherwise it shows a fixed alert and stores nothing), then stores the access token, refresh token and expiry on the singleton `Profile` (both tokens encrypted with Active Record encryption), shows a notice and queues a full link. The Connect button's form has `data-turbo=false`, because Turbo's fetch can't follow the cross-origin redirect to Strava.
+- **Scope:** built with `activity:read_all`. W11 adds `profile:read_all`, which Strava requires for the gear endpoints. The stored connection has only the old scope, so `profiles.strava_scope` records the scope the callback granted, and until it includes gear access the nav shows **Reconnect Strava** and gear features wait (not an error). Reconnecting is an owner action after the W11 deploy.
+- **Refresh:** `Strava::Client` refreshes when the token expires within 5 minutes and saves the rotated refresh token. The refresh request is made outside any transaction; if Strava rejects it but the stored refresh token is no longer the one sent, another process rotated it, so the new token is used. A 401 or a revoked refresh clears the connection so the button shows again. Requests use 10 s open and read timeouts, and there are no retries. Strava's limits are 100 requests per 15 minutes and 1,000 per day.
+- **Links:** `activities.strava_id` is matched to the run whose `started_at` is within ±10 minutes of the Strava run's start, nearest first, and is never overwritten or reused. The connect queues a full scan (about 15 requests at 200 per page); each Garmin sync then links recent unlinked runs from the newest activities only. The Strava `external_id` field (upload file name, or `garmin_push_N`) is not used.
+- **Gear (W11):**
+  - The same scans read each activity's `gear_id` (the summary representation includes it; null means no gear set) into `activities.strava_gear_id` for every run linked by `strava_id`, including the pre-Garmin Strava rows.
+  - Each distinct `gear_id` gets one `GET /gear/{id}` (name, brand, model, description, distance), refreshed weekly, plus `GET /athlete` for its shoe list. The raw payload is stored in `gears.summary`, so fields can be re-derived without refetching; the `retired` flag is read from it when Strava exposes it (unverified, §13).
+  - Passes: a full scan on connect and on the Gear page's Refresh button; an hourly recent pass over the last 30 days (one request) so a gear fixed on Strava shows up soon. `profiles.strava_gear_synced_at` is set when a full pass finishes; until then the Gear page says the first scan is pending.
+  - Gear is read-only: there are no write calls to Strava.
+
 ## 8. Data model (SQLite)
 
 ### `activities` (Phase 0)
@@ -471,29 +543,33 @@ Smashrun supplies tracks for the runs before Garmin, and the one run that exists
 | `avg_hr`, `max_hr`, `avg_cadence`, `max_cadence`, `calories`, `vo2max` | All nullable; older runs lack some of these. |
 | `start_lat`, `start_lng`, `location_name` | |
 | `vdot` | Computed on save |
-| `summary` | JSON: the raw Garmin summary or Strava CSV row, so fields can be re-derived without re-fetching. |
+| `summary` | JSON: the raw Garmin summary or Strava CSV row, so fields can be re-derived without re-fetching (HR zone times, training effect and load, Body Battery change and running dynamics are read from here). |
 
 Index on `local_started_at`. All of history is about 2,900 rows. Aggregations load the period's runs into Ruby; add caching only if measurements show a need.
 
-### Phase 2 additions
+### Phase 2 additions (built)
 
 - On `activities`: `has_one_attached :original` (Active Storage, local disk). Columns `splits` (JSON, per km), `pace_profile` (JSON, 20 values for the sparkline), `pace_variability` (float), `weather` (JSON: temperature, humidity, wind, precipitation, code, sunrise, sunset). The original is the Garmin ZIP as downloaded (`<id>.zip`) or the gzipped Smashrun detail (`smashrun-<id>.json.gz`).
-- `profiles` also holds the Strava connection: `strava_access_token` and `strava_refresh_token` (encrypted) and `strava_token_expires_at` (§7.6).
+- `profiles` holds the Strava connection: `strava_access_token` and `strava_refresh_token` (encrypted) and `strava_token_expires_at` (§7.6).
 - `tracks`: `activity_id` (unique), `chart_metrics` (nullable JSON: `elevation`, the 100 m gain/loss bins; older rows may still hold an unused `speed_windows`; nil for rebuilt distances or not yet processed) and `data` (JSON of columnar arrays `t, d, lat, lng, alt, hr, cad`, downsampled to ≤ 2,000 points; series without data are omitted). Tracks live in a separate table so loading activities stays lean.
-- No `notables` column: notables are computed on the fly. `efforts` (fastest segments) moves to Phase 3 with the Pro Map.
+- No `notables` column: notables are computed on the fly.
 
-### Phase 3 additions
+### Phase 3 additions (planned)
 
-- `activities.bands`: JSON of seconds per pace bucket, HR zone and grade bucket.
+- `profiles`: `hr_zones` (JSON: boundaries, max HR, and whether they came from Garmin or the default bands), `strava_scope` (string), `strava_gear_synced_at` (datetime), `wellness_synced_at` (datetime).
+- `wellness_days`: `date` (unique), `resting_hr`, `hrv_last_night`, `hrv_weekly_avg`, `hrv_baseline_low`, `hrv_baseline_high`, `hrv_status`, `sleep_s`, `sleep_score`, `body_battery_high`, `body_battery_low`, `stress_avg`, `weight_kg`, `training_readiness`, and `raw` (JSON per endpoint). The columns are finalised after the probe; a metric the API doesn't offer gets no column.
+- `gears`: `strava_id` (string, unique), `name`, `brand_name`, `model_name`, `retired` (boolean), `summary` (JSON, the raw Strava payload), `synced_at`.
+- `activities.strava_gear_id` (string, nullable, indexed): the Strava gear ID as read; matched to `gears.strava_id` by value, so activities can be read before their gear row exists.
+
+### Phase 4 additions (planned)
+
+- `activities.bands`: JSON of seconds per pace zone, HR zone and grade bucket.
 - `goals`: `period` (month or year), `starts_on`, `distance_m`.
-
-### Phase 4 additions
-
-- `wellness_days`: `date` (unique), `resting_hr`, `hrv_avg`, `hrv_baseline_low`, `hrv_baseline_high`, `sleep_s`, `sleep_score`, `body_battery_high`, `body_battery_low`, `stress_avg`, `weight_kg`, and `raw` (JSON per endpoint).
+- `efforts` (fastest segments for the Pro Map).
 
 ### Singleton `profile`
 
-Garmin profile and HR zones (JSON), `synced_at`, `sync_error`.
+Garmin profile settings (JSON), HR zones (Phase 3), `synced_at`, `sync_started_at`, `sync_error`, and the Strava connection.
 
 ## 9. Architecture and stack
 
@@ -507,62 +583,75 @@ Garmin profile and HR zones (JSON), `synced_at`, `sync_error`.
 - **Gems:**
   - `dotenv`: Rails doesn't load `.env` on its own.
   - Tests: `factory_bot_rails`, `webmock` (as in Visualizer).
-  - Phase 2: `rubyzip` (Garmin downloads are ZIPs) and `fit4ruby` from your fork `miharekar/fit4ruby` (§3). Nokogiri, already bundled, parses TCX.
+  - `rubyzip` (Garmin downloads are ZIPs) and `fit4ruby` from your fork `miharekar/fit4ruby` (§3). Nokogiri, already bundled, parses TCX.
   - `csv` for the Strava import.
 - **JS (Importmap only, no Node build):**
-  - `bin/importmap pin d3` in Phase 1.
-  - Mapbox GL JS in Phase 2, the single-file UMD build vendored in `vendor/javascript` with its CSS (`app/assets/stylesheets/mapbox-gl.css`), pinned with `preload: false` and imported dynamically so only run pages with a map load it. The multi-chunk ESM build breaks under Propshaft's digested paths. Every map, including the Phase 3 Pro Map, uses it.
+  - d3 pinned with `bin/importmap pin`.
+  - Mapbox GL JS, the single-file UMD build vendored in `vendor/javascript` with its CSS (`app/assets/stylesheets/mapbox-gl.css`), pinned with `preload: false` and imported dynamically so only run pages with a map load it. The multi-chunk ESM build breaks under Propshaft's digested paths. Every map, including the Phase 4 Pro Map, uses it.
 - **Code organization (Visualizer `STYLE.md`):**
   - Rich models with thin controllers.
-  - Class-scoped concerns, for example `Activity::Performance` for VDOT, `Activity::GarminSync`, `Activity::StravaImport`.
-  - POROs in `app/models` for aggregates: `Overview`, `PersonalRecords`, `PaceTrend`, `PrProgress`.
+  - Class-scoped concerns, for example `Activity::Performance` for VDOT and hill difficulty, `Activity::GarminSync`, `Activity::StravaImport`, `Activity::StravaLink`.
+  - POROs in `app/models` for aggregates: `Overview`, `PersonalRecords`, `PaceTrend`, `PrProgress`; and, as they arrive, `HrZones` and `PaceZones`.
   - Integrations in `app/lib`: `Garmin::Client`, `Strava::Client`, `Smashrun::Client`, `OpenMeteo::Client`.
   - Jobs follow the `_later`/`_now` pattern.
+  - View constants for cards, type and controls live in helpers (`WidgetsHelper` and the controls helper, §10).
 - **Routes:** REST resources only:
-  - `resource :overview` (with `:year`/`:month`), `resource :pace_trend`, `resource :pr_progress`, `resource :sync` (`create` = Sync now).
-  - `resources :runs` (index and show) since Phase 2.
-  - Later: `resource :training_bands`, `resources :goals`, `resource :wellness`.
+  - Built: `resource :overview` (with `:year`/`:month`), `resource :pace_trend`, `resource :pr_progress`, `resources :runs` (index and show), `resource :sync` (`create` = Sync now), `resource :theme` (`update`), `resource :strava_connection` and the OAuth callback.
+  - Phase 3: `resource :wellness`, `resources :gears` (index), `resource :gear_sync` (`create` = Refresh from Strava), and a `gear` filter param on `/runs`.
+  - Phase 4: `runs/:run_id/map` (`resource :map`, show), `resource :training_bands`, `resources :goals`.
 - **Charts:**
-  - One Stimulus controller per chart type: `period-bars`, `trailing-line`, `pace-scatter`, `weekly-heatmap`, `pace-trends`, `pr-progress`, and so on.
-  - The server renders chart data as JSON into Stimulus values, so Phase 1 needs no JSON endpoints.
-  - Shared helpers live in `app/javascript/helpers/charts/`: pace and duration formatters, axes, tooltip, brush.
+  - One Stimulus controller per chart type (kebab-case files in `app/javascript/controllers`): `period-bars`, `trailing-line`, `pace-scatter`, `heatmap`, `streaks`, `pace-trends`, `pr-progress`, `run-speed`, `run-profiles`, `run-map`, `pace-variability`, `elevation-profile`, `rank-distribution`, `analyze-run`, `day-tip`, `info`, and so on.
+  - The server renders chart data as JSON into Stimulus values, so no JSON endpoints are needed.
+  - Shared helpers live in `app/javascript/helpers/`: formatters, tooltip (`tooltipHtml`), resize, time, regression, `linked_selection` (Overview hover), `run_cursor` and `route_point` (run page cursor), roving focus, and the pure logic of each chart.
   - Charts redraw on `ResizeObserver`.
   - Theme comes from CSS variables (`--chart-accent`, `--chart-muted`, `--chart-grid`, …), so a light/dark switch needs no redraw. The variables, Tailwind's `dark:` variant and `color-scheme` all key off `<html data-theme>`.
 
 ### Deployment
 
 - One Docker container (`docker compose up -d --build`, Dockerfile on `ruby:4.0.9-slim`, Puma without Thruster) on port 9295, served at `https://run.rekar.eu` by Caddy on the Pi over Tailscale. On the LAN it speaks plain http, so `force_ssl` and `assume_ssl` are off. Rails honours the forwarded scheme and host from any sender, so the Strava OAuth callback is `https://run.rekar.eu/strava/callback`; the tailnet range is a trusted proxy only so that `request.remote_ip` is the real client.
-- The production primary database is the same `storage/development.sqlite3` that `bin/dev` uses (SQLite in WAL mode), so there is one dataset; cache, queue and cable have their own `storage/production_*.sqlite3`. `./storage` and `config/master.key` are mounted, and `.env` supplies the Garmin, Strava, Smashrun and Mapbox settings. The entrypoint runs `db:prepare` only.
-- Solid Queue runs inside Puma and runs the hourly Garmin sync (§7.2). There is no auth, as before: the machine is only reachable through the LAN and the tailnet.
+- The production primary database is the same `storage/development.sqlite3` that `bin/dev` uses (SQLite in WAL mode), so there is one dataset; cache, queue and cable have their own `storage/production_*.sqlite3`. `./storage` and `config/master.key` are mounted, and `.env` supplies the Garmin, Strava, Smashrun and Mapbox settings. The entrypoint runs `db:prepare` only. A migration run by the container marks the shared primary's environment as `production`; `bin/rails db:environment:set RAILS_ENV=development` undoes that for dev's protected tasks.
+- Solid Queue runs inside Puma and runs the hourly Garmin sync (§7.2) and, in Phase 3, the wellness refresh. There is no auth: the machine is only reachable through the LAN and the tailnet (§11, R12).
+- Rebuild the container after code or migration changes, and at every phase close-out.
 
 ## 10. Design
 
-- **Theme:** light and dark via `prefers-color-scheme` (Tailwind v4's default `dark:` behavior).
+One design system, defined once in helpers (`WidgetsHelper` for cards and type, and a controls helper that W2 introduces and W4 completes), so views never write these classes inline.
+
+- **Theme:** System, Light or Dark, rendered as `<html data-theme>`. Tailwind's `dark:` variant, the `--chart-*` CSS variables and `color-scheme` all key off that attribute, so no chart redraws on a switch. Chart colours are always CSS variables, never `light-dark()`, because the map reads them with `getComputedStyle`.
 - **Palette:**
   - Accent is a nod to Smashrun's "Team Yellow Green": lime/green (dark mode base `#6ACD12`, highlight `#9CFF44`, low `#254806`; deeper greens in light mode).
-  - Amber/yellow for highlighted "top runs" and predictions.
+  - Amber for highlighted runs, "this run", predictions and the linked-hover selection.
   - Neutrals from Tailwind `zinc`.
-- **Layout:**
-  - `max-w-7xl`. Cards with subtle borders. Two columns on desktop, one on narrow screens.
-  - Chart titles hold their metric switches inline, as Smashrun did ("**Distance** ▾ per month").
-- **Type:** the system UI font stack. `tabular-nums` for stats. Units are small and muted next to big numbers.
-- **Motion:** 150–250 ms transitions on chart updates and nothing more.
+  - Pace zones use one shared ramp (§6) defined as CSS variables.
+- **Layout:** `max-w-7xl`. Every page is a header row (the title on the left, actions or selectors on the right, wrapping), an optional controls row, then a card grid with `gap-4`. Two columns on desktop, one on narrow screens. Nothing scrolls sideways at 360 px.
+- **Cards:** one card style (`CARD`; margins stay at the call site). A card's title row has the title (`CARD_TITLE`) and its ⓘ on the left and the chart's button group on the right, wrapping on narrow screens. A metric switch shows its selection in the title text ("Distance per month"), never as a dropdown.
+- **Type:** the system UI font stack. Page title `text-2xl` semibold; card title semibold; tile label small, medium, muted (`TILE_LABEL`); tile value `text-4xl` semibold with `tabular-nums` (`TILE_VALUE`), the lime accent only on the headline numbers (`ACCENT`); units and sub-lines small and muted (`TILE_UNIT`, `TILE_SUB`); hints and legends `text-xs` muted (`HINT`, which sets type and colour only; each call site sets its margin). Long explanations go in the ⓘ; a hint stays only to say how to use the chart.
+- **Controls:** four kinds, each from one helper, sharing height, radius, focus ring and disabled style:
+  - **Button:** an outlined action or link (Sync now, Open in Strava, Previous, Latest run).
+  - **Button group (segmented control):** a single choice among options (metric, window, mode, distance, period). `aria-pressed` buttons in one track, or links when the choice is a page; the selected segment has one accent look everywhere. It replaces every `<select>`.
+  - **Toggle button:** an independent on/off filter (Exclude pauses, a gear in a chart), drawn like one selected segment.
+  - **Icon button:** the ⓘ and the theme switch.
+- **Tooltips:** the shared tooltip. Title-and-rows tooltips are built with `tooltipHtml` (a muted title, then label/value rows), everything escaped; distances to one decimal.
+- **Motion:** 150 to 250 ms transitions on chart updates. The one longer motion is the dot glide in "Runs in the prior 90 days" (about 400 ms).
+- **Accessibility:** keyboard operable charts (§5.1), visible `:focus-visible` rings, labelled controls, and text contrast in both themes.
 
 ## 11. Privacy and security
 
-- **Data sensitivity:** the app stores GPS tracks, which reveal home and routines, plus heart-rate and wellness data. It is your own data, kept on your machine.
-- **Network exposure:** the dev server binds to 0.0.0.0 and allows the hosts `framework:3000` and `test.rekar.eu`, all behind Tailscale. There is no auth, so the tailnet is the boundary.
+- **Data sensitivity:** the app stores GPS tracks, which reveal home and routines, plus heart-rate data, and from Phase 3 health data (HRV, sleep, weight, Body Battery, stress). It is your own data, kept on your machine. Health values are never logged or printed, and test fixtures are synthetic.
+- **Network exposure:** the container (port 9295) and the dev server (0.0.0.0:3000) are reachable on the LAN, and run.rekar.eu is served by Caddy on the Pi over Tailscale. There is no auth, so the tailnet and LAN are the boundary. run.rekar.eu is confirmed tailnet-only (2026-10-27). HTTP basic auth at Caddy stays an optional hardening (R12).
 - **Secrets:** `.env` is ignored by Rails' default `.gitignore` (`/.env*`) and is mode 600.
 - **Smashrun credentials:** `SMASHRUN_USERNAME` and `SMASHRUN_PASSWORD` grant full access to the Smashrun account. Never log them. The 12-week token is held only in memory.
 - **Garmin key:** the key gives read access to all of your Garmin health data. It must never be logged; filter it and the bearer token out of logs and error output.
+- **Strava tokens:** stored encrypted on the profile with Active Record encryption (keys in the credentials file, opened by `config/master.key`, which the container mounts read-only). Never log them or the OAuth `code`.
 - **Key rotation:** create a new key at `connect.garmin.com/app/settings/personalApiToken`, update `.env`, and restart.
-- **Storage:** `storage/` (SQLite databases and the stored originals) is git-ignored by default. If you back it up, encrypt the backup.
+- **Storage:** `storage/` (SQLite databases and the stored originals) is git-ignored. `storage/dumps/` holds raw API dumps and captures from earlier phases: never print it or copy it into `test/`. If you back it up, encrypt the backup.
+- **Design references:** other people's public Smashrun pages are read only to see their layout. Nothing from them is stored in the repo, logged or used as test data.
 - **Third parties:**
   - Garmin (the source).
-  - Strava (gap fill, once).
+  - Strava (gap fill, run links, and from Phase 3 gear; read-only).
   - Smashrun (until it shuts down): receives your login, once per fetch.
-  - Open-Meteo (Phase 2): receives rounded coordinates and dates.
-  - Mapbox (Phase 2): receives the style, tile and font requests, which reveal which areas you view, and the public token. With `performanceMetricsCollection: false` (GL JS sends `gljs.performance` events with the user agent, screen size and GPU by default), the only events still sent to `events.mapbox.com` are `appUserTurnstile`, `style.load` and `map.load` (the one Mapbox bills on, one per map initialised on a page). They carry the SDK version, the style URL, the token-derived SKU token and an anonymous user ID that GL keeps in `localStorage` (keys starting `mapbox.eventData`).
+  - Open-Meteo: receives rounded coordinates and dates.
+  - Mapbox: receives the style, tile and font requests, which reveal which areas you view, and the public token. With `performanceMetricsCollection: false` (GL JS sends `gljs.performance` events with the user agent, screen size and GPU by default), the only events still sent to `events.mapbox.com` are `appUserTurnstile`, `style.load` and `map.load` (the one Mapbox bills on, one per map initialised on a page). They carry the SDK version, the style URL, the token-derived SKU token and an anonymous user ID that GL keeps in `localStorage` (keys starting `mapbox.eventData`).
   - No analytics.
 - **Terms:** Garmin's Personal API is for personal use only. Turning this into a multi-user app would mean handling other people's health and location data. That would require Garmin's business developer program and real privacy and compliance work. It is out of scope.
 
@@ -571,34 +660,25 @@ Garmin profile and HR zones (JSON), `synced_at`, `sync_error`.
 **Test suite**
 
 - Minitest, FactoryBot, and WebMock with the network disabled.
-- Fixtures are synthetic: made-up coordinates, names, IDs and heart rates. Nothing downloaded from your accounts goes into `test/`.
+- Fixtures are synthetic: made-up coordinates, names, IDs, heart rates and wellness values. Nothing downloaded from your accounts goes into `test/`.
 
 **Unit tests**
 
-- VDOT golden values.
-- PR bucketing and interpolation.
-- Streaks and breaks.
-- Trailing sums.
-- Weekly buckets.
-- Magic PR targets.
-- Top-run flagging.
-- Predictions: the Ruby VDOT lookup tables are interpolated in the browser.
-- Garmin client: token caching, re-exchange on 401, expired-key error.
-- Sync: idempotent upsert, delete reconciliation.
-- Strava gap-fill cutoff.
-- Phase 2:
-  - Track parsers (FIT, TCX with two `<Track>`s, Smashrun JSON) and metrics: splits, pace profile, variability, clipping, cadence doubling, the 2,000-point cap.
-  - Smashrun import: cutoff, nearest match, creation, race OR, calorie fill.
-  - Weather, notables (one per type, moon phase on known dates), food picker.
-  - Garmin original download and the sync hooks.
+- VDOT golden values, predictions (the Ruby lookup tables are interpolated in the browser), pace zones and the performance zone (boundaries at 5.5, 6.0 and 23.0 km/h, nil VDOT).
+- PR bucketing and interpolation, streaks and breaks, trailing sums, weekly buckets, magic PR targets, top-run flagging.
+- Garmin client: token caching, re-exchange on 401, expired-key error. Sync: idempotent upsert, delete reconciliation. Strava gap-fill cutoff.
+- Track parsers (FIT, TCX with two `<Track>`s, Smashrun JSON) and metrics: splits, pace profile, variability, elevation bins, clipping, cadence doubling, the 2,000-point cap, `route` and `route_distances` staying aligned when a GPS fix is missing.
+- Smashrun import: cutoff, nearest match, creation, race OR, calorie fill. Weather, notables (one per type, moon phase on known dates), food picker.
+- Strava connection and links: state check, scope check, refresh and rotation, revoked connection, ±10 minute matching. Hill difficulty (the fitted table and its edges).
+- Phase 3: wellness parsers and sync (idempotent upserts, the 3-day refresh, chunking, missing metrics), HR zone lookup and the default bands, Strava gear sync (missing scope, gear without a row yet, null gear, `retired` absent, 401 handling), gear stats and the "no gear" and "suggested gear" rules.
 
 **JS tests**
 
-`node --test` for the regression, brush stats, formatters, run stats and Analyze Run helpers.
+`node --test` for the pure logic of: regression, brush stats, formatters, tooltips (`tooltipHtml` escaping), run stats, linked selection, rank histograms, pace variability, the run cursor and route point lookup, the elevation profile, estimated-finish cycling, the prior-90-days helpers (axes per metric, mean without nulls, brush selection, readout cycling, days-before labels, same-day grouping), and the button group. Phase 3 adds the wellness chart helpers (7-day average, weight trend, zone bar maths).
 
 **Golden values**
 
-Smashback's values, next to smashrun.com/miharekar (all time, km). Smashrun used its own processing and counts about 470 km of hikes that Garmin recorded as hiking. Streaks and breaks must match exactly; totals and PRs within ±0.1%.
+Smashback's values, next to smashrun.com/miharekar (all time, km), as of 2026-10-25. Smashrun used its own processing and counts about 470 km of hikes that Garmin recorded as hiking. Streaks and breaks must match exactly; totals and PRs within ±0.1%. Recompute when an aggregation changes.
 
 | Metric | Smashback | Smashrun |
 |---|---|---|
@@ -620,7 +700,16 @@ Smashback's values, next to smashrun.com/miharekar (all time, km). Smashrun used
 **Performance**
 
 - Overview, all-time view: under 300 ms server time on the full history.
-- Brushing Pace Trends and PR Progress stays smooth: no recompute over ~16 ms on ~2,900 runs.
+- Brushing Pace Trends and PR Progress, and hovering the Overview charts, stays smooth: no handler over ~16 ms on ~2,900 runs.
+- The Wellness page renders in under 300 ms server time on the full history, and its brush stays under ~16 ms per handler.
+
+**Definition of done for every work item (§14)**
+
+- `bin/rails test`, `node --test test/javascript/*_test.mjs`, `bin/rubocop`, `bin/brakeman --quiet --no-pager --exit-on-warn --exit-on-error`, `herb analyze .` and the Herb linter (`npx @herb-tools/linter app/views --simple --no-color`) pass.
+- New logic has tests: Ruby for metrics and sync, `node --test` for interactive math.
+- This document and `AGENTS.md` are updated in the same change.
+- A browser check on the item's own dev server, in light and dark, at 1300 px and 360 px: no sideways scroll, a clean console (the Herb dev-tools messages aside), the keyboard path works, tooltips escape their text, and nothing lingers after a Turbo visit.
+- No personal data in tests, logs or screenshots shared in reports.
 
 ## 13. Risks and open questions
 
@@ -631,13 +720,50 @@ Smashback's values, next to smashrun.com/miharekar (all time, km). Smashrun used
 | R3 | Does `activityType=running` include child types such as treadmill and trail? | Verified: it includes `trail_running`. Treadmill runs are typed `treadmill_running`. |
 | R5 | Strava CSV quirks. | Moot: the Strava API is the primary source (§7.3). |
 | R6 | Personal API key expiry (≤ 1 year). | Clear banner and rotation docs (§11). |
-| Q1 | Smashrun Pro's "Trends Comparison": what did it do? | Unknown. Skipped unless you remember. |
-| Q3 | Top runs: rolling 30-day window or calendar month? | Rolling 30-day chosen. It's a one-line change. |
 | R7 | Smashrun shutting down. | Its data is fetched once into stored originals (§7.5), so nothing depends on it afterwards. |
 | R8 | Garmin originals are untrimmed. | Clip FIT recordings to `started_at` and `timer_s` of recording time (§6). |
 | R9 | The Open-Meteo archive lags about 5 days. | Leave `weather` nil and retry on later syncs (§7.2). |
+| R10 | The Personal API may not expose some wellness data, and the Phase 3 paths are unverified guesses. | W6 probes first and the scope shrinks to what exists. The summary-based fields (HR zone times, training effect and load, Body Battery change) need no endpoint. If resting HR, HRV or sleep turn out to be missing, ask the owner whether to import Garmin's account data export instead (its file layout would be inspected first, as the Strava archive was). |
+| R11 | Per-day endpoints make the wellness backfill long (about 3,500 days per metric). | 1 request/s, resumable, newest first, run in the background. Stop a metric after several empty weeks, because older devices didn't record it. |
+| R12 | Health data will sit in an app with no login. | run.rekar.eu is confirmed tailnet-only (2026-10-27); keep it that way (basic auth at Caddy is optional hardening). Never log health values; synthetic fixtures. |
+| R13 | Strava gear needs `profile:read_all`, which the stored connection lacks, and the `retired` flag is not confirmed in the API. | A reconnect prompt, with gear features waiting for the grant. The raw gear payload is stored so `retired` can be derived later. Until it is known, show every gear as active. |
+| R14 | Strava rate limits (100 requests per 15 minutes, 1,000 per day). | A full link or gear scan is about 15 requests and the recent pass is 1 request an hour. |
+| Q1 | Smashrun Pro's "Trends Comparison": what did it do? | Unknown. Skipped unless you remember. |
+| Q3 | Top runs: rolling 30-day window or calendar month? | Rolling 30-day chosen. It's a one-line change. |
 | Q4 | Garmin Connect web URL for activities. | `/app/activity/:id`. |
+| Q5 | Smashrun's estimated finish: how does it step? | The captured page and scripts hold no code for it, only a ▶ beside the distance. We step 5K, 10K, Half, Marathon and wrap. Tell us if the real widget does something else. |
 
-## 14. Checklist
+## 14. Work queue and checklist
 
-Phase 0 is done.
+Work in this order. Items marked "parallel" touch different files and can run at the same time; the owner-visible results are in §5. Every item meets the definition of done in §12. Conventions are in `AGENTS.md`.
+
+**Phase 0 and 1: done.** Phase 2 as listed in §5.5, Strava links, theme switch, linked hover and the container are built and committed.
+
+### Phase 2: finishing
+
+- [x] **W0: install this document and commit the pending cleanup.** Replace `docs/PRD.md` with this document. The working tree also holds a 7-file simplification: the route marker no longer hides across GPS gaps or before and after the first fix, the Analyze Run histogram axis no longer widens for this run's value (moot after W3), `noMouseFocus` is a one-liner, and the route/distance pairing test in `test/models/track_test.rb` is removed. Run the full checks, then commit. Restore the pairing test unless the owner removed it on purpose: it guards `route` and `route_distances` staying aligned when a GPS fix is missing.
+- [ ] **W1: performance index and estimated finish (§5.5, §6).** Add `PaceZones` (Ruby, with the colour ramp as CSS variables) and `Activity#performance_zone`; build the two-column card and its stepping controller; remove the VDOT tile's 2×2 grid; repack the tile grid. Parallel with W2. Done when: zone lookup tests cover the boundaries and nil VDOT, a node test covers the cycling order, a controller test covers the card, and the browser check covers all four distances, keyboard, and runs with and without HR, variability, altitude and VDOT.
+- [ ] **W2: buttons instead of dropdowns (§5.1, §10).** Introduce the controls helper with the button group, toggle button and button, and replace the four `<select>`s: Overview distance-per-period metric (5 options), the Overview scatter's y metric (3), Pace Trends' finish distance (4). Move the hand-rolled groups (PR Progress mode and reference period, Pace Trends presets, the speed chart's 100 m / per km toggle) and the Pace Trends filter chips onto the same components. Titles follow the selection; groups wrap at 360 px. Leave the Analyze Run select for W3. Parallel with W1. Done when: no `<select>` remains outside the Analyze Run view, behaviour and `aria-pressed` are unchanged, and tests are updated.
+- [ ] **W3: rebuild "Runs in the prior 90 days" (§5.5 item 9, §6).** Dot strip, brush with cycling readout, day timeline, legend, keyboard and tooltips as specified, using the W2 button group. Remove the histogram code and its tests. Done when: the pure helpers have `node --test` tests, a controller test covers the payload, and the implementer compares screenshots against the reference page named in §5.5, in light and dark at 1300 and 360 px. Depends on W2.
+- [ ] **W4: one design system pass (§10).** Audit every page by screenshot in both themes at 1300 and 360 px (Overview all-time, year and month; Runs; a GPS run; an indoor run; Pace Trends; PR Progress), list the inconsistencies in buttons, pills, chips, card title rows, page headers, spacing, empty states, focus rings and hints, and fix them through the shared helpers. Done when: no control or card classes are written inline in views (a grep check), `AGENTS.md` "Views and CSS" states the final rules, and the report lists what changed. Depends on W1 to W3, and runs alone.
+- [ ] **W5: Phase 2 close-out.** In `AGENTS.md`, "the Phase 3 Pro Map" becomes "the Phase 4 Pro Map", and the new helpers and components are named. Tick this checklist. Rebuild the container and check `/up`, `/overview`, a run page, `/pace_trend` and `/pr_progress` on :9295.
+
+### Phase 3: Wellness and gear
+
+- [ ] **W6: Garmin wellness probe (spike, §7.1).** A read-only task, `bin/rails garmin:probe`, that tries each candidate endpoint for yesterday, a date a year ago and the first run's date, at ≤ 1 request/s (about 40 requests). It prints HTTP status, content type, top-level JSON keys with types and array lengths, and the earliest date with data per metric; never values. It writes nothing to the database, and its output goes to `/tmp/opencode/` at mode 600. The Status column in §7.1 is filled in with the real paths, and a short summary is written for the owner. Ask the owner only if resting HR, HRV or sleep is missing (R10). Parallel with W11.
+- [ ] **W7: wellness data and sync (§5.6, §7.2, §8).** `wellness_days` and the `profiles` columns, `Garmin::Client` methods for the verified endpoints, `Wellness::Sync` and `Wellness::SyncJob` (hourly), `bin/rails wellness:backfill`, `profiles.hr_zones` and the `HrZones` PORO with the default-band fallback. Done when: WebMock tests cover idempotency, the 3-day refresh and missing metrics, and a 30-day dry run on the dev database reports counts only. Depends on W6.
+- [ ] **W8: HR zones, effort and recovery on the run page (§5.6).** The zones and effort section from the stored summaries, the zone bands on the HR profile, and "Going in". Done when: controller tests cover each section being present or absent per data, a node test covers the zone bar maths, and the browser check covers a run with full data, one without HR and a pre-Garmin run. Depends on W7.
+- [ ] **W9: Wellness page (§5.6).** The nav item, the shared window and brush, the day cursor, and the charts the probe allows, with empty states. Done when the performance targets in §12 are met. Depends on W7. Parallel with W10.
+- [ ] **W10: Pace Trends overlay (§5.3, §5.6).** The overlay button group and secondary axis. Depends on W7. Parallel with W9.
+- [ ] **W11: Strava gear sync (§7.6, §8).** The `profile:read_all` scope, `profiles.strava_scope` and the Reconnect prompt, `gears` and `activities.strava_gear_id`, the Strava client's gear calls, `gear_id` read in the link scans, the weekly gear refresh, the full pass on connect and the hourly recent pass. Done when: WebMock tests cover a missing scope, a gear without a row yet, null gear, an absent `retired` and 401 handling. Owner action after the deploy: click Reconnect Strava. Then check on the live connection, printing counts only. Parallel with W6.
+- [ ] **W12: Gear page and gear on runs (§5.7).** The table, the "No gear set" row, the two charts, the Refresh button, the runs list column and `gear` filter with the Suggested column, and the header tag. Done when: per-gear distance matches Strava's gear distance within 1% where a gear was only used for runs, every linked run without gear is listed, and tests and the browser check pass. Depends on W11.
+- [ ] **W13: Phase 3 close-out.** Check the new pages against the design system (§10), update this document and `AGENTS.md`, tick this checklist, rebuild and deploy the container.
+
+### Phase 4: Pro analytics
+
+- [ ] **W14: Pro Map (§5.8).** Route colouring from the pace zones and HR zones, distribution bars with the click cycle, fastest segments (`efforts`), splits, and the change-in-pace graph. Depends on W1 and W8. Parallel with W15 and W16.
+- [ ] **W15: Training Bands (§5.9).** `activities.bands`, computed in `process_original` and backfilled with `activities:reprocess`, and the page. Depends on W8. Parallel with W14 and W16.
+- [ ] **W16: Progress Towards Goal (§5.10).** `goals` with CRUD, the chart, and the Overview widgets. Parallel with W14 and W15.
+- [ ] **W17: final close-out.** Update this document and `AGENTS.md`, rebuild and deploy the container, and re-check the golden values.
+
+**Owner actions along the way:** decide what to do if W6 finds resting HR, HRV or sleep missing; click Reconnect Strava after the W11 deploy.
