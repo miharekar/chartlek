@@ -21,13 +21,13 @@ class Strava::ClientTest < ActiveSupport::TestCase
   test "builds the authorization URL" do
     query = URI.decode_www_form(URI(@client.authorize_url(REDIRECT_URI, state: "abc")).query).to_h
 
-    assert_equal({"client_id" => "123", "redirect_uri" => REDIRECT_URI, "response_type" => "code", "approval_prompt" => "auto", "scope" => "activity:read_all", "state" => "abc"}, query)
+    assert_equal({"client_id" => "123", "redirect_uri" => REDIRECT_URI, "response_type" => "code", "approval_prompt" => "auto", "scope" => "activity:read_all,profile:read_all", "state" => "abc"}, query)
   end
 
   test "exchanges the code and stores both tokens encrypted" do
     stub_request(:post, TOKEN_URL).with(body: {client_id: "123", client_secret: "test-secret", code: "the-code", grant_type: "authorization_code"}).to_return(body: token("access-1", "refresh-1"))
 
-    @client.authorize("the-code")
+    @client.authorize("the-code", scope: "read,activity:read_all")
 
     profile = Profile.find(@profile.id)
     assert profile.strava_connected?
@@ -194,7 +194,7 @@ class Strava::ClientTest < ActiveSupport::TestCase
   test "raises with the status and never the secret" do
     stub_request(:post, TOKEN_URL).to_return(status: 400, body: {message: "Bad Request"}.to_json)
 
-    error = assert_raises(Strava::Client::Error) { @client.authorize("bad") }
+    error = assert_raises(Strava::Client::Error) { @client.authorize("bad", scope: "read") }
 
     assert_match "400", error.message
     assert_no_match "test-secret", error.message

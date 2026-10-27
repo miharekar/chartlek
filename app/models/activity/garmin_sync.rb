@@ -35,6 +35,7 @@ module Activity::GarminSync
         else
           profile.finish_sync
           link_strava_later if profile.strava_connected?
+          sync_strava_gear_later if profile.strava_gear_access?
         ensure
           if changes.any? || profile.sync_error != previous_error
             Turbo::StreamsChannel.broadcast_refresh_to(:garmin_sync)

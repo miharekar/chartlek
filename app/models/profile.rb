@@ -44,12 +44,20 @@ class Profile < ApplicationRecord
     strava_refresh_token.present?
   end
 
+  def strava_gear_access?
+    strava_connected? && strava_scope.to_s.split(",").include?(Strava::Client::GEAR_SCOPE)
+  end
+
+  def strava_reconnect?
+    strava_connected? && !strava_gear_access?
+  end
+
   def store_strava_tokens(access_token:, refresh_token:, expires_at:)
     update!(strava_access_token: access_token, strava_refresh_token: refresh_token, strava_token_expires_at: Time.zone.at(expires_at))
   end
 
   def disconnect_strava
-    update!(strava_access_token: nil, strava_refresh_token: nil, strava_token_expires_at: nil)
+    update!(strava_access_token: nil, strava_refresh_token: nil, strava_token_expires_at: nil, strava_scope: nil)
   end
 
   def invalid_key?

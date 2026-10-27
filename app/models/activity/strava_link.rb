@@ -18,7 +18,9 @@ module Activity::StravaLink
 
       if full || after
         summaries = client.activities(after: after&.to_i)
-        link_strava_summaries(summaries)
+        linked = link_strava_summaries(summaries)
+        full ? sync_strava_gear_now(full:, client:, summaries:) : read_strava_gear_ids(summaries)
+        linked
       else
         0
       end

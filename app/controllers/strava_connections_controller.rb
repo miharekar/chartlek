@@ -23,10 +23,10 @@ class StravaConnectionsController < ApplicationController
   end
 
   def connect(code, scope)
-    Strava::Client.new.authorize(code)
+    Strava::Client.new.authorize(code, scope:)
     Activity.link_strava_later(full: true)
     notice = "Strava connected. Linking your runs."
-    notice += " Private activities were not shared, so they are skipped." unless scope.split(",").include?(Strava::Client::SCOPE)
+    notice += " Private activities were not shared, so they are skipped." unless scope.split(",").include?(Strava::Client::PRIVATE_SCOPE)
 
     redirect_to root_path, notice:
   rescue Strava::Client::Error

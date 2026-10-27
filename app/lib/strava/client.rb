@@ -6,8 +6,11 @@ class Strava::Client
 
   AUTHORIZE_URL = "https://www.strava.com/oauth/authorize"
   TOKEN_URL = "https://www.strava.com/oauth/token"
-  ACTIVITIES_URL = "https://www.strava.com/api/v3/athlete/activities"
-  SCOPE = "activity:read_all"
+  API_URL = "https://www.strava.com/api/v3"
+  ACTIVITIES_URL = "#{API_URL}/athlete/activities"
+  PRIVATE_SCOPE = "activity:read_all"
+  GEAR_SCOPE = "profile:read_all"
+  SCOPE = "#{PRIVATE_SCOPE},#{GEAR_SCOPE}"
   ACTIVITY_SCOPES = %w[activity:read activity:read_all].freeze
   PER_PAGE = 200
   REFRESH_MARGIN = 5.minutes
@@ -23,12 +26,23 @@ class Strava::Client
     "#{AUTHORIZE_URL}?#{URI.encode_www_form(client_id: @client_id, redirect_uri:, response_type: "code", approval_prompt: "auto", scope: SCOPE, state:)}"
   end
 
-  def authorize(code)
+  def authorize(code, scope:)
     store(request_token(grant_type: "authorization_code", code:, label: "token exchange"))
+    @profile.update!(strava_scope: scope)
   end
 
   def activities(after: nil)
     (1..).lazy.map { activities_page(it, after) }.take_while(&:any?).to_a.flatten(1)
+  end
+
+  def athlete
+    JSON.parse(checked(get(URI("#{API_URL}/athlete")), "athlete").body)
+  end
+
+  def gear(id)
+    response = get(URI("#{API_URL}/gear/#{ERB::Util.url_encode(id)}"))
+
+    JSON.parse(checked(response, "gear").body) unless response.code == "404"
   end
 
   def inspect
@@ -39,13 +53,18 @@ class Strava::Client
   def activities_page(page, after)
     uri = URI(ACTIVITIES_URL)
     uri.query = URI.encode_www_form({page:, per_page: PER_PAGE, after:}.compact)
+
+    JSON.parse(checked(get(uri), "activities page #{page}").body)
+  end
+
+  def get(uri)
     response = start(uri) { it.get(uri.request_uri, "Authorization" => "Bearer #{access_token}") }
 
     if response.code == "401"
       @profile.disconnect_strava
       raise NotConnected, "Strava rejected the access token"
     else
-      JSON.parse(checked(response, "activities page #{page}").body)
+      response
     end
   end
 

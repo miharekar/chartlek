@@ -14,7 +14,7 @@ class StravaConnectionsControllerTest < ActionDispatch::IntegrationTest
     uri = URI(response.location)
     query = URI.decode_www_form(uri.query).to_h
     assert_equal "www.strava.com", uri.host
-    assert_equal "activity:read_all", query["scope"]
+    assert_equal "activity:read_all,profile:read_all", query["scope"]
     assert_equal "http://www.example.com/strava/callback", query["redirect_uri"]
     assert_equal "123", query["client_id"]
     assert query["state"].present?
@@ -123,14 +123,28 @@ class StravaConnectionsControllerTest < ActionDispatch::IntegrationTest
     assert_not Profile.instance.strava_connected?
   end
 
-  test "the nav button shows only while disconnected" do
+  test "the callback stores the granted scope" do
+    state = start["state"]
+    stub_request(:post, TOKEN_URL).to_return(body: {access_token: "a", refresh_token: "r", expires_at: 6.hours.from_now.to_i}.to_json)
+
+    get strava_callback_path(code: "c", state:, scope: "read,activity:read_all,profile:read_all")
+
+    assert_equal "read,activity:read_all,profile:read_all", Profile.instance.strava_scope
+    assert Profile.instance.strava_gear_access?
+  end
+
+  test "the nav button is Connect, Reconnect or absent by connection and scope" do
     get root_path
     follow_redirect!
     assert_select "form[action=?][data-turbo=false] button", strava_connection_path, text: "Connect Strava"
 
     Profile.instance.store_strava_tokens(access_token: "a", refresh_token: "r", expires_at: 1.hour.from_now.to_i)
+    Profile.instance.update!(strava_scope: "read,activity:read_all")
     get "/overview"
+    assert_select "form[action=?][data-turbo=false] button", strava_connection_path, text: "Reconnect Strava"
 
+    Profile.instance.update!(strava_scope: "read,activity:read_all,profile:read_all")
+    get "/overview"
     assert_select "form[action=?]", strava_connection_path, false
   end
 
