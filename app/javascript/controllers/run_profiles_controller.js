@@ -79,7 +79,7 @@ export default class extends Controller {
     if (key === "hr") {
       const [bottom, top] = y.domain()
       for (const { zone, from, to } of zoneBands(this.zonesValue, bottom, top)) {
-        chart.append("rect").attr("x", 0).attr("width", innerWidth).attr("y", y(to)).attr("height", y(from) - y(to)).attr("fill", `var(--hr-zone-${zone})`).attr("fill-opacity", 0.14).attr("pointer-events", "none")
+        chart.append("rect").attr("x", 0).attr("width", innerWidth).attr("y", y(to)).attr("height", y(from) - y(to)).attr("fill", `var(--hr-zone-${zone})`).attr("fill-opacity", 0.2).attr("pointer-events", "none")
       }
 
       const stops = zoneStops(this.zonesValue, bottom, top)
