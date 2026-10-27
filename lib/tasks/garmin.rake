@@ -7,7 +7,9 @@ namespace :garmin do
     abort "No runs yet; sync first" unless first_run
 
     path = ENV.fetch("OUTPUT") { File.join(Dir.tmpdir, "smashback-garmin-probe", "probe.txt") }
-    Garmin::Probe.new(client: Garmin::Client.new, first_run_on: first_run.to_date, path:).run
+    scope = ENV["SCOPE"] == "all" ? :all : :documented
+    activity_id = Activity.where(source: "garmin").order(started_at: :desc).pick(:external_id)
+    Garmin::Probe.new(client: Garmin::Client.new, first_run_on: first_run.to_date, path:, activity_id:, scope:).run
     puts "Also written to #{path}"
   end
 end

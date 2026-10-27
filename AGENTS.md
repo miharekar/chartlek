@@ -41,7 +41,7 @@ bin/rails activities:reprocess  # rebuild tracks and metrics from stored origina
 bin/rails wellness:backfill  # Garmin wellness history from the first run, newest first, 1 request/s, resumable (DAYS=30 limits it); prints counts only
 bin/rails smashrun:fetch     # pre-Garmin runs: match, fill calories and races, attach recordings (15 s per request)
 bin/rails weather:fetch      # Open-Meteo weather backfill
-bin/rails garmin:probe       # read-only Garmin wellness endpoint probe: statuses and JSON shapes, never values; also writes OUTPUT= (default under the system tmpdir, file mode 600)
+bin/rails garmin:probe       # read-only Garmin wellness endpoint probe: statuses and JSON shapes, never values; also writes OUTPUT= (default under the system tmpdir, file mode 600); SCOPE=all adds the first round's candidates
 bin/rails strava:fetch       # gap fill from the Strava API (needs the Connect Strava nav button clicked once)
 bin/rails "strava:import[/path/to/unzipped/strava/archive]"  # gap fill from a Strava archive
 bin/rails test         # full Minitest suite

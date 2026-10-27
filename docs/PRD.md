@@ -449,7 +449,11 @@ All metric math lives in Ruby and is unit-tested. The only JS math is interactiv
 | `GET /wellness-service/wellness/dailyHeartRate?date=` | Resting HR, 7-day average and the day's heart rate samples | 3 | Verified (corrected path: without `/{displayName}`, which is 404). The daily summary above is the cheaper source |
 | `GET /wellness-service/wellness/bodyBattery/reports/daily?startDate&endDate` | Body Battery (range): per day `charged`, `drained`, the value series and activity events | 3 | Verified |
 | `GET /hrv-service/hrv/{date}` and `/hrv-service/hrv/daily/{from}/{to}` | HRV: `hrvSummary` (`lastNightAvg`, `weeklyAvg`, `lastNight5MinHigh`, `status`, `baseline` with `lowUpper`, `balancedLow`, `balancedUpper`) plus 5-minute readings; the range form returns `hrvSummaries` | 3 | Verified (both). A date with no data is 204 with an empty body. The range form accepted 30 and 90 days in one request |
-| `GET /sleep-service/sleep/dailySleepData?date=` | Sleep duration, stages, score | 3 | Not available (404; also `/wellness-service/wellness/dailySleepData` with and without `/{displayName}`, and `/sleep-service/stats/sleep/daily/{start}/{end}`) |
+| `GET /sleep-service/sleep/dailySleepData?date=` | Sleep duration, stages, score | 3 | Not available (404; also `/wellness-service/wellness/dailySleepData` with and without `/{displayName}`, and `/sleep-service/stats/sleep/daily/{start}/{end}`). The documented paths below work |
+| `GET /sleep-service/sleep/dailySleep?date=` | One night, flat: `sleepTimeSeconds`, `deepSleepSeconds`, `lightSleepSeconds`, `remSleepSeconds`, `awakeSleepSeconds`, `napTimeSeconds`, sleep start and end (epoch ms, GMT and local), `averageSpO2Value`, `lowestSpO2Value`, `highestSpO2Value`, `averageRespirationValue`, `lowestRespirationValue`, `highestRespirationValue`, `avgSleepStress`, `avgHeartRate`, `awakeCount`, `sleepScores` (`overall.value` and a qualifier for each of total duration, stress, awake count, REM, light, deep, restlessness), `sleepNeed`, `sleepAlignment` | 3 | Verified (found from Garmin's swagger docs). A night with no data is 200 with null fields |
+| `GET /sleep-service/sleep/dailySleepSummariesByDate?startDate&endDate` | The same night objects as an array, one per date (31 days in one request; the shape has `breathingDisruptionSeverity` in addition) | 3 | Verified. Empty before the first night: an empty array |
+| `GET /usersummary-service/v2/dailysummaries?startDate&endDate` | `{data: [...]}`, one entry per day, in groups: `wellnessChronology`, `movement`, `calories`, `heartRate` (`minValue`, `maxValue`, `restingValue`), `intensityMinutes`, `stress` (`avgLevel`, `maxLevel`, proportions and durations), `bodyBattery` (`minValue`, `maxValue`, `chargedValue`, `drainedValue`, `latestValue`, feedback events), `hydration`, `respiration` (`avgValue`, `maxValue`, `minValue`, `latestValue`), `pulseOx` (`avgValue`, `minValue`, `latestValue`), `jetLag` | 3 | Verified. 31, 90 and 180 days in one request return one entry per day; 365 days is HTTP 500 (retried five times, still 500). No 7-day resting HR average and no Body Battery at wake time |
+| `GET /activity-service/activity/{id}` | One run's detail: `summaryDTO` (the summary fields plus `beginPotentialStamina`, `endPotentialStamina`, `minAvailableStamina`, `avgGradeAdjustedSpeed`, `impactLoad`, `differenceBodyBattery`), `splitSummaries` and `metadataDTO` | 3 | Verified. `splitSummaries` is a handful of entries by `splitType` (4 on the sampled run), not one per kilometre, with no recovery heart rate. No `recoveryHeartRate` key anywhere in the detail |
 | `GET /weight-service/weight/range/{start}/{end}?includeAll=true` | Weight: `dailyWeightSummaries` (one per weigh-in day), plus body fat, water, bone and muscle mass when the scale recorded them | 3 | Verified. `/weight-service/weight/dateRange` is 404. Weights are in grams |
 | `GET /metrics-service/metrics/trainingreadiness/{date}` | Training readiness, recovery time | 3 | Not available (404) |
 | `GET /metrics-service/metrics/trainingstatus/daily/{date}` | Training status and load | 3 | Not available (404, and `/aggregated/{date}` too) |
@@ -459,13 +463,20 @@ The probe (`bin/rails garmin:probe`, W6, run on 27 Oct 2026) tried these paths a
 
 | Metric | Earliest data |
 |---|---|
-| Resting HR, stress, Body Battery | between mid-2017 and early 2018 |
+| Resting HR, stress, Body Battery | between mid-2017 and early 2018 (the stored daily summaries start 2017-05-09, stress and Body Battery from 2017-09-22) |
 | Weight | mid-2017 |
 | HRV | late 2022 |
+| Sleep time | 2017-05-10 |
+| Sleep stages | by early 2018 (2017-09 has none, 2018-03 has all) |
+| Sleep score | between March 2021 and March 2022 (none in 2021-03, all in 2022-03) |
+| Overnight respiration and SpO2 | by early 2020 (none in 2019-03, all in 2020-03) |
+| v2 daily summaries | 2017-05 (within 32 days of 2017-05-23) |
 
 The probe bisects with a few requests per metric, so each date is only good to a few months; the backfill stops a metric after several empty weeks (R11) and doesn't depend on them. The probe's output (statuses and JSON key shapes, no values) is in `/tmp/opencode/p5/probe.txt`.
 
-The Personal API has **no** time-series, splits, laps or weather endpoints. Everything per-second comes from the original file, or from Smashrun for the years before Garmin (§7.5), and weather comes from Open-Meteo. The activity summaries do carry, per run, the time in each HR zone, training effect, training load, Body Battery change, intensity minutes and running dynamics.
+A second round (27 Oct 2026, after reading Garmin's Personal API swagger docs, `bin/rails garmin:probe`, 30 requests) found sleep under `/sleep-service/sleep/dailySleep` and `dailySleepSummariesByDate`, which round one had missed by guessing the Connect web path `dailySleepData`. Against the stored daily summaries, `v2/dailysummaries` matched on resting HR, average stress and Body Battery high and low for all 5 recent days compared. It has no `lastSevenDaysAvgRestingHeartRate` and no at-wake Body Battery, so it can't replace the daily summary without losing two stored columns. The activity-detail run carries no recovery heart rate. Its output is in `/tmp/opencode/p8/probe.txt`.
+
+The Personal API has **no** time-series, laps or weather endpoints, and its only split data is the `splitSummaries` groups in the activity detail. Everything per-second comes from the original file, or from Smashrun for the years before Garmin (§7.5), and weather comes from Open-Meteo. The activity summaries do carry, per run, the time in each HR zone, training effect, training load, Body Battery change, intensity minutes and running dynamics.
 
 ### 7.2 Sync flow
 
