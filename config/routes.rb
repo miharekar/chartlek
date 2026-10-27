@@ -14,6 +14,7 @@ Rails.application.routes.draw do
   resource :training_bands, only: :show
   resources :gears, path: "gear", only: :index
   resource :gear_sync, only: :create
+  resources :goals
   resource :sync, only: :create
   resource :theme, only: :update
   resource :strava_connection, only: %i[show create]

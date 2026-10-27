@@ -1,4 +1,6 @@
 class Overview
+  GoalSlot = Data.define(:kind, :starts_on, :goal, :progress)
+
   attr_reader :period, :activities
 
   def self.for(year: nil, month: nil)
@@ -32,10 +34,6 @@ class Overview
 
   def average_pace
     activities.sum(&:timer_s) / total_km
-  end
-
-  def longest
-    activities.max_by(&:distance_m)
   end
 
   def latest
@@ -82,6 +80,26 @@ class Overview
     PersonalRecords.for(activities)
   end
 
+  def month_goal
+    starts_on = month_start
+
+    if starts_on
+      goal = Goal.find_by(period: "month", starts_on:)
+
+      goal_slot("month", starts_on, goal) if goal || (starts_on == @today.beginning_of_month && !current_goal?)
+    end
+  end
+
+  def year_goal
+    starts_on = year_start
+
+    if starts_on
+      goal = Goal.find_by(period: "year", starts_on:)
+
+      goal_slot("year", starts_on, goal) if goal || starts_on == @today.beginning_of_year
+    end
+  end
+
   def years(selected = nil)
     ([@today.year, selected] + @all.map { it.local_started_at.year }).compact.uniq.sort.reverse
   end
@@ -91,6 +109,29 @@ class Overview
   end
 
   private
+  def current_goal?
+    @current_goal = Goal.exists?(period: "month", starts_on: @today.beginning_of_month) || Goal.exists?(period: "year", starts_on: @today.beginning_of_year) if @current_goal.nil?
+    @current_goal
+  end
+
+  def month_start
+    case period.kind
+    when :month then Date.new(period.year, period.month, 1)
+    when :all then @today.beginning_of_month
+    end
+  end
+
+  def year_start
+    case period.kind
+    when :year then Date.new(period.year, 1, 1)
+    when :all then @today.beginning_of_year
+    end
+  end
+
+  def goal_slot(kind, starts_on, goal)
+    GoalSlot.new(kind:, starts_on:, goal:, progress: goal&.progress(today: @today, activities: @all))
+  end
+
   def run_dates
     @run_dates ||= activities.map { it.local_started_at.to_date }.uniq
   end

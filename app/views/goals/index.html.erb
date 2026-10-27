@@ -1,0 +1,40 @@
+<%= page_header "Goals" do %>
+  <%= action_button "New goal", new_goal_path %>
+<% end %>
+
+<% if @goals.empty? %>
+  <%= empty_state "No goals yet." do %>
+    Set a monthly or yearly distance goal and follow it here and on the Overview.
+  <% end %>
+<% else %>
+  <section class="mt-6 <%= WidgetsHelper::CARD %>">
+    <div class="overflow-x-auto">
+      <table class="<%= WidgetsHelper::TABLE %>">
+        <thead class="<%= WidgetsHelper::TABLE_HEAD %>">
+          <tr class="<%= WidgetsHelper::TABLE_HEAD_ROW %> text-left">
+            <th class="<%= WidgetsHelper::CELL %> font-medium">Goal</th>
+            <th class="<%= WidgetsHelper::CELL %> hidden text-right font-medium sm:table-cell">Target</th>
+            <th class="<%= WidgetsHelper::CELL %> hidden text-right font-medium sm:table-cell">Done</th>
+            <th class="<%= WidgetsHelper::CELL %> text-right font-medium">%</th>
+            <th class="<%= WidgetsHelper::CELL %> font-medium">Status</th>
+          </tr>
+        </thead>
+        <tbody class="<%= WidgetsHelper::TABLE_BODY %>">
+          <% @goals.each do |goal| %>
+            <% progress = goal.progress(today: @today) %>
+            <tr class="<%= WidgetsHelper::TABLE_ROW %>">
+              <td class="<%= WidgetsHelper::CELL %>">
+                <%= link_to goal.title, goal_path(goal), class: WidgetsHelper::TABLE_LINK %>
+                <span class="ml-1 <%= WidgetsHelper::MUTED %>"><%= goal_period_label(goal) %></span>
+              </td>
+              <td class="<%= WidgetsHelper::CELL %> hidden text-right sm:table-cell"><%= overview_distance(goal.distance_km) %> km</td>
+              <td class="<%= WidgetsHelper::CELL %> hidden whitespace-nowrap text-right sm:table-cell"><%= overview_distance(progress.done_km) %> km</td>
+              <td class="<%= WidgetsHelper::CELL %> text-right"><%= progress.percent %>%</td>
+              <td class="<%= WidgetsHelper::CELL %> <%= goal_status_class(progress) %>"><%= goal_status(progress) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+<% end %>

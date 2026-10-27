@@ -92,6 +92,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_28_140000) do
     t.index ["strava_id"], name: "index_gears_on_strava_id", unique: true
   end
 
+  create_table "goals", force: :cascade do |t|
+    t.string "period", null: false
+    t.date "starts_on", null: false
+    t.float "distance_m", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["period", "starts_on"], name: "index_goals_on_period_and_starts_on", unique: true
+  end
+
   create_table "profiles", force: :cascade do |t|
     t.json "settings"
     t.datetime "synced_at"

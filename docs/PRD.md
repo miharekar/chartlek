@@ -114,7 +114,7 @@ The header row has a **Latest run · date · km →** button linking to the newe
 | 3 | Average days run per week | Distinct run days ÷ weeks in the period. For all time, the period runs from the first run to today. |
 | 4 | Time of day | % of runs starting after noon (local time), with a small AM/PM donut. |
 | 5 | Average pace | Total timer time ÷ total distance. |
-| 6 | Longest run | km and date; links to the run. |
+| 6 | Yearly goal | A stat tile beside Kilometers run (§5.10): the year's distance done of its goal, a progress bar with a tick at the direct path, percent, ahead or behind, and the required km per day; links to the goal. All time shows the current year's goal, a year view that year's. With no goal it is a quiet "Set a yearly goal" tile for the current year, and the slot is dropped (Kilometers run spans the full row at `lg`) for a past or future year and in month views. |
 | 7 | Distance per period | Bars: per month (all time), per week (year), per day (month). A button group beside the title chooses the metric: **Distance**, Elevation gained, Avg distance, Avg pace, Avg VDOT, and the title follows it. Hover shows value and run count. Clicking a bar drills into that period. |
 | 8 | Trailing days | Daily rolling sum of distance: 365 days (all-time view), 90 (year), 7 (month). |
 | 9 | Runs pace vs distance | Scatter of runs in the period. x = km. y = pace on a speed-linear axis labeled as pace (ticks 4:00, 5:00, 6:00, 7:30, 10:00, 15:00, 30:00). The last run is a plain amber dot, a little larger than the others and without an outline; it hides while a linked hover selection is active (every selected dot is amber then) and returns when the selection clears. The average is a ring marker. A button group chooses the y metric: **Pace**, Avg HR, VDOT. |
@@ -333,19 +333,22 @@ A full-page view at `/runs/:id/map`, opened from the run page's route map ("Open
   - **ⓘ:** explains the groups and says the HR zones are today's, as on the run page.
 - **Performance:** the payload is columnar, one dense array of weekly seconds per band (bands with no time left out), about 170 KB on the full history, summed in Ruby from one query. The page took about 50 ms server-side once warm (161 ms the first request) and a window change or filter toggle redraws in about 5 ms.
 
-### 5.10 Progress Towards Goal (Phase 4, planned)
+### 5.10 Progress Towards Goal (Phase 4, built, W16)
 
-**Goals**
+**Goals (`/goals`, nav item Goals after Gear)**
 
-- Monthly and yearly distance goals, stored locally with CRUD.
-- They also appear as widgets on the Overview, as on Smashrun.
+- Monthly and yearly distance goals, stored locally (`resources :goals`): an index table (goal, target, done, %, status), new and edit forms (period, any date in the month or year, distance in km), and a show page. Distances are entered and shown in km. A goal is unique per period and start; the start snaps to the first day of the month or year. Delete is a button with a confirm on the show page.
+- The show page has four tiles (done and %, ahead or behind the direct path, needed per day with the days left, the recent average) above the chart.
+- On the Overview, the yearly goal is the stat tile that sits beside Kilometers run (widget 6 in §5.2); the monthly goal is a compact widget in a row between the period selector and the stat tiles. Both show distance done of the goal, percent, a bar with a tick at the direct path, ahead or behind in km and the required km per day, and link to the goal.
+  - **Yearly tile:** all time shows the current year's goal and a year view that year's (a past year's is final and has no requirement). The current year without a goal shows a quiet "Set a yearly goal" tile, whatever other goals exist. A past or future year without a goal and every month view have no tile: the slot is dropped and Kilometers run fills the row at `lg`, so the grid packs without gaps at every width.
+  - **Monthly widget:** all time shows the current month's goal and a month view that month's; year views have none. The subtle "Set a monthly goal" link appears only while neither the current month nor the current year has a goal, and a past month without a goal shows nothing. The yearly goal is never also in this row.
 
 **Chart**
 
-- An accent line shows cumulative distance. A grey line shows the direct path to the goal (goal ÷ days).
-- Hovering a past date shows where you were. Hovering a future date shows the required average distance per day from now on.
-- When you're behind, a red catch-up line appears. Its intensity is the required daily distance relative to your recent daily average.
-- The x-axis has ticks on run days with daily totals; clicking one opens that run.
+- An accent line shows cumulative distance by day. A grey dotted line shows the direct path to the goal (goal × day ÷ days). The y axis reaches the goal or a larger total.
+- Hovering a past day shows where you were: distance, the direct path, ahead or behind, and that day's run total. Hovering a future day shows the average per day needed if you start that day (remaining ÷ days from that day, §6). Today shows both. The cursor is a Tab stop with Left, Right, Home, End, Enter (opens the run) and Escape.
+- When you're behind (and the goal isn't reached and the period isn't over), a red dashed catch-up line runs from today's total to the goal. Its opacity is the required daily distance relative to your recent daily average (§6).
+- Bars along the x-axis mark run days, their height the daily total; clicking a run day opens its longest run. Days bucket by `local_started_at` date.
 
 ## 6. Metrics and formulas
 
@@ -356,6 +359,12 @@ All metric math lives in Ruby and is unit-tested. The only JS math is interactiv
   - `timer_s` is Garmin's `duration`, which excludes manual pauses. It drives pace, VDOT and PRs.
   - `elapsed_s` and `moving_s` are also stored.
   - A run *has pauses* when `elapsed_s − timer_s ≥ 60`.
+- **Goal progress (Phase 4, W16):**
+  - A goal spans the days of its month or year; day i's total is the sum of that local date's runs, and cumulative distance is the running sum through today (or the period's end).
+  - The direct path through day i is goal × (i + 1) ÷ days. Ahead or behind = done − the path through today, but until today has a run the path stops at yesterday, so a goal isn't red from the first hour of the day. The distance must be above 0 and under 100,000 km. On a finished period the chart shows where you finished and no required rate.
+  - Required per day = remaining ÷ days left, where days left counts today (period end − today + 1). For a future day d it is remaining ÷ (days − d), as if nothing more is run before d. It is nil once the period is over and 0 once the goal is reached.
+  - Behind means the period is running, the goal isn't reached and done is below the path.
+  - **Recent daily average:** all runs (inside or outside the period) in the 28 days ending today, divided by 28 (`Goal::Progress::RECENT_DAYS`). The catch-up ratio is required ÷ recent average (none when the recent average is 0). The line's opacity is 0.35 up to a ratio of 1 (the pace already being run) and rises linearly to 1 at a ratio of 3 or more, and is 1 without a recent average.
 - **Local time:** all day bucketing (streaks, weekdays, AM/PM, calendars) uses Garmin's `startTimeLocal`. UTC is stored as well.
 - **VDOT** (Daniels–Gilbert):
   - v = m/min, t = minutes.
@@ -588,7 +597,7 @@ Index on `local_started_at`. All of history is about 2,900 rows. Aggregations lo
 ### Phase 4 additions (planned)
 
 - `activities.bands` (built, W15): JSON `{"pace": [37 seconds], "hr": [5], "grade": [7]}` of whole seconds per pace zone, HR zone (zone 1 first) and grade bucket (steepest descent first), computed from the stored track (§5.9). An array whose total is 0 (no HR, no altitude) is nil, and the whole column is nil for rebuilt distances and runs without a track. HR bands use the zones in force when they were computed.
-- `goals`: `period` (month or year), `starts_on`, `distance_m`.
+- `goals` (built, W16): `period` (`month` or `year`), `starts_on` (first day of the month or year), `distance_m` (float, entered in km), timestamps; unique index on `period` and `starts_on`.
 
 ### Singleton `profile`
 
@@ -621,9 +630,9 @@ Garmin profile settings (JSON), HR zones (Phase 3), `synced_at`, `sync_started_a
 - **Routes:** REST resources only:
   - Built: `resource :overview` (with `:year`/`:month`), `resource :pace_trend`, `resource :pr_progress`, `resource :wellness` (show, with `from` and `to`), `resources :runs` (index and show), `resource :sync` (`create` = Sync now), `resource :theme` (`update`), `resource :strava_connection` and the OAuth callback.
   - Phase 3: `resources :gears` (index, served at `/gear`), `resource :gear_sync` (`create` = Refresh from Strava), and a `gear` filter param on `/runs`.
-  - Phase 4: `runs/:run_id/map` (`resource :map`, show, built), `resource :training_bands` (show, built), `resources :goals`.
+  - Phase 4: `runs/:run_id/map` (`resource :map`, show, built), `resource :training_bands` (show, built), `resources :goals` (built).
 - **Charts:**
-  - One Stimulus controller per chart type (kebab-case files in `app/javascript/controllers`): `period-bars`, `trailing-line`, `pace-scatter`, `heatmap`, `streaks`, `pace-trends`, `pr-progress`, `run-speed`, `run-profiles`, `run-map`, `wellness`, `training-bands`, `pace-variability`, `elevation-profile`, `rank-distribution`, `analyze-run`, `day-tip`, `info`, and so on.
+  - One Stimulus controller per chart type (kebab-case files in `app/javascript/controllers`): `period-bars`, `trailing-line`, `pace-scatter`, `heatmap`, `streaks`, `pace-trends`, `pr-progress`, `run-speed`, `run-profiles`, `run-map`, `wellness`, `training-bands`, `pace-variability`, `elevation-profile`, `goal-progress`, `rank-distribution`, `analyze-run`, `day-tip`, `info`, and so on.
   - The server renders chart data as JSON into Stimulus values, so no JSON endpoints are needed.
   - Shared helpers live in `app/javascript/helpers/`: formatters, tooltip (`tooltipHtml`), resize, time, regression, `linked_selection` (Overview hover), `run_cursor` (run page distance cursor, and the Wellness day cursor) and `route_point`, `wellness` (moving means, zone stacking, step windows), `training_bands` (week stacking, filters, tooltip rows), roving focus, and the pure logic of each chart.
   - Charts redraw on `ResizeObserver`.
@@ -711,7 +720,6 @@ Smashback's values, next to smashrun.com/miharekar (all time, km), as of 2026-10
 | Average run length | 11.5 km | 11.4 km |
 | Runs after noon | 67% | 66% |
 | Average pace | 6:07 /km | 6:14 /km |
-| Longest run | 43.2 km on 25 Sep 2016 | same |
 | Longest break | 110 days (30 Oct 2014 – 16 Feb 2015) | same |
 | Longest streak | 111 days (21 Apr – 9 Aug 2020) | same |
 | PR 5 km | 24:23 (12 Apr 2022) | same |
@@ -785,7 +793,7 @@ Work in this order. Items marked "parallel" touch different files and can run at
 
 - [x] **W14: Pro Map (§5.8).** Route colouring from the pace zones and HR zones, distribution bars with the click cycle, fastest segments (computed by `Track::Efforts`, no table), splits, and the change-in-pace graph. Depends on W1 and W8. Parallel with W15 and W16.
 - [x] **W15: Training Bands (§5.9).** `activities.bands`, computed in `process_original` and backfilled from the stored tracks with `activities:bands`, and the page. Depends on W8. Parallel with W14 and W16.
-- [ ] **W16: Progress Towards Goal (§5.10).** `goals` with CRUD, the chart, and the Overview widgets. Parallel with W14 and W15.
+- [x] **W16: Progress Towards Goal (§5.10).** `goals` with CRUD, the chart, and the Overview widgets. Parallel with W14 and W15.
 - [ ] **W17: final close-out.** Update this document and `AGENTS.md`, rebuild and deploy the container, and re-check the golden values.
 
 **Owner actions along the way:** click Reconnect Strava after the W11 deploy.

@@ -75,7 +75,7 @@ class OverviewsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "section", text: /Daily stats for May 2023/
-    assert_includes response.body, "&lt;b&gt;Long"
+    assert_includes response.body, "\\u003cb\\u003eLong"
     assert_not_includes response.body, "<b>Long</b>"
   end
 
@@ -129,5 +129,97 @@ class OverviewsControllerTest < ActionDispatch::IntegrationTest
 
     assert_select "[data-controller=streaks] [data-from='2024-03-05'][data-to='2024-03-06'][data-action*='streaks#select']"
     assert_select "[data-controller=streaks] [data-action*='streaks#clear']", minimum: 1
+  end
+
+  def with_march_run
+    travel_to Time.utc(2024, 3, 20, 12) do
+      create(:activity, local_started_at: Time.utc(2024, 3, 5, 7), started_at: Time.utc(2024, 3, 5, 7), distance_m: 31_000)
+      yield
+    end
+  end
+
+  test "the monthly goal widget sits above the grid and the yearly slot nudges" do
+    with_march_run do
+      goal = Goal.create!(period: "month", starts_on: Date.new(2024, 3, 1), distance_km: 93)
+
+      get "/overview"
+
+      assert_select "div.mt-6.flex section a[href=?]", goal_path(goal), text: "March 2024 goal"
+      assert_select "[role=progressbar][aria-valuenow='33']", count: 1
+      assert_select "section", text: /31\.0of 93\.0 km/
+      assert_select "section", text: /km behind/
+      assert_select "section", text: /needed/
+      assert_select ".grid section a[href=?]", new_goal_path(period: "year", starts_on: "2024-01-01"), text: "Set a yearly goal"
+      assert_select "a", text: "Set a monthly goal", count: 0
+    end
+  end
+
+  test "the yearly goal is a tile in the stats grid and not in the row above it" do
+    with_march_run do
+      goal = Goal.create!(period: "year", starts_on: Date.new(2024, 1, 1), distance_km: 900)
+
+      get "/overview"
+
+      assert_select ".grid section.col-span-2 a[href=?]", goal_path(goal), text: "2024 goal"
+      assert_select "div.mt-6.flex", false
+      assert_select "[role=progressbar]", count: 1
+      assert_select "section.col-span-2.lg\\:col-span-4", false
+      assert_select "a", text: /Set a/, count: 0
+      assert_select "h2", text: "Longest run", count: 0
+
+      get "/overview/2024"
+
+      assert_select ".grid section a[href=?]", goal_path(goal)
+    end
+  end
+
+  test "a month view has no yearly tile and the kilometers tile fills the row" do
+    with_march_run do
+      Goal.create!(period: "year", starts_on: Date.new(2024, 1, 1), distance_km: 900)
+
+      get "/overview/2024/3"
+
+      assert_select "[role=progressbar]", false
+      assert_select "section.col-span-2.lg\\:col-span-4 h2", text: "Kilometers run"
+      assert_select "a", text: /Set a yearly/, count: 0
+    end
+  end
+
+  test "a past year without a goal drops the slot, the current year without one shows a quiet tile" do
+    with_march_run do
+      create(:activity, local_started_at: Time.utc(2023, 5, 6, 7), started_at: Time.utc(2023, 5, 6, 7))
+
+      get "/overview/2023"
+
+      assert_select "section.col-span-2.lg\\:col-span-4 h2", text: "Kilometers run"
+      assert_select "a", text: /Set a/, count: 0
+
+      get "/overview/2024"
+
+      assert_select ".grid section.col-span-2 p", text: /No goal for 2024/
+      assert_select ".grid a[href=?]", new_goal_path(period: "year", starts_on: "2024-01-01"), text: "Set a yearly goal"
+    end
+  end
+
+  test "the monthly set-a-goal link shows only while neither the current month nor the current year has a goal" do
+    with_march_run do
+      get "/overview"
+
+      assert_select "div.mt-6.flex a[href=?]", new_goal_path(period: "month", starts_on: "2024-03-01"), text: "Set a monthly goal"
+
+      Goal.create!(period: "year", starts_on: Date.new(2024, 1, 1), distance_km: 900)
+      get "/overview"
+
+      assert_select "a", text: "Set a monthly goal", count: 0
+    end
+  end
+
+  test "the overview works with no goals at all" do
+    create_runs
+
+    get "/overview/2024/3"
+
+    assert_response :success
+    assert_select "[role=progressbar]", false
   end
 end

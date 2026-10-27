@@ -25,6 +25,7 @@
   --chart-muted: #a1a1aa;
   --chart-grid: #e4e4e7;
   --chart-axis: #71717a;
+  --chart-behind: #dc2626;
   --hr-zone-1: #64748b;
   --hr-zone-2: #3b82f6;
   --hr-zone-3: #22c55e;
@@ -100,6 +101,7 @@
     --chart-muted: #71717a;
     --chart-grid: #27272a;
     --chart-axis: #a1a1aa;
+    --chart-behind: #f87171;
     --pace-stop-0: #b91c1c;
     --pace-stop-1: #f97316;
     --pace-stop-2: #facc15;
@@ -127,6 +129,7 @@
     --chart-muted: #71717a;
     --chart-grid: #27272a;
     --chart-axis: #a1a1aa;
+    --chart-behind: #f87171;
     --pace-stop-0: #b91c1c;
     --pace-stop-1: #f97316;
     --pace-stop-2: #facc15;

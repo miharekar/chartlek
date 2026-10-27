@@ -1,0 +1,47 @@
+<% progress = @progress %>
+<%= page_header "#{@goal.title} goal" do %>
+  <div class="flex flex-wrap items-center gap-2">
+    <%= action_button "All goals", goals_path %>
+    <%= action_button "Edit", edit_goal_path(@goal) %>
+    <%= button_to "Delete", goal_path(@goal), method: :delete, class: ControlsHelper::BUTTON, form: {data: {turbo_confirm: "Delete the #{@goal.title} goal?"}} %>
+  </div>
+<% end %>
+
+<div class="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+  <section class="<%= WidgetsHelper::CARD %>">
+    <h2 class="<%= WidgetsHelper::TILE_LABEL %>">Done</h2>
+    <p class="<%= WidgetsHelper::TILE_VALUE %> <%= WidgetsHelper::ACCENT %>"><%= overview_distance(progress.done_km) %><span class="<%= WidgetsHelper::TILE_UNIT %>">km</span></p>
+    <p class="<%= WidgetsHelper::TILE_SUB %>"><%= progress.percent %>% of <%= overview_distance(@goal.distance_km) %> km</p>
+  </section>
+  <section class="<%= WidgetsHelper::CARD %>">
+    <h2 class="<%= WidgetsHelper::TILE_LABEL %>">Vs direct path</h2>
+    <p class="<%= WidgetsHelper::TILE_VALUE %> <%= goal_status_class(progress) %>"><%= goal_gap(progress).first %><% if goal_gap(progress).second %><span class="<%= WidgetsHelper::TILE_UNIT %>"><%= goal_gap(progress).second %></span><% end %></p>
+    <p class="<%= WidgetsHelper::TILE_SUB %>"><%= overview_distance(progress.expected_km) %> km expected so far</p>
+  </section>
+  <section class="<%= WidgetsHelper::CARD %>">
+    <h2 class="<%= WidgetsHelper::TILE_LABEL %>">Needed per day</h2>
+    <p class="<%= WidgetsHelper::TILE_VALUE %>"><%= progress.required_km_per_day ? overview_distance(progress.required_km_per_day) : "–" %><span class="<%= WidgetsHelper::TILE_UNIT %>">km</span></p>
+    <p class="<%= WidgetsHelper::TILE_SUB %>"><%= pluralize(progress.days_left, "day") %> left</p>
+  </section>
+  <section class="<%= WidgetsHelper::CARD %>">
+    <h2 class="<%= WidgetsHelper::TILE_LABEL %>">Recent average</h2>
+    <p class="<%= WidgetsHelper::TILE_VALUE %>"><%= overview_distance(progress.recent_km_per_day) %><span class="<%= WidgetsHelper::TILE_UNIT %>">km/day</span></p>
+    <p class="<%= WidgetsHelper::TILE_SUB %>">last <%= Goal::Progress::RECENT_DAYS %> days</p>
+  </section>
+</div>
+
+<section class="mt-4 <%= WidgetsHelper::CARD %>">
+  <div class="<%= WidgetsHelper::CARD_HEADER %>">
+    <h2 class="<%= WidgetsHelper::CARD_TITLE %>">Progress towards <%= overview_distance(@goal.distance_km) %> km <%= overview_info "The grey dotted line is the direct path: the goal spread evenly over every day of the period. When you are behind it, a red dashed catch-up line runs from today's total to the goal; it is fainter when the average per day it needs is close to your recent daily average (the last #{Goal::Progress::RECENT_DAYS} days) and solid when it needs three times that or more. The bars along the bottom are your daily totals." %></h2>
+    <div class="<%= WidgetsHelper::LEGEND %>">
+      <span class="inline-flex items-center gap-1.5"><span class="h-0.5 w-4 bg-[var(--chart-accent)]"></span>Distance</span>
+      <span class="inline-flex items-center gap-1.5"><span class="h-0 w-4 border-t-2 border-dashed border-[var(--chart-muted)]"></span>Direct path</span>
+      <% if progress.behind? %>
+        <span class="inline-flex items-center gap-1.5"><span class="h-0 w-4 border-t-2 border-dashed border-[var(--chart-behind)]"></span>Catch-up</span>
+      <% end %>
+      <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-1 bg-[var(--chart-accent-low)]"></span>Run days</span>
+    </div>
+  </div>
+  <%= tag.div class: "mt-3 h-80", data: {controller: "goal-progress", goal_progress_data_value: progress.payload, label: "Cumulative distance against the direct path to the goal"} %>
+  <p class="mt-2 <%= WidgetsHelper::HINT %>">Hover a past day to see where you were and a future day for the average per day you would then need. Click a run day to open its run.</p>
+</section>

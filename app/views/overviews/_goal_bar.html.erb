@@ -1,0 +1,6 @@
+<div class="relative mt-2 h-2 rounded-full bg-[var(--chart-accent-low)]" role="progressbar" aria-label="<%= goal.title %> goal" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<%= [progress.percent, 100].min %>">
+  <div class="h-2 rounded-full bg-[var(--chart-accent)]" style="width: <%= [100 * progress.done_km / goal.distance_km, 100].min %>%"></div>
+  <% if progress.elapsed_days.positive? && progress.days_left.positive? %>
+    <div class="absolute -top-0.5 h-3 w-0.5 bg-[var(--chart-axis)]" style="left: <%= 100 * progress.expected_km / goal.distance_km %>%" title="Direct path"></div>
+  <% end %>
+</div>

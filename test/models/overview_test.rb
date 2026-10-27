@@ -29,7 +29,6 @@ class OverviewTest < ActiveSupport::TestCase
     assert_in_delta 10, o.average_km, 1e-9
     assert_in_delta 16_500 / 50.0, o.average_pace, 1e-9
     assert_equal "fifty", o.total_km_in_words
-    assert_equal 21_000, o.longest.distance_m
   end
 
   test "days per week uses distinct days over the period" do
@@ -89,5 +88,56 @@ class OverviewTest < ActiveSupport::TestCase
     o = overview([run_on([2024, 3, 4, 7, 0], distance_m: 5100, timer_s: 1500)])
 
     assert_equal ["5 km"], o.records.map(&:name)
+  end
+
+  def slots(runs, **options)
+    o = overview(runs, **options)
+    [o.month_goal, o.year_goal].map { |slot| slot && [slot.kind, slot.goal.present?] }
+  end
+
+  test "goal slots by view: all time has both current periods, a year only its yearly one, a month only its monthly one" do
+    runs = [run_on([2024, 3, 4, 7, 0], distance_m: 10_000).tap { it.id = 1 }]
+    Goal.create!(period: "month", starts_on: Date.new(2024, 3, 1), distance_km: 100)
+    Goal.create!(period: "year", starts_on: Date.new(2023, 1, 1), distance_km: 900)
+
+    assert_equal [["month", true], ["year", false]], slots(runs)
+    assert_equal [nil, ["year", true]], slots(runs, year: 2023)
+    assert_equal [["month", true], nil], slots(runs, year: 2024, month: 3)
+    assert_equal [nil, nil], slots(runs, year: 2022)
+    assert_equal 10.0, overview(runs).month_goal.progress.done_km
+  end
+
+  test "the yearly slot is a set-a-goal tile only for the current year, whatever other goals exist" do
+    Goal.create!(period: "month", starts_on: Date.new(2024, 3, 1), distance_km: 100)
+
+    assert_equal ["year", false], slots([])[1]
+    assert_equal ["year", false], slots([], year: 2024)[1]
+    assert_nil slots([], year: 2023)[1]
+    assert_nil slots([], year: 2025)[1]
+    assert_nil slots([], year: 2024, month: 3)[1]
+  end
+
+  test "the monthly set-a-goal slot shows only while neither the current month nor the current year has a goal" do
+    assert_equal ["month", false], slots([])[0]
+    assert_equal ["month", false], slots([], year: 2024, month: 3)[0]
+    assert_nil slots([], year: 2024, month: 2)[0]
+
+    Goal.create!(period: "year", starts_on: Date.new(2024, 1, 1), distance_km: 900)
+
+    assert_nil slots([])[0]
+    assert_nil slots([], year: 2024, month: 3)[0]
+    assert_equal ["year", true], slots([])[1]
+  end
+
+  test "a monthly goal alone leaves the yearly tile as a nudge" do
+    Goal.create!(period: "month", starts_on: Date.new(2024, 3, 1), distance_km: 100)
+
+    assert_equal [["month", true], ["year", false]], slots([])
+  end
+
+  test "a goal in another period doesn't count as current" do
+    Goal.create!(period: "year", starts_on: Date.new(2023, 1, 1), distance_km: 900)
+
+    assert_equal [["month", false], ["year", false]], slots([])
   end
 end

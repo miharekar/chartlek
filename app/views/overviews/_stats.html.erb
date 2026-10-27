@@ -3,23 +3,16 @@
 <% big = WidgetsHelper::TILE_VALUE %>
 <% unit = WidgetsHelper::TILE_UNIT %>
 <% sub = WidgetsHelper::TILE_SUB %>
-<% longest = overview.longest %>
+<% year_goal = overview.year_goal %>
 
-<section class="<%= card %> col-span-2">
+<section class="<%= card %> col-span-2<%= " lg:col-span-4" unless year_goal %>">
   <h2 class="<%= label %>">Kilometers run</h2>
   <p class="<%= big %> <%= WidgetsHelper::ACCENT %>"><%= number_with_delimiter(overview.total_km.round) %><span class="<%= unit %>">km</span></p>
   <p class="<%= sub %> first-letter:uppercase"><%= overview.total_km_in_words %></p>
   <p class="<%= sub %>"><%= pluralize(number_with_delimiter(overview.count), "run") %></p>
 </section>
 
-<section class="<%= card %> col-span-2">
-  <h2 class="<%= label %>">Longest run</h2>
-  <p class="<%= big %>"><%= overview_distance(longest.distance_m / 1000) %><span class="<%= unit %>">km</span></p>
-  <p class="<%= sub %>">
-    <%= link_to overview_date(longest.local_started_at), run_path(longest), class: WidgetsHelper::LINK %>
-    <span class="<%= WidgetsHelper::MUTED %>"><%= longest.name %></span>
-  </p>
-</section>
+<%= render "year_goal", slot: year_goal if year_goal %>
 
 <section class="<%= card %>">
   <h2 class="<%= label %>">Average run length</h2>
