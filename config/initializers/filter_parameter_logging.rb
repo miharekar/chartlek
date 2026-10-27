@@ -6,3 +6,7 @@
 Rails.application.config.filter_parameters += %i[
   passw email secret token _key crypt salt certificate otp ssn cvv cvc code
 ]
+
+Rails.application.config.filter_parameters += [
+  :resting_hr, :hr_zones, :hrv_, :body_battery, :stress_avg, :weight_kg, /\Araw\z/
+]

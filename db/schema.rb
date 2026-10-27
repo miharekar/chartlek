@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_28_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_28_100000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -101,6 +101,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_28_090000) do
     t.text "strava_access_token"
     t.text "strava_refresh_token"
     t.datetime "strava_token_expires_at"
+    t.json "hr_zones"
+    t.datetime "wellness_synced_at"
     t.string "strava_scope"
     t.datetime "strava_gear_synced_at"
   end
@@ -112,6 +114,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_28_090000) do
     t.datetime "updated_at", null: false
     t.json "chart_metrics"
     t.index ["activity_id"], name: "index_tracks_on_activity_id", unique: true
+  end
+
+  create_table "wellness_days", force: :cascade do |t|
+    t.date "date", null: false
+    t.integer "resting_hr"
+    t.integer "resting_hr_avg_7d"
+    t.integer "hrv_last_night"
+    t.integer "hrv_weekly_avg"
+    t.integer "hrv_baseline_low"
+    t.integer "hrv_baseline_high"
+    t.string "hrv_status"
+    t.integer "body_battery_high"
+    t.integer "body_battery_low"
+    t.integer "body_battery_wake"
+    t.integer "stress_avg"
+    t.float "weight_kg"
+    t.json "raw", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["date"], name: "index_wellness_days_on_date", unique: true
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"

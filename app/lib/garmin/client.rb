@@ -9,6 +9,10 @@ class Garmin::Client
   ACTIVITIES_PATH = "/activitylist-service/activities/search/activities"
   SETTINGS_PATH = "/userprofile-service/userprofile/settings"
   DOWNLOAD_PATH = "/download-service/files/activity"
+  HR_ZONES_PATH = "/biometric-service/heartRateZones/v2"
+  DAILY_SUMMARY_PATH = "/usersummary-service/usersummary/daily"
+  HRV_RANGE_PATH = "/hrv-service/hrv/daily"
+  WEIGHT_RANGE_PATH = "/weight-service/weight/range"
   MIN_INTERVAL = 1.0
   MAX_ATTEMPTS = 5
   TOKEN_MARGIN = 1.hour
@@ -31,6 +35,22 @@ class Garmin::Client
     get(SETTINGS_PATH)
   end
 
+  def hr_zones
+    get(HR_ZONES_PATH)
+  end
+
+  def daily_summary(date)
+    get(DAILY_SUMMARY_PATH, calendarDate: date)
+  end
+
+  def hrv_range(from, to)
+    get("#{HRV_RANGE_PATH}/#{from}/#{to}")
+  end
+
+  def weight_range(from, to)
+    get("#{WEIGHT_RANGE_PATH}/#{from}/#{to}", includeAll: true)
+  end
+
   def download(activity_id)
     authorized_response(URI("#{BASE_URL}#{DOWNLOAD_PATH}/#{activity_id}")).body
   end
@@ -48,7 +68,9 @@ class Garmin::Client
     uri = URI("#{BASE_URL}#{path}")
     uri.query = URI.encode_www_form(params) if params.any?
 
-    JSON.parse(authorized_response(uri).body)
+    body = authorized_response(uri).body
+
+    JSON.parse(body) if body.present?
   end
 
   def authorized_response(uri)
