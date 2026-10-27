@@ -95,11 +95,30 @@ class Activity::HrZoningTest < ActiveSupport::TestCase
     assert_equal zones["floors"], HrZones.for(activity).floors
   end
 
-  test "the estimate uses only the earliest sets" do
-    Activity::HrZoning::ESTIMATE_FROM.times { fitted(Time.utc(2018, 1, 1) + it.days, FLOORS) }
-    (Activity::HrZoning::ESTIMATE_FROM + 1).times { fitted(Time.utc(2019, 6, 1) + it.days, [150, 160, 170, 180, 190]) }
+  test "the estimate uses the 100 sets nearest before the run, or the earliest 100 when fewer come before it" do
+    early = [90, 110, 130, 150, 170]
+    late = [150, 160, 170, 180, 190]
+    Activity::HrZoning::ESTIMATE_FROM.times { fitted(Time.utc(2018, 1, 1) + it.days, early) }
+    (Activity::HrZoning::ESTIMATE_FROM + 1).times { fitted(Time.utc(2019, 6, 1) + it.days, late) }
+    sets = Activity.fit_zone_sets
 
-    assert_equal FLOORS, Activity.estimated_hr_zones_reference["floors"]
+    assert_equal early, Activity.estimate_hr_zones(sets, Time.utc(2015, 1, 1))["floors"]
+    assert_equal early, Activity.estimate_hr_zones(sets, Time.utc(2018, 3, 1))["floors"]
+    assert_equal late, Activity.estimate_hr_zones(sets, Time.utc(2020, 6, 1))["floors"]
+    assert_equal early, Activity.estimate_hr_zones(sets, Time.utc(2019, 1, 1))["floors"]
+    assert_nil Activity.estimate_hr_zones([], Time.utc(2020, 1, 1))
+  end
+
+  test "a run after the first FIT zones is estimated from the sets before it and is not said to predate them" do
+    fitted(Time.utc(2018, 1, 1), [90, 110, 130, 150, 170])
+    fitted(Time.utc(2018, 2, 1), [100, 120, 140, 160, 180])
+    activity = run_with(fit(with_zones: false), started_at: Time.utc(2024, 3, 5, 6, 30))
+
+    activity.process_original
+
+    assert_equal "estimated", activity.reload.hr_zones["source"]
+    assert_not activity.predates_fit_zones?
+    assert create(:activity, started_at: Time.utc(2015, 1, 1), local_started_at: Time.utc(2015, 1, 1)).predates_fit_zones?
   end
 
   test "backfill reads FIT zones, estimates tracked runs, skips runs without heart rate and is idempotent" do

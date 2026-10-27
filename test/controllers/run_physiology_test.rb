@@ -140,7 +140,7 @@ class RunPhysiologyTest < ActionDispatch::IntegrationTest
   test "a run with stored zones shows its own ranges, and the estimated ones say so" do
     zones = {"floors" => [90, 110, 130, 150, 170], "max_hr" => 190, "seconds" => [60, 180, 360, 0, 0]}
     run = create(:activity, avg_hr: 140, hr_zones: zones.merge("source" => "fit"))
-    estimated = create(:activity, avg_hr: 140, hr_zones: zones.merge("source" => "estimated"))
+    estimated = create(:activity, avg_hr: 140, started_at: Time.utc(2016, 1, 1), local_started_at: Time.utc(2016, 1, 1), hr_zones: zones.merge("source" => "estimated"))
 
     get run_path(run)
 
@@ -151,5 +151,17 @@ class RunPhysiologyTest < ActionDispatch::IntegrationTest
 
     assert_select "dd", text: "130–149"
     assert_select "p span", text: "Estimated zones"
+    assert_select "p", text: /from before your watch recorded its zones/
+  end
+
+  test "an estimated run after the first recorded zones does not claim to predate them" do
+    zones = {"floors" => [90, 110, 130, 150, 170], "max_hr" => 190, "seconds" => [60, 180, 360, 0, 0]}
+    create(:activity, started_at: Time.utc(2018, 1, 1), local_started_at: Time.utc(2018, 1, 1), hr_zones: zones.merge("source" => "fit"))
+    run = create(:activity, avg_hr: 140, hr_zones: zones.merge("source" => "estimated"))
+
+    get run_path(run)
+
+    assert_select "p", text: /has no recorded zones/
+    assert_select "p", text: /before your watch/, count: 0
   end
 end

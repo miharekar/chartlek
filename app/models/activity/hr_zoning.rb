@@ -12,21 +12,27 @@ module Activity::HrZoning
   class_methods do
     def backfill_hr_zones
       joins(:original_attachment).includes(:track).find_each do |activity|
-        activity.update_column(:hr_zones, activity.derive_hr_zones(activity.track&.data || {}, reference: nil))
+        activity.update_column(:hr_zones, activity.derive_hr_zones(activity.track&.data || {}, sets: []))
       end
 
-      reference = estimated_hr_zones_reference
+      sets = fit_zone_sets
       not_zoned_from_fit.includes(:track).where.associated(:track).find_each do |activity|
-        activity.update_column(:hr_zones, activity.derive_hr_zones(activity.track.data, reference:))
+        activity.update_column(:hr_zones, activity.derive_hr_zones(activity.track.data, sets:))
       end
 
       group(SOURCE).count
     end
 
-    def estimated_hr_zones_reference
-      sets = zoned_from_fit.order(:started_at).limit(ESTIMATE_FROM).pluck(:hr_zones)
+    def fit_zone_sets
+      zoned_from_fit.order(:started_at).pluck(:started_at, :hr_zones)
+    end
 
-      {"floors" => sets.map { it["floors"] }.transpose.map { median(it) }, "max_hr" => median(sets.pluck("max_hr")), "source" => "estimated"} if sets.any?
+    def estimate_hr_zones(sets, at)
+      index = sets.bsearch_index { |started_at, _| started_at >= at } || sets.size
+      nearest = (index < ESTIMATE_FROM) ? sets.first(ESTIMATE_FROM) : sets[index - ESTIMATE_FROM, ESTIMATE_FROM]
+      zones = nearest.map(&:last)
+
+      {"floors" => zones.pluck("floors").transpose.map { median(it) }, "max_hr" => median(zones.pluck("max_hr")), "source" => "estimated"} if zones.any?
     end
 
     private
@@ -35,8 +41,9 @@ module Activity::HrZoning
     end
   end
 
-  def derive_hr_zones(data, reference: Activity.estimated_hr_zones_reference)
-    zones = fit_hr_zones || (reference if data.stringify_keys.key?("hr"))
+  def derive_hr_zones(data, sets: nil)
+    zones = fit_hr_zones
+    zones ||= Activity.estimate_hr_zones(sets || Activity.fit_zone_sets, started_at) if data.stringify_keys.key?("hr")
 
     if zones
       seconds = zones["seconds"]
@@ -44,6 +51,12 @@ module Activity::HrZoning
 
       zones.merge("seconds" => seconds)
     end
+  end
+
+  def predates_fit_zones?
+    first = Activity.zoned_from_fit.minimum(:started_at)
+
+    first.nil? || started_at < first
   end
 
   def fit_hr_zones

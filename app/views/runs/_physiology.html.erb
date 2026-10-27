@@ -6,7 +6,7 @@
   <div class="mt-4 grid gap-4 lg:grid-cols-3">
     <% if times %>
       <section class="<%= WidgetsHelper::CARD %> <%= going_in.any? ? "lg:col-span-2" : "lg:col-span-3" %>">
-        <h2 class="<%= WidgetsHelper::CARD_TITLE %>">Heart rate zones and effort <%= overview_info "Time in each zone, with the bpm ranges of the zones set on your watch for that run. Runs from before your watch recorded its zones use estimated zones: the typical zones of your first recorded runs." %></h2>
+        <h2 class="<%= WidgetsHelper::CARD_TITLE %>">Heart rate zones and effort <%= overview_info "Time in each zone, with the bpm ranges of the zones set on your watch for that run. When a run has no recorded zones they are estimated: the typical zones of the 100 recorded runs just before it, or of your first 100 for the oldest runs." %></h2>
         <% summary = times.map { "zone #{it[:zone]} #{run_zone_minutes(it[:seconds])}, #{it[:percent]} percent" }.join("; ") %>
         <div class="mt-4 flex h-5 overflow-hidden rounded-sm ring-1 ring-zinc-200 dark:ring-zinc-700" role="group" aria-label="Time in heart rate zones: <%= summary %>" data-controller="hr-zones">
           <% times.select { it[:seconds].positive? }.each_with_index do |zone, index| %>
@@ -25,7 +25,7 @@
           <% end %>
         </dl>
         <% if zones&.estimated? %>
-          <p class="mt-2 <%= WidgetsHelper::HINT %>"><%= chip "Estimated zones", :estimated %> This run is from before your watch recorded its zones, so the ranges and times use the typical zones of your first recorded runs.</p>
+          <p class="mt-2 <%= WidgetsHelper::HINT %>"><%= chip "Estimated zones", :estimated %> <%= run.predates_fit_zones? ? "This run is from before your watch recorded its zones, so the ranges and times use the typical zones of your first recorded runs." : "This run has no recorded zones, so the ranges and times use the typical zones of the runs just before it." %></p>
         <% elsif zones&.default? %>
           <p class="mt-2 <%= WidgetsHelper::HINT %>">Zone ranges use Garmin's default bands of your highest recorded max HR.</p>
         <% end %>
