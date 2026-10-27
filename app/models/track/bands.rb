@@ -47,7 +47,7 @@ class Track::Bands
     bpms = hr&.values_at(*from..to)&.compact
     climb = alt[to] - alt[from] if alt && alt[to] && alt[from]
 
-    Window.new(t[to] - t[from], d[to] - d[from], climb, (bpms.sum / bpms.size if bpms&.any?))
+    Window.new(t[to] - t[from], d[to] - d[from], climb, (bpms.sum.fdiv(bpms.size) if bpms&.any?))
   end
 
   def hr_zone(window)

@@ -31,6 +31,14 @@ class Track::BandsTest < ActiveSupport::TestCase
     assert_equal [300, 0, 0, 0, 0], Track::Bands.new(data(speed: 3.0, hr: 80), ZONES).to_h["hr"]
   end
 
+  test "averages a window's heart rate without truncating" do
+    window = {"t" => [0, 10, 20, 30], "d" => [0, 30, 60, 90]}
+
+    assert_equal [0, 0, 30, 0, 0], Track::Bands.new(window.merge("hr" => [139, 141, 140, 140]), ZONES).to_h["hr"]
+    assert_equal [0, 30, 0, 0, 0], Track::Bands.new(window.merge("hr" => [139, 140, 139, 140]), ZONES).to_h["hr"]
+    assert_equal [0, 0, 30, 0, 0], Track::Bands.new(window.merge("hr" => [139, 140, 141, 140]), ZONES).to_h["hr"]
+  end
+
   test "has no heart rate bands without heart rate or zones" do
     assert_nil Track::Bands.new(data(speed: 3.0), ZONES).to_h["hr"]
     assert_nil Track::Bands.new(data(speed: 3.0, hr: 150), nil).to_h["hr"]
