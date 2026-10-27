@@ -3,6 +3,7 @@ module Activity::Performance
 
   PAUSE_THRESHOLD_S = 60
   FLAT_M_PER_KM = 1.5
+  MIN_PACE_DISTANCE_M = 100
   HILL_STEP_M_PER_KM = 8.0
   MAX_HILL_DIFFICULTY = 5
   WORKOUT_STEPS = %w[INTERVAL_WARMUP INTERVAL_ACTIVE INTERVAL_RECOVERY INTERVAL_REST INTERVAL_COOLDOWN].freeze
@@ -46,7 +47,7 @@ module Activity::Performance
       workout_steps.sort_by { WORKOUT_STEPS.index(it["splitType"]) }.map do |step|
         distance = step["distance"].to_f
         duration = step["duration"].to_f
-        {type: step["splitType"], count: (step["noOfSplits"] if step["noOfSplits"].to_i > 1), distance_m: distance, duration_s: duration, pace: (duration / distance * 1000 if distance.positive?)}
+        {type: step["splitType"], count: (step["noOfSplits"] if step["noOfSplits"].to_i > 1), distance_m: distance, duration_s: duration, pace: (duration / distance * 1000 if distance >= MIN_PACE_DISTANCE_M)}
       end
     end
   end

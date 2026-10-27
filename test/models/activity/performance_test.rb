@@ -119,6 +119,8 @@ class Activity::PerformanceTest < ActiveSupport::TestCase
     assert_equal %w[INTERVAL_WARMUP INTERVAL_ACTIVE INTERVAL_RECOVERY INTERVAL_REST INTERVAL_COOLDOWN], structured.workout_splits.pluck(:type)
     assert_equal [nil, 8, 7, nil, nil], structured.workout_splits.pluck(:count)
     assert_equal [500.0, 240.0, 450.0, nil, 600.0], structured.workout_splits.pluck(:pace)
+    short = build(:activity, summary: {"splitSummaries" => [split("INTERVAL_WARMUP", distance: 99, duration: 300), split("INTERVAL_COOLDOWN", distance: 100, duration: 30)]})
+    assert_equal [nil, 300.0], short.workout_splits.pluck(:pace)
     assert old.workout?
     assert_equal [nil, nil, nil], old.workout_splits.pluck(:count)
     assert reps.workout?
