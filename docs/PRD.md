@@ -29,7 +29,7 @@ Why: Smashrun (smashrun.com/miharekar) is effectively abandonware, but its chart
 - Badges, anything social (friends, ranks, rarity %, invites, sharing), weekly email report.
 - Cooper test view.
 - Local run tags, notes or edits.
-- Running power.
+- Power charts, power zones or power-based metrics.
 - Multi-user support and authentication. It is deployed for the owner alone (§8).
 - Imperial units, including mile benchmarks.
 - Writing anything back to Garmin or Strava, including gear.
