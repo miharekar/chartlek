@@ -171,6 +171,7 @@ Verified against the real account (Oct 2026). Smashrun supplies only the years b
 
 ## Open-Meteo
 
+- The run header shows weather through `WeatherHelper#run_weather(run)`: the WMO `code` becomes one condition icon and label (`weather_condition`, a night variant for clear and partly cloudy when `Activity#local_midpoint` is outside sunrise and sunset), then temperature, humidity, wind and rain items with inline decorative SVG icons (`WeatherHelper::ICONS`, layout `WidgetsHelper::META` and `META_ITEM`).
 - Archive API, hourly values at the run's local midpoint plus daily sunrise and sunset, `timezone=auto`, coordinates rounded to 0.01°. The archive lags about 5 days: nulls leave `weather` nil so a later sync retries.
 
 ## Coding style guidelines

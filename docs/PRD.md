@@ -222,7 +222,7 @@ A button group above the main chart chooses None, Resting HR, HRV or VO2max, dra
 
 1. **Header**
    - Local date and time, start-end clock time.
-   - Weather: temperature, humidity, wind, from Open-Meteo at the run's midpoint hour.
+   - Weather, from Open-Meteo at the run's midpoint hour, as one line of icon and value items (`run_weather`): the condition from the WMO code with its label (clear, partly cloudy, cloudy, fog, drizzle, rain, showers, snow, thunderstorm; clear and partly cloudy turn to a moon when the midpoint is outside sunrise to sunset), then temperature, humidity, wind and, only above 0, rain. The icons are inline SVG and decorative, the text carries the meaning, and a missing field leaves no item. Runs without weather show nothing.
    - Location name (Garmin only), previous/next run, and Open in Garmin and Open in Strava buttons side by side. Garmin shows for Garmin runs; Strava shows for runs with a `strava_id` (§7.6). A Smashrun-only run has neither. Phase 3 adds the gear tag (§5.7).
    - If there were several runs that day, a switcher between them.
    - A Smashrun-style date navigator: every year with runs (newest first), the 12 months of the run's year, and every day of its month, with the run's year, month and day selected. A year or month with runs opens its latest run, and a day opens its first run; the others are inert. Weekends look distinct, race days are amber, and hovering or focusing a day shows its weekday, date and distance in the shared tooltip. (Smashrun's own year and month buttons open its overview pages instead.)

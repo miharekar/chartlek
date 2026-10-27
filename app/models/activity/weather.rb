@@ -39,11 +39,11 @@ module Activity::Weather
     end
   end
 
-  private
   def local_midpoint
     local_started_at + (elapsed_s || timer_s) / 2
   end
 
+  private
   def weather_at(data, midpoint)
     hourly = data["hourly"]
     index = hourly["time"].index(midpoint.strftime("%Y-%m-%dT%H:00"))

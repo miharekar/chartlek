@@ -10,6 +10,8 @@ module WidgetsHelper
   TILE_UNIT = "ml-1 text-sm font-normal #{MUTED}"
   TILE_SUB = "mt-1 text-sm tabular-nums text-zinc-600 dark:text-zinc-300"
   HINT = "text-xs #{MUTED}"
+  META = "flex flex-wrap items-center gap-x-4 gap-y-1 text-sm #{MUTED}"
+  META_ITEM = "inline-flex items-center gap-1.5"
   LEGEND = "flex flex-wrap items-center gap-x-4 gap-y-1 #{HINT}"
   PLACEHOLDER = "text-zinc-400"
   ACCENT = "text-lime-700 dark:text-[#9CFF44]"

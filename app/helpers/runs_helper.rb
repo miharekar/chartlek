@@ -72,17 +72,6 @@ module RunsHelper
     "#{run.local_started_at.strftime("%H:%M")}–#{finish.strftime("%H:%M")}"
   end
 
-  def run_weather(weather)
-    parts = [
-      (weather["temperature"] && "#{weather["temperature"].round}°C"),
-      (weather["humidity"] && "#{weather["humidity"].round}% humidity"),
-      (weather["wind"] && "wind #{weather["wind"].round} km/h"),
-      (weather["precipitation"]&.positive? && "#{weather["precipitation"]} mm rain")
-    ]
-
-    parts.compact_blank.join(" · ")
-  end
-
   def run_extent(run, series, fallback_max)
     values = run.track&.data&.dig(series)&.compact
 

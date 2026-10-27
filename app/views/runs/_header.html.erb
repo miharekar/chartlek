@@ -10,7 +10,7 @@
         <% if run.location_name.present? %>· <%= run.location_name %><% end %>
       </p>
       <% if run.weather.present? %>
-        <p class="mt-1 text-sm <%= WidgetsHelper::MUTED %>"><%= run_weather(run.weather) %></p>
+        <p class="mt-1 <%= WidgetsHelper::META %>"><%= run_weather(run) %></p>
       <% end %>
     </div>
     <nav class="flex flex-wrap items-center gap-2" aria-label="Runs">
