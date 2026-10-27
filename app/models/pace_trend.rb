@@ -10,9 +10,8 @@ class PaceTrend
 
   attr_reader :distance
 
-  def initialize(exclude_paused: false, exclude_indoor: false, races_only: false, from: nil, to: nil, distance: nil)
+  def initialize(exclude_paused: false, races_only: false, from: nil, to: nil, distance: nil)
     @exclude_paused = exclude_paused
-    @exclude_indoor = exclude_indoor
     @races_only = races_only
     @from = parse_date(from)
     @to = parse_date(to)
@@ -40,7 +39,6 @@ class PaceTrend
   private
   def filtered_runs
     scope = Activity.where.not(vdot: nil).select(COLUMNS).order(:local_started_at, :id)
-    scope = scope.where(indoor: false) if @exclude_indoor
     scope = scope.where(race: true) if @races_only
     @exclude_paused ? scope.reject(&:paused?) : scope.to_a
   end

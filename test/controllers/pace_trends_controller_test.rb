@@ -61,12 +61,22 @@ class PaceTrendsControllerTest < ActionDispatch::IntegrationTest
     create(:activity, race: true)
     create(:activity, indoor: true)
 
-    [{no_pauses: "1"}, {no_indoor: "1"}, {races: "1"}, {races: "1", no_indoor: "1", no_pauses: "1", from: "2024-01-01", to: "2024-03-01", distance: "5K"}].each do |query|
+    [{no_pauses: "1"}, {races: "1"}, {races: "1", no_pauses: "1", from: "2024-01-01", to: "2024-03-01", distance: "5K"}].each do |query|
       get pace_trend_path(query)
 
       assert_response :success, query.inspect
       assert_select "[data-controller='pace-trends']"
     end
+  end
+
+  test "the old no_indoor param is ignored" do
+    create(:activity, indoor: true)
+
+    get pace_trend_path(no_indoor: "1")
+
+    assert_response :success
+    assert_select "[data-controller='pace-trends']"
+    assert_select "button[aria-pressed], a[aria-pressed]", text: /treadmill/i, count: 0
   end
 
   test "filters that exclude every run show the empty state" do

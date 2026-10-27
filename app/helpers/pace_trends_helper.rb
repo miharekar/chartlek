@@ -1,7 +1,7 @@
 module PaceTrendsHelper
-  FILTERS = [["Exclude pauses", "no_pauses"], ["Exclude treadmill", "no_indoor"], ["Races only", "races"]].freeze
+  FILTERS = [["Exclude pauses", "no_pauses"], ["Races only", "races"]].freeze
   PRESETS = [["3 mo", "3"], ["6 mo", "6"], ["1 yr", "12"], ["2 yr", "24"], ["All time", "all"]].freeze
-  CARRIED_PARAMS = %w[no_pauses no_indoor races from to distance].freeze
+  CARRIED_PARAMS = %w[no_pauses races from to distance].freeze
 
   def pace_trend_filter_chips
     safe_join(FILTERS.map { |label, key|

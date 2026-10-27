@@ -171,7 +171,6 @@ This answers "am I getting faster?" by putting all distances on a common scale (
 Toggle buttons:
 
 - Exclude runs with pauses.
-- Exclude treadmill/indoor/virtual.
 - Races only (Garmin event type `race`).
 
 **Tooltip**

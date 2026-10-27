@@ -17,13 +17,6 @@ class PaceTrendTest < ActiveSupport::TestCase
     assert_equal [clean, unknown].map(&:id), PaceTrend.new(exclude_paused: true).runs.map(&:id)
   end
 
-  test "exclude_indoor drops indoor runs" do
-    create(:activity, indoor: true)
-    outdoor = create(:activity)
-
-    assert_equal [outdoor.id], PaceTrend.new(exclude_indoor: true).runs.map(&:id)
-  end
-
   test "races_only keeps races" do
     create(:activity)
     race = create(:activity, race: true)

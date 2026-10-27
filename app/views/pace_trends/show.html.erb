@@ -33,6 +33,6 @@
     <div data-pace-trends-target="timeline" class="mt-2 w-full"></div>
   </div>
 <% else %>
-  <%= empty_state "No runs to show#{" with these filters" if request.query_parameters.slice("no_pauses", "no_indoor", "races").any?}." %>
+  <%= empty_state "No runs to show#{" with these filters" if request.query_parameters.slice("no_pauses", "races").any?}." %>
 <% end %>
 <% end %>
