@@ -14,7 +14,9 @@ module Activity::Physiology
     ground_contact: "avgGroundContactTime",
     vertical_oscillation: "avgVerticalOscillation",
     stride_length: "avgStrideLength",
-    vertical_ratio: "avgVerticalRatio"
+    vertical_ratio: "avgVerticalRatio",
+    power: "avgPower",
+    normalized_power: "normPower"
   }.freeze
 
   def hr_zone_times(zones = HrZones.for(self))

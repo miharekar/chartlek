@@ -137,7 +137,9 @@ module RunsHelper
       (["Ground contact", "#{dynamics[:ground_contact].round} ms"] if dynamics[:ground_contact]),
       (["Vertical oscillation", "#{format("%.1f", dynamics[:vertical_oscillation])} cm"] if dynamics[:vertical_oscillation]),
       (["Stride length", "#{(dynamics[:stride_length] / 100).round(2)} m"] if dynamics[:stride_length]),
-      (["Vertical ratio", "#{format("%.1f", dynamics[:vertical_ratio])}%"] if dynamics[:vertical_ratio])
+      (["Vertical ratio", "#{format("%.1f", dynamics[:vertical_ratio])}%"] if dynamics[:vertical_ratio]),
+      (["Power", "#{dynamics[:power].round} W"] if dynamics[:power]),
+      (["Normalized power", "#{dynamics[:normalized_power].round} W"] if dynamics[:normalized_power])
     ].compact
   end
 

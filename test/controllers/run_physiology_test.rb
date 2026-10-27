@@ -43,6 +43,18 @@ class RunPhysiologyTest < ActionDispatch::IntegrationTest
     assert_select "dd", text: "8.3 cm"
     assert_select "dd", text: "1.05 m"
     assert_select "dd", text: "7.9%"
+    assert_select "dt", text: "Power", count: 0
+  end
+
+  test "running power shows rounded, power and normalized" do
+    run = create(:activity, avg_hr: 140, summary: summary(avgPower: 284.6, normPower: 298.2, maxPower: 410))
+
+    get run_path(run)
+
+    assert_select "dt", text: "Power"
+    assert_select "dd", text: "285 W"
+    assert_select "dt", text: "Normalized power"
+    assert_select "dd", text: "298 W"
   end
 
   test "a run without zone times or HR has no zones card" do

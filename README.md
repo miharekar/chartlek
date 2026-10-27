@@ -94,7 +94,7 @@ Everything about one run.
 
 **Physiology.**
 - **Heart rate zones:** a stacked bar of the time in each of the run's zones, with the zone ranges. Garmin's zones move with your resting HR, so each run uses the zones it was run with, read from its FIT file; older runs show estimated zones, labelled as such (see [Data sources](#data-sources)).
-- Aerobic and anaerobic effect, training load, Body Battery change and intensity minutes from Garmin, and running dynamics (ground contact, vertical oscillation, stride length, vertical ratio) when recorded.
+- Aerobic and anaerobic effect, training load, Body Battery change and intensity minutes from Garmin, and running dynamics (ground contact, vertical oscillation, stride length, vertical ratio, running power and normalized power) when recorded.
 - **Going in:** how you arrived at the run, from Garmin wellness: that morning's resting HR (and 7-day average), last night's HRV against your baseline, sleep duration and score, and Body Battery at wake.
 - **Fastest runs at this distance** over the last 90 days, 180 days, 365 days and all time.
 - **Runs in the prior 90 days:** every run before this one as a dot strip (by distance, pace, VDOT or heart rate) above a one-mark-per-day timeline. Drag a brush over the strip to read the share, hours, distance and count of the runs inside it; hover or click a dot to see or open that run.

@@ -62,6 +62,8 @@ class Activity::PhysiologyTest < ActiveSupport::TestCase
     run = build(:activity, summary: summary(avgGroundContactTime: 240.5, avgVerticalOscillation: 0, avgStrideLength: 105.2))
 
     assert_equal({ground_contact: 240.5, stride_length: 105.2}, run.running_dynamics)
+    assert_equal({power: 285.0, normalized_power: 298.0}, build(:activity, summary: summary(avgPower: 285.0, normPower: 298.0, maxPower: 0)).running_dynamics)
+    assert_equal({}, build(:activity, summary: summary(avgPower: 0, normPower: nil)).running_dynamics)
   end
 
   test "going in is the wellness of the run's local day without its empty values" do
