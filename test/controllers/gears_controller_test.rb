@@ -34,6 +34,17 @@ class GearsControllerTest < ActionDispatch::IntegrationTest
     assert_select "form[action=?] button", gear_sync_path, text: "Refresh from Strava"
   end
 
+  test "after the retries are used up it says the first scan failed and points to Refresh" do
+    connect(synced: false)
+    Profile.instance.update!(strava_gear_attempts: Profile::STRAVA_GEAR_ATTEMPTS)
+
+    get gears_path
+
+    assert_select "p", text: /first gear scan failed/
+    assert_select "p", text: /first gear scan is pending/, count: 0
+    assert_select "form[action=?] button", gear_sync_path, text: "Refresh from Strava"
+  end
+
   test "lists gear most used first with the no gear row" do
     connect
     Gear.create!(strava_id: "g1", name: "Synthetic One", brand_name: "Acme", model: "Zoom")

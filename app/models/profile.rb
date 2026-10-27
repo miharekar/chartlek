@@ -1,5 +1,6 @@
 class Profile < ApplicationRecord
   SYNC_STALE_AFTER = 15.minutes
+  STRAVA_GEAR_ATTEMPTS = 2
   INVALID_KEY_ERROR = "Garmin key is invalid or expired"
 
   encrypts :strava_access_token, :strava_refresh_token
@@ -46,6 +47,14 @@ class Profile < ApplicationRecord
 
   def strava_gear_access?
     strava_connected? && strava_scope.to_s.split(",").include?(Strava::Client::GEAR_SCOPE)
+  end
+
+  def strava_gear_scan_due?
+    strava_gear_access? && strava_gear_synced_at.nil? && strava_gear_attempts < STRAVA_GEAR_ATTEMPTS
+  end
+
+  def strava_gear_scan_failed?
+    strava_gear_access? && strava_gear_synced_at.nil? && strava_gear_attempts >= STRAVA_GEAR_ATTEMPTS
   end
 
   def strava_gear_ready?

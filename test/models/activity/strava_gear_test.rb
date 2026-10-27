@@ -230,6 +230,75 @@ class Activity::StravaGearTest < ActiveSupport::TestCase
     assert_requested :get, ACTIVITIES_URL, query: hash_including("after" => /\d+/)
   end
 
+  def failing_first_scan
+    summaries({"id" => 555, "gear_id" => "g1"})
+    stub_request(:get, ATHLETE_URL).to_return(body: "{}")
+    stub_request(:get, GEAR_URL).to_return(status: 500, body: "{}")
+  end
+
+  test "the hourly first scan is retried twice, then falls back to the recent pass" do
+    failing_first_scan
+
+    2.times { |attempt| assert_nothing_raised { Activity.link_strava_now }; assert_equal attempt + 1, @profile.reload.strava_gear_attempts }
+    assert_requested :get, ATHLETE_URL, times: 2
+    assert_predicate @profile, :strava_gear_scan_failed?
+
+    Activity.link_strava_now
+
+    assert_requested :get, ATHLETE_URL, times: 2
+    assert_equal 2, @profile.reload.strava_gear_attempts
+    assert_nil @profile.strava_gear_synced_at
+  end
+
+  test "a failed connect-time full scan counts as the first attempt" do
+    @run.update!(strava_id: nil)
+    summaries({"id" => 555, "sport_type" => "Run", "start_date" => @run.started_at.iso8601, "gear_id" => "g1"})
+    stub_request(:get, ATHLETE_URL).to_return(body: "{}")
+    stub_request(:get, GEAR_URL).to_return(status: 500, body: "{}")
+
+    Activity.link_strava_now(full: true)
+
+    assert_equal 1, @profile.reload.strava_gear_attempts
+  end
+
+  test "Refresh runs the full pass after the cap, and a success resets the count" do
+    @profile.update!(strava_gear_attempts: Profile::STRAVA_GEAR_ATTEMPTS)
+    summaries({"id" => 555, "gear_id" => "g1"})
+    stub_request(:get, ATHLETE_URL).to_return(body: "{}")
+    gear
+
+    Activity::StravaGearJob.perform_now(full: true)
+
+    assert_requested :get, ATHLETE_URL
+    assert_equal 0, @profile.reload.strava_gear_attempts
+    assert_not_nil @profile.strava_gear_synced_at
+  end
+
+  test "a failed Refresh counts too" do
+    failing_first_scan
+
+    assert_raises(Strava::Client::Error) { Activity::StravaGearJob.perform_now(full: true) }
+
+    assert_equal 1, @profile.reload.strava_gear_attempts
+  end
+
+  test "network timeouts count as failed attempts and are logged by class only" do
+    summaries({"id" => 555, "gear_id" => "g1"})
+    stub_request(:get, ATHLETE_URL).to_return(body: "{}")
+    stub_request(:get, GEAR_URL).to_timeout
+    io = StringIO.new
+    logger = ActiveSupport::Logger.new(io)
+    Rails.logger.broadcast_to(logger)
+    begin
+      Activity.link_strava_now
+    ensure
+      Rails.logger.stop_broadcasting_to(logger)
+    end
+
+    assert_equal 1, @profile.reload.strava_gear_attempts
+    assert_equal ["Strava gear pass skipped: Net::OpenTimeout"], io.string.lines.grep(/skipped/).map { it[/Strava gear pass skipped: \S+/] }
+  end
+
   test "the gear job is queued after a sync" do
     assert_enqueued_with(job: Activity::StravaGearJob, args: [{full: false}]) { Activity.sync_strava_gear_later }
   end

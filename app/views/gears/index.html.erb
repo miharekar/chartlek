@@ -8,6 +8,10 @@
   <%= empty_state "Gear needs Strava profile access." do %>
     Use Reconnect Strava (or Connect Strava) in the nav bar and leave the profile access ticked.
   <% end %>
+<% elsif @profile.strava_gear_scan_failed? %>
+  <%= empty_state "The first gear scan failed." do %>
+    Strava did not answer it twice, so it is not retried every hour. Start it again with Refresh from Strava.
+  <% end %>
 <% elsif !@ready %>
   <%= empty_state "The first gear scan is pending." do %>
     Your runs and their gear appear here when it finishes. Reload in a minute, or start it with Refresh from Strava.

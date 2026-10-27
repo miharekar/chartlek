@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_28_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_28_110000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -105,6 +105,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_28_100000) do
     t.datetime "wellness_synced_at"
     t.string "strava_scope"
     t.datetime "strava_gear_synced_at"
+    t.integer "strava_gear_attempts", default: 0, null: false
   end
 
   create_table "tracks", force: :cascade do |t|

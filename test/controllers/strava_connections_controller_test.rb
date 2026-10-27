@@ -133,6 +133,16 @@ class StravaConnectionsControllerTest < ActionDispatch::IntegrationTest
     assert Profile.instance.strava_gear_access?
   end
 
+  test "reconnecting resets the first gear scan's failed attempts" do
+    Profile.instance.update!(strava_gear_attempts: Profile::STRAVA_GEAR_ATTEMPTS)
+    state = start["state"]
+    stub_request(:post, TOKEN_URL).to_return(body: {access_token: "a", refresh_token: "r", expires_at: 6.hours.from_now.to_i}.to_json)
+
+    get strava_callback_path(code: "c", state:, scope: "read,activity:read_all,profile:read_all")
+
+    assert_equal 0, Profile.instance.strava_gear_attempts
+  end
+
   test "the nav button is Connect, Reconnect or absent by connection and scope" do
     get root_path
     follow_redirect!

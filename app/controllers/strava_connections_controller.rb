@@ -24,6 +24,7 @@ class StravaConnectionsController < ApplicationController
 
   def connect(code, scope)
     Strava::Client.new.authorize(code, scope:)
+    sync_profile.update!(strava_gear_attempts: 0)
     Activity.link_strava_later(full: true)
     notice = "Strava connected. Linking your runs."
     notice += " Private activities were not shared, so they are skipped." unless scope.split(",").include?(Strava::Client::PRIVATE_SCOPE)

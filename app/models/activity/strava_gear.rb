@@ -49,20 +49,25 @@ module Activity::StravaGear
         summaries ||= client.activities(after: full ? nil : GEAR_WINDOW.ago.to_i)
         read_strava_gear_ids(summaries)
         Gear.sync(strava_gear_ids(full, client), client:, force: full)
-        profile.update!(strava_gear_synced_at: Time.current) if full
+        profile.update!(strava_gear_synced_at: Time.current, strava_gear_attempts: 0) if full
       end
+    rescue Strava::Client::NotConnected
+      raise
+    rescue Strava::Client::Error, Net::OpenTimeout, Net::ReadTimeout
+      profile.update!(strava_gear_attempts: profile.strava_gear_attempts + 1) if full
+      raise
     end
 
     def sync_strava_gear_after_link(full:, client:, summaries:)
       profile = Profile.instance
 
       if profile.strava_gear_access?
-        everything = full || profile.strava_gear_synced_at.nil?
+        everything = full || profile.strava_gear_scan_due?
         sync_strava_gear_now(full: everything, client:, summaries: (summaries if full))
       end
     rescue Strava::Client::NotConnected
       raise
-    rescue Strava::Client::Error => error
+    rescue Strava::Client::Error, Net::OpenTimeout, Net::ReadTimeout => error
       Rails.logger.warn("Strava gear pass skipped: #{error.class}")
     end
 
