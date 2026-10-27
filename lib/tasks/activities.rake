@@ -45,6 +45,13 @@ namespace :activities do
     puts "Computed bands for #{Activity.backfill_bands} runs"
   end
 
+  desc "Read per-run HR zones from the stored originals and estimate them for older runs"
+  task hr_zones: :environment do
+    counts = Activity.backfill_hr_zones
+
+    puts "HR zones by source: #{counts.map { |source, count| "#{source || "none"} #{count}" }.join(", ")}"
+  end
+
   desc "Download and process the Garmin original of every run that lacks one"
   task download: :environment do
     report = Activity.download_originals do |progress|

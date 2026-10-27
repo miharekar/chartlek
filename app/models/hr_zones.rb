@@ -15,6 +15,16 @@ class HrZones
     end
   end
 
+  def self.for(activity)
+    stored = activity.hr_zones
+
+    if stored.present?
+      new(floors: stored["floors"], max_hr: stored["max_hr"], source: stored["source"])
+    else
+      current
+    end
+  end
+
   def initialize(floors:, max_hr:, source:)
     @floors = floors
     @max_hr = max_hr
@@ -31,11 +41,33 @@ class HrZones
     floors[zone - 1]..last
   end
 
+  def seconds(data)
+    t, hr = data.stringify_keys.values_at("t", "hr")
+    totals = Array.new(ZONES.size, 0.0)
+
+    if hr
+      (1...t.size).each do |index|
+        zone = zone(hr[index])
+        totals[zone - 1] += t[index] - t[index - 1] if zone
+      end
+    end
+
+    totals.map(&:round)
+  end
+
   def bands
     ZONES.map { {zone: it, from: floors[it - 1], to: (floors[it] if it < ZONES.last)} }
   end
 
   def garmin?
     source == "garmin"
+  end
+
+  def default?
+    source == "default"
+  end
+
+  def estimated?
+    source == "estimated"
   end
 end

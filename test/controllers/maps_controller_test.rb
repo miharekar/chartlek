@@ -36,6 +36,14 @@ class MapsControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-pro-map-target=splits]"
   end
 
+  test "show gives the map the run's own zone floors" do
+    run = run_with(full, splits:, avg_hr: 160, hr_zones: {"floors" => [91, 111, 131, 151, 171], "max_hr" => 190, "source" => "fit"})
+
+    get run_map_path(run)
+
+    assert_select "[data-controller=pro-map][data-pro-map-floors-value=?]", "[91,111,131,151,171]"
+  end
+
   test "show hides the metrics a run lacks and what needs splits" do
     run = run_with(full.slice("t", "d", "lat", "lng"))
 

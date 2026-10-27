@@ -76,9 +76,9 @@ class Wellness::TrendsTest < ActiveSupport::TestCase
 
   test "heart rate zone time is summed per week starting Monday and empty weeks are left out" do
     WellnessDay.create!(date: Date.new(2024, 3, 5), resting_hr: 52)
-    create(:activity, local_started_at: Time.utc(2024, 3, 4, 7), started_at: Time.utc(2024, 3, 4, 6), summary: {"hrTimeInZone_1" => 100.4, "hrTimeInZone_3" => 200})
-    create(:activity, local_started_at: Time.utc(2024, 3, 10, 7), started_at: Time.utc(2024, 3, 10, 6), summary: {"hrTimeInZone_1" => 50, "hrTimeInZone_5" => 10})
-    create(:activity, local_started_at: Time.utc(2024, 3, 11, 7), started_at: Time.utc(2024, 3, 11, 6), summary: {"hrTimeInZone_1" => 0})
+    create(:activity, local_started_at: Time.utc(2024, 3, 4, 7), started_at: Time.utc(2024, 3, 4, 6), hr_zones: {"seconds" => [100, 0, 200, 0, 0]})
+    create(:activity, local_started_at: Time.utc(2024, 3, 10, 7), started_at: Time.utc(2024, 3, 10, 6), hr_zones: {"seconds" => [50, 0, 0, 0, 10]})
+    create(:activity, local_started_at: Time.utc(2024, 3, 11, 7), started_at: Time.utc(2024, 3, 11, 6), hr_zones: {"seconds" => [0, 0, 0, 0, 0]})
     create(:activity, local_started_at: Time.utc(2024, 3, 18, 7), started_at: Time.utc(2024, 3, 18, 6))
 
     assert_equal [[Time.utc(2024, 3, 4).to_i * 1000, 150, 0, 200, 0, 10]], Wellness::Trends.new.payload[:zones]

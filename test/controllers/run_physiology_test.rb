@@ -133,7 +133,23 @@ class RunPhysiologyTest < ActionDispatch::IntegrationTest
 
     assert_select "h2", text: /Heart rate zones and effort/
     ["Aerobic effect", "Anaerobic effect", "Training load", "Body Battery change", "Intensity minutes"].each { assert_select "h3", text: it, count: 0 }
-    assert_select "p", text: /Ranges are your current zones/
-    assert_select "h2 button[aria-label*='zones you had']"
+    assert_select "p", text: /Estimated zones|default bands/, count: 0
+    assert_select "h2 button[aria-label*='zones set on your watch']"
+  end
+
+  test "a run with stored zones shows its own ranges, and the estimated ones say so" do
+    zones = {"floors" => [90, 110, 130, 150, 170], "max_hr" => 190, "seconds" => [60, 180, 360, 0, 0]}
+    run = create(:activity, avg_hr: 140, hr_zones: zones.merge("source" => "fit"))
+    estimated = create(:activity, avg_hr: 140, hr_zones: zones.merge("source" => "estimated"))
+
+    get run_path(run)
+
+    assert_select "dd", text: "130–149"
+    assert_select "span", text: "Estimated zones", count: 0
+
+    get run_path(estimated)
+
+    assert_select "dd", text: "130–149"
+    assert_select "p span", text: "Estimated zones"
   end
 end

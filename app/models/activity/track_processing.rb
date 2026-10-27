@@ -5,9 +5,7 @@ module Activity::TrackProcessing
 
   class_methods do
     def backfill_bands
-      zones = HrZones.current
-
-      where.not(splits: nil).includes(:track).where.associated(:track).find_each.count { it.update_column(:bands, Track::Bands.new(it.track.data, zones).to_h) }
+      where.not(splits: nil).includes(:track).where.associated(:track).find_each.count { it.update_column(:bands, Track::Bands.new(it.track.data, HrZones.for(it)).to_h) }
     end
   end
 
@@ -19,7 +17,8 @@ module Activity::TrackProcessing
     recording = recording.with_distance(distance_m)
     recording = recording.without_stops(timer_s) unless source == "garmin"
     metrics = Track::Metrics.new(recording) unless recording.rebuilt?
-    bands = Track::Bands.new(recording.data, HrZones.current).to_h unless recording.rebuilt?
+    self.hr_zones = derive_hr_zones(recording.data)
+    bands = Track::Bands.new(recording.data, HrZones.for(self)).to_h unless recording.rebuilt?
 
     transaction do
       (track || build_track).update!(data: recording.data, chart_metrics: metrics&.chart_metrics)

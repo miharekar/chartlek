@@ -4,7 +4,7 @@ class MapsController < ApplicationController
     @track = @run.track
 
     if @track&.mappable? && helpers.mapbox_token
-      @zones = HrZones.current if @track.data.key?("hr")
+      @zones = HrZones.for(@run) if @track.data.key?("hr")
     else
       redirect_to run_path(@run)
     end

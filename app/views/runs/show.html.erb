@@ -1,4 +1,4 @@
-<% zones = HrZones.current if @run.avg_hr || @run.hr_zone_times(nil) %>
+<% zones = HrZones.for(@run) if @run.avg_hr || @run.hr_zone_times(nil) %>
 <%= render "header", run: @run %>
 <%= render "notables", run: @run %>
 <%= render "tiles", run: @run %>

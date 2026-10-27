@@ -40,4 +40,25 @@ class HrZonesTest < ActiveSupport::TestCase
     assert_equal [1, 2, 3, 4, 5], bands.pluck(:zone)
     assert_equal [[100, 120], [120, 140], [140, 160], [160, 180], [180, nil]], bands.map { [it[:from], it[:to]] }
   end
+
+  test "for builds a run's own zones and falls back to the current ones without any" do
+    Profile.instance.update!(hr_zones: {"floors" => [100, 120, 140, 160, 180], "max_hr" => 200})
+    run = build(:activity, hr_zones: {"floors" => [90, 110, 130, 150, 170], "max_hr" => 190, "source" => "estimated"})
+
+    zones = HrZones.for(run)
+
+    assert_predicate zones, :estimated?
+    assert_equal [90, 110, 130, 150, 170], zones.floors
+    assert_equal 170..190, zones.range(5)
+    assert_equal "garmin", HrZones.for(build(:activity)).source
+  end
+
+  test "seconds attributes each interval to the zone of its end sample and skips gaps and low heart rate" do
+    zones = HrZones.new(floors: [100, 120, 140, 160, 180], max_hr: 200, source: "fit")
+
+    assert_equal [0, 10, 10, 0, 5], zones.seconds("t" => [0, 10, 20, 30, 40, 45], "hr" => [90, 125, 145, nil, 90, 185])
+    assert_equal [0] * 5, zones.seconds("t" => [0, 10], "hr" => [90, 95])
+    assert_equal [0] * 5, zones.seconds("t" => [0, 10])
+    assert_equal [0, 10, 0, 0, 0], zones.seconds(t: [0, 10], hr: [90, 130])
+  end
 end

@@ -128,6 +128,7 @@ Rails/I18nLocaleTexts:
 Rails/SkipsModelValidations:
   Exclude:
     - app/models/activity/track_processing.rb
+    - app/models/activity/hr_zoning.rb
 Style/Alias:
   EnforcedStyle: prefer_alias_method
 Style/Documentation:

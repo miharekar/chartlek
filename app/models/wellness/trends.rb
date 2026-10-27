@@ -22,11 +22,11 @@ class Wellness::Trends
   }.freeze
   WEEK = Arel.sql("date(local_started_at, 'weekday 0', '-6 days')")
   ZONE_SECONDS = [
-    Arel.sql("SUM(json_extract(summary, '$.hrTimeInZone_1'))"),
-    Arel.sql("SUM(json_extract(summary, '$.hrTimeInZone_2'))"),
-    Arel.sql("SUM(json_extract(summary, '$.hrTimeInZone_3'))"),
-    Arel.sql("SUM(json_extract(summary, '$.hrTimeInZone_4'))"),
-    Arel.sql("SUM(json_extract(summary, '$.hrTimeInZone_5'))")
+    Arel.sql("SUM(json_extract(hr_zones, '$.seconds[0]'))"),
+    Arel.sql("SUM(json_extract(hr_zones, '$.seconds[1]'))"),
+    Arel.sql("SUM(json_extract(hr_zones, '$.seconds[2]'))"),
+    Arel.sql("SUM(json_extract(hr_zones, '$.seconds[3]'))"),
+    Arel.sql("SUM(json_extract(hr_zones, '$.seconds[4]'))")
   ].freeze
 
   def initialize(from: nil, to: nil)

@@ -3,6 +3,10 @@ class Track::Reader
     new(original).recording
   end
 
+  def self.zones(original)
+    new(original).zones
+  end
+
   def initialize(original)
     @original = original
   end
@@ -19,9 +23,21 @@ class Track::Reader
     end
   end
 
+  def zones
+    if @original.filename.to_s.end_with?(".zip")
+      entry = zip_entry
+
+      Track::FitZones.read(entry.get_input_stream.read) if File.extname(entry.name.to_s).casecmp?(".fit")
+    end
+  end
+
   private
+  def zip_entry
+    Zip::File.open_buffer(StringIO.new(@original.download)).entries.find(&:file?)
+  end
+
   def read_zip
-    entry = Zip::File.open_buffer(StringIO.new(@original.download)).entries.find(&:file?)
+    entry = zip_entry
 
     case File.extname(entry.name.to_s).downcase
     when ".fit"

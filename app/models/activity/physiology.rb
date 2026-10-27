@@ -17,8 +17,9 @@ module Activity::Physiology
     vertical_ratio: "avgVerticalRatio"
   }.freeze
 
-  def hr_zone_times(zones = HrZones.current)
-    seconds = HrZones::ZONES.map { summary&.dig("hrTimeInZone_#{it}").to_f }
+  def hr_zone_times(zones = HrZones.for(self))
+    seconds = hr_zones&.dig("seconds")&.map(&:to_f)
+    seconds = HrZones::ZONES.map { summary&.dig("hrTimeInZone_#{it}").to_f } unless seconds&.sum&.positive?
     total = seconds.sum
 
     if total.positive?

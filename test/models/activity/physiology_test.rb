@@ -16,6 +16,22 @@ class Activity::PhysiologyTest < ActiveSupport::TestCase
     assert_equal [[100, 119], [120, 139], [140, 159], [160, 179], [180, 200]], times.map { [it[:from], it[:to]] }
   end
 
+  test "zone times prefer the run's stored seconds and zones over the summary" do
+    zones = {"floors" => [90, 110, 130, 150, 170], "max_hr" => 190, "seconds" => [10, 10, 20, 60, 0], "source" => "fit"}
+    times = build(:activity, summary:, hr_zones: zones).hr_zone_times
+
+    assert_equal [10.0, 10.0, 20.0, 60.0, 0.0], times.pluck(:seconds)
+    assert_equal [10, 10, 20, 60, 0], times.pluck(:percent)
+    assert_equal [[90, 109], [110, 129], [130, 149], [150, 169], [170, 190]], times.map { [it[:from], it[:to]] }
+  end
+
+  test "stored seconds that are all zero fall back to the summary, and hide the card without one" do
+    zones = {"floors" => [90, 110, 130, 150, 170], "max_hr" => 190, "seconds" => [0] * 5, "source" => "fit"}
+
+    assert_equal [60.0, 180.0, 360.0, 0.0, 0.0], build(:activity, summary:, hr_zones: zones).hr_zone_times.pluck(:seconds)
+    assert_nil build(:activity, summary: nil, hr_zones: zones).hr_zone_times
+  end
+
   test "zone times have no range without zones" do
     times = build(:activity, summary:).hr_zone_times(nil)
 
