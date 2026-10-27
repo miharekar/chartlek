@@ -44,5 +44,15 @@ class WellnessesControllerTest < ActionDispatch::IntegrationTest
     get wellness_path
     assert_select "[data-chart=sleep]"
     assert_includes response.body, "sleep_need"
+    assert_select "[data-chart=timing]", false
+  end
+
+  test "the timing chart shows with bedtime and wake time" do
+    ms = ->(*time) { Time.utc(*time).to_i * 1000 }
+    WellnessDay.create!(date: Date.new(2024, 3, 6), sleep_s: 26_000, raw: {"sleep" => {"sleepStartTimestampLocal" => ms.(2024, 3, 5, 23, 10), "sleepEndTimestampLocal" => ms.(2024, 3, 6, 6, 30)}})
+
+    get wellness_path
+
+    assert_select "[data-chart=timing]"
   end
 end

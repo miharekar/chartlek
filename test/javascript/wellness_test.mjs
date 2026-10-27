@@ -15,7 +15,7 @@ registerHooks({
   }
 })
 
-const { dailyAverage, dayIndex, movingMean, pointAtOrBefore, stackZones, weekAt, weightTrend } = await import("helpers/wellness")
+const { clockLabel, dailyAverage, dayIndex, movingMean, pointAtOrBefore, stackZones, weekAt, weightTrend } = await import("helpers/wellness")
 
 const DAY = 86400000
 
@@ -92,4 +92,14 @@ test("pointAtOrBefore and weekAt find the surrounding entry", () => {
   assert.equal(weekAt(points, 16 * DAY)[1], "a")
   assert.equal(weekAt(points, 17 * DAY), undefined)
   assert.equal(weekAt(points, 5 * DAY), undefined)
+})
+
+test("clock labels wrap offsets from midnight into HH:MM", () => {
+  assert.equal(clockLabel(0), "00:00")
+  assert.equal(clockLabel(6.5 * 3600), "06:30")
+  assert.equal(clockLabel(-2 * 3600), "22:00")
+  assert.equal(clockLabel(-30 * 60), "23:30")
+  assert.equal(clockLabel(20 * 60), "00:20")
+  assert.equal(clockLabel(25 * 3600), "01:00")
+  assert.equal(clockLabel(-4 * 3600 - 29), "20:00")
 })

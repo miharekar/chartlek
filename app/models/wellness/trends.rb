@@ -1,5 +1,6 @@
 class Wellness::Trends
   DEFAULT_WINDOW = 1.year
+  WOKE_ON_DATE = "date(json_extract(raw, '$.sleep.sleepEndTimestampLocal') / 1000, 'unixepoch') = date"
   SERIES = {
     rhr: :resting_hr,
     hrv: :hrv_last_night,
@@ -19,7 +20,10 @@ class Wellness::Trends
     sleep_score: :sleep_score,
     sleep_hr: :sleep_hr_avg,
     sleep_stress: :sleep_stress_avg,
-    sleep_need: Arel.sql("json_extract(raw, '$.sleep.sleepNeed.actual') * 60")
+    sleep_need: Arel.sql("json_extract(raw, '$.sleep.sleepNeed.actual') * 60"),
+    sleep_bed: Arel.sql("CASE WHEN #{WOKE_ON_DATE} THEN json_extract(raw, '$.sleep.sleepStartTimestampLocal') / 1000 - strftime('%s', date) END"),
+    sleep_wake: Arel.sql("CASE WHEN #{WOKE_ON_DATE} THEN json_extract(raw, '$.sleep.sleepEndTimestampLocal') / 1000 - strftime('%s', date) END"),
+    sleep_in_bed: Arel.sql("CASE WHEN #{WOKE_ON_DATE} THEN (json_extract(raw, '$.sleep.sleepEndTimestampGMT') - json_extract(raw, '$.sleep.sleepStartTimestampGMT')) / 1000 END")
   }.freeze
   WEEK = Arel.sql("date(local_started_at, 'weekday 0', '-6 days')")
   ZONE_SECONDS = [
@@ -44,6 +48,7 @@ class Wellness::Trends
       rhr: columns[:rhr],
       hrv: columns[:hrv],
       sleep: columns[:sleep],
+      timing: columns[:sleep_bed] && columns[:sleep_wake],
       bb: columns[:bb_high] && columns[:bb_low],
       stress: columns[:stress],
       weight: columns[:weight],

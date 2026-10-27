@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 import { axisBottom, axisLeft, axisRight } from "d3-axis"
-import { extent, max, range } from "d3-array"
+import { extent, max, quantile, range } from "d3-array"
 import { pointer, select } from "d3-selection"
 import { scaleLinear, scaleUtc } from "d3-scale"
 import { area, curveMonotoneX, line } from "d3-shape"
@@ -13,7 +13,7 @@ import { clear, publish, subscribe } from "helpers/run_cursor"
 import { createTimeline } from "helpers/timeline"
 import { parseTime } from "helpers/time"
 import { hideTooltip, showTooltip, showTooltipFor, tooltipHtml } from "helpers/tooltip"
-import { dailyAverage, dayIndex, pointAtOrBefore, stackZones, weekAt, weightTrend } from "helpers/wellness"
+import { clockLabel, dailyAverage, dayIndex, pointAtOrBefore, stackZones, weekAt, weightTrend } from "helpers/wellness"
 
 const MARGIN = { top: 18, right: 44, bottom: 22, left: 44 }
 const HEIGHT = 300
@@ -60,6 +60,24 @@ const CHARTS = {
     rows: (c, index) => {
       const { hrv, hrv_low: low, hrv_high: high, status } = c.columns
       return [["Last night", hrv[index] == null ? null : `${hrv[index]} ms`], ["Baseline", low?.[index] != null && high?.[index] != null ? `${low[index]}–${high[index]} ms` : null], ["Status", status?.[index] ? humanize(status[index]) : null]]
+    }
+  },
+  timing: {
+    unit: "",
+    ticks: 8,
+    tickFormat: hours => clockLabel(hours * 3600),
+    layers: [{ stroke: "none", fill: "var(--chart-accent-low)", "fill-opacity": 0.8 }, { fill: "none", stroke: "var(--chart-highlight)", "stroke-width": 1.5 }, { fill: "none", stroke: "var(--chart-accent)", "stroke-width": 1.5 }],
+    domain: ({ columns }) => [quantile(columns.sleep_wake, 0.99) / 3600, quantile(columns.sleep_bed, 0.01) / 3600],
+    paths: (c, view) => {
+      const { sleep_bed: bed, sleep_wake: wake } = c.columns
+      const width = Math.max(1, (view.x(view.start + DAY_MS) - view.x(view.start)) * 0.4)
+      const days = range(view.i0, view.i1).filter(index => bed[index] != null && wake[index] != null)
+      return [days.map(index => bar(view, index, hours(bed[index]), hours(wake[index]), width)).join(""), linePath(c.bedAverage, view), linePath(c.wakeAverage, view)]
+    },
+    rows: (c, index) => {
+      const { sleep_bed: bed, sleep_wake: wake } = c.columns
+      const inBed = c.columns.sleep_in_bed?.[index]
+      return [["Bedtime", bed[index] == null ? null : clockLabel(bed[index])], ["Wake time", wake[index] == null ? null : clockLabel(wake[index])], ["In bed", inBed == null ? null : formatDuration(inBed)]]
     }
   },
   bb: {
@@ -163,6 +181,8 @@ export default class extends Controller {
     this.columns = this.payload.columns
     this.average = dailyAverage(this.columns.rhr || [])
     this.trend = weightTrend(this.columns.weight || [])
+    this.bedAverage = dailyAverage((this.columns.sleep_bed || []).map(hours))
+    this.wakeAverage = dailyAverage((this.columns.sleep_wake || []).map(hours))
     this.count = Object.values(this.columns)[0].length
     this.statusDots = this.#statusDots()
     this.domain = this.payload.domain.map(parseTime)
@@ -220,7 +240,7 @@ export default class extends Controller {
   #build(target) {
     const key = target.dataset.chart
     const spec = CHARTS[key]
-    const chart = { key, spec, target, y: scaleLinear().domain(spec.domain(this)).nice(5) }
+    const chart = { key, spec, target, y: scaleLinear().domain(spec.domain(this)).nice(spec.ticks ?? 5) }
     if (spec.secondary) chart.y2 = scaleLinear().domain(spec.secondary.domain)
     chart.svg = select(target).append("svg").attr("class", "block w-full").attr("height", HEIGHT)
     chart.clipId = `wellness-clip-${key}-${Math.random().toString(36).slice(2)}`
@@ -260,7 +280,7 @@ export default class extends Controller {
       chart.clip.attr("x", MARGIN.left).attr("y", MARGIN.top).attr("width", plotWidth).attr("height", plotHeight)
       chart.overlay.attr("x", MARGIN.left).attr("y", MARGIN.top).attr("width", plotWidth).attr("height", plotHeight)
       chart.cursorLine.attr("y1", MARGIN.top).attr("y2", HEIGHT - MARGIN.bottom)
-      chart.yAxis.attr("transform", `translate(${MARGIN.left},0)`).call(axisLeft(chart.y).ticks(5).tickFormat(chart.spec.tickFormat).tickSize(-plotWidth).tickSizeOuter(0))
+      chart.yAxis.attr("transform", `translate(${MARGIN.left},0)`).call(axisLeft(chart.y).ticks(chart.spec.ticks ?? 5).tickFormat(chart.spec.tickFormat).tickSize(-plotWidth).tickSizeOuter(0))
       chart.yAxis.select(".domain").remove()
       chart.yAxis.selectAll(".tick line").attr("stroke", "var(--chart-grid)")
       chart.yAxis.selectAll("text").attr("fill", "var(--chart-axis)")

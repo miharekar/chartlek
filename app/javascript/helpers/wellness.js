@@ -36,6 +36,11 @@ export function dailyAverage(values) {
   return movingMean(values, 6, 0, 4).map((mean, index) => (values[index] == null ? null : mean))
 }
 
+export function clockLabel(seconds) {
+  const minutes = ((Math.round(seconds / 60) % 1440) + 1440) % 1440
+  return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`
+}
+
 export function dayIndex(start, ms) {
   return Math.round((ms - start) / DAY_MS)
 }

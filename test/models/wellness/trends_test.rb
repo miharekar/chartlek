@@ -56,6 +56,49 @@ class Wellness::TrendsTest < ActiveSupport::TestCase
     assert_not Wellness::Trends.new.payload[:columns].key?(:sleep_need)
   end
 
+  test "bedtime and wake time are seconds from the wake date's midnight, a night without them is a gap" do
+    ms = ->(*time) { Time.utc(*time).to_i * 1000 }
+    WellnessDay.create!(date: Date.new(2024, 3, 2), sleep_s: 27_000, raw: {"sleep" => {"sleepStartTimestampLocal" => ms.(2024, 3, 1, 23, 30), "sleepEndTimestampLocal" => ms.(2024, 3, 2, 6, 45)}})
+    WellnessDay.create!(date: Date.new(2024, 3, 3), sleep_s: 25_000, raw: {"sleep" => {}})
+    WellnessDay.create!(date: Date.new(2024, 3, 4), sleep_s: 26_000, raw: {"sleep" => {"sleepStartTimestampLocal" => ms.(2024, 3, 4, 0, 20), "sleepEndTimestampLocal" => ms.(2024, 3, 4, 7, 5)}})
+
+    trends = Wellness::Trends.new
+    columns = trends.payload[:columns]
+
+    assert_equal [-1800, nil, 1200], columns[:sleep_bed]
+    assert_equal [24_300, nil, 25_500], columns[:sleep_wake]
+    assert_equal %i[sleep timing], trends.charts
+  end
+
+  test "a night whose wake day is not its row date is a gap in every timing series" do
+    ms = ->(*time) { Time.utc(*time).to_i * 1000 }
+    WellnessDay.create!(date: Date.new(2024, 3, 2), sleep_s: 27_000, raw: {"sleep" => {"sleepStartTimestampLocal" => ms.(2024, 3, 1, 23), "sleepEndTimestampLocal" => ms.(2024, 3, 2, 7), "sleepStartTimestampGMT" => ms.(2024, 3, 1, 22), "sleepEndTimestampGMT" => ms.(2024, 3, 2, 6)}})
+    WellnessDay.create!(date: Date.new(2024, 3, 3), sleep_s: 25_000, raw: {"sleep" => {"sleepStartTimestampLocal" => ms.(2024, 3, 1, 23), "sleepEndTimestampLocal" => ms.(2024, 3, 2, 7), "sleepStartTimestampGMT" => ms.(2024, 3, 1, 22), "sleepEndTimestampGMT" => ms.(2024, 3, 2, 6)}})
+
+    columns = Wellness::Trends.new.payload[:columns]
+
+    assert_equal [-3600, nil], columns[:sleep_bed]
+    assert_equal [25_200, nil], columns[:sleep_wake]
+    assert_equal [28_800, nil], columns[:sleep_in_bed]
+  end
+
+  test "time in bed comes from the GMT pair so a DST night is not an hour off" do
+    ms = ->(*time) { Time.utc(*time).to_i * 1000 }
+    WellnessDay.create!(date: Date.new(2024, 3, 31), sleep_s: 25_000, raw: {"sleep" => {"sleepStartTimestampLocal" => ms.(2024, 3, 30, 23), "sleepEndTimestampLocal" => ms.(2024, 3, 31, 7), "sleepStartTimestampGMT" => ms.(2024, 3, 30, 22), "sleepEndTimestampGMT" => ms.(2024, 3, 31, 5)}})
+
+    columns = Wellness::Trends.new.payload[:columns]
+
+    assert_equal [-3600], columns[:sleep_bed]
+    assert_equal [25_200], columns[:sleep_wake]
+    assert_equal [25_200], columns[:sleep_in_bed]
+  end
+
+  test "there is no timing chart without both bedtime and wake time" do
+    WellnessDay.create!(date: Date.new(2024, 3, 2), sleep_s: 27_000, raw: {"sleep" => {"sleepStartTimestampLocal" => Time.utc(2024, 3, 1, 23).to_i * 1000}})
+
+    assert_equal %i[sleep], Wellness::Trends.new.charts
+  end
+
   test "the window defaults to the last year and follows from and to" do
     WellnessDay.create!(date: Date.new(2020, 1, 1), resting_hr: 50)
     WellnessDay.create!(date: Date.new(2024, 3, 5), resting_hr: 52)
