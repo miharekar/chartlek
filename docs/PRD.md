@@ -1,6 +1,6 @@
 # Smashback: Product Requirements Document
 
-- **Status:** Draft v3. Phases 0 and 1 are done. Phase 2 is built and is being finished (W1 to W5, §14). Phase 3 (Wellness and gear) and Phase 4 (Pro analytics) are planned.
+- **Status:** Draft v3. Phases 0 and 1 are done. Phase 2 is done (W1 to W5). Phase 3 (Wellness and gear) and Phase 4 (Pro analytics) are planned.
 - **Date:** 2026-10-27
 - **Owner:** Miha Rekar
 - **Repo:** `~/Projects/Personal/smashback`
@@ -69,7 +69,7 @@ These are explicitly out of scope:
 |---|---|---|---|
 | **0: Foundation** | App skeleton, Garmin client, activity sync from summaries, Strava archive import, nav and sync status | `Sync now` imports all Garmin runs. The Strava task imports only gap runs. Tests pass. | Done |
 | **1: v1** | Overview (§5.2), Pace Trends (§5.3), PR Progress (§5.4) | All widgets per spec. Golden values (§12) within tolerance. Light and dark both verified. | Done |
-| **2: Runs** | Original download and parsing (FIT, TCX, Smashrun recordings), runs list, run page (§5.5), weather, notables, food equivalents, PR sparklines, Strava connection and run links, theme switch, linked hover, container deployment | Every run has a parsed track (Garmin original or Smashrun recording; two Smashrun details have none). Run page complete. | Built. Finishing in W1 to W5: performance index and dynamic estimated finish, buttons instead of dropdowns, the rebuilt "Runs in the prior 90 days", one design system |
+| **2: Runs** | Original download and parsing (FIT, TCX, Smashrun recordings), runs list, run page (§5.5), weather, notables, food equivalents, PR sparklines, Strava connection and run links, theme switch, linked hover, container deployment | Every run has a parsed track (Garmin original or Smashrun recording; two Smashrun details have none). Run page complete. | Done (W1 to W5: performance index and dynamic estimated finish, buttons instead of dropdowns, the rebuilt "Runs in the prior 90 days", one design system) |
 | **3: Wellness and gear** | Garmin health data (probe first), HR zones and recovery on the run page, Wellness page, Pace Trends overlays, Strava gear sync and the Gear page (§5.6, §5.7) | Probe results are recorded in §7.1. Every run with HR shows its zones. The Wellness page shows every metric the API offers, for the whole history. Gear totals match Strava's and every linked run without gear is listed. | Planned (W6 to W13) |
 | **4: Pro analytics** | Pro Map (§5.8), Training Bands (§5.9), Progress Towards Goal (§5.10) | Per spec. | Planned (W14 to W17) |
 
@@ -255,7 +255,7 @@ A button group above the main chart chooses None, Resting HR, HRV or VO2max, dra
 
 ### 5.6 Wellness (Phase 3, planned)
 
-Garmin health data next to the runs, in three places: the run page, a Wellness page and Pace Trends. The W6 probe (§7.1) found what the Personal API offers: resting HR, HRV, stress, Body Battery, weight and HR zones. **Cut because the API has no endpoint: sleep (duration, stages, score), training readiness, recovery time, training status and load, and VO2max by day** (VO2max still comes from the run summaries). Sleep missing is an owner decision (R10).
+Garmin health data next to the runs, in three places: the run page, a Wellness page and Pace Trends. The W6 probe (§7.1) found what the Personal API offers: resting HR, HRV, stress, Body Battery, weight and HR zones. **Cut because the API has no endpoint: sleep (duration, stages, score), training readiness, recovery time, training status and load, and VO2max by day** (VO2max still comes from the run summaries). The owner decided to leave out whatever the API lacks (R10), with no data-export import.
 
 Some of it needs no new endpoint, because the stored activity summaries already carry it (checked on a recent run): time in each of the five HR zones, aerobic and anaerobic training effect with its label, training load, Body Battery change, intensity minutes, VO2max, and running dynamics when the watch records them (ground contact time, vertical oscillation, stride length, vertical ratio).
 
@@ -731,7 +731,7 @@ Smashback's values, next to smashrun.com/miharekar (all time, km), as of 2026-10
 | R7 | Smashrun shutting down. | Its data is fetched once into stored originals (§7.5), so nothing depends on it afterwards. |
 | R8 | Garmin originals are untrimmed. | Clip FIT recordings to `started_at` and `timer_s` of recording time (§6). |
 | R9 | The Open-Meteo archive lags about 5 days. | Leave `weather` nil and retry on later syncs (§7.2). |
-| R10 | The Personal API may not expose some wellness data. **Resolved by W6: sleep, training readiness, recovery time, training status and load, and VO2max by day are not available; resting HR, HRV, stress, Body Battery, weight and HR zones are.** | The scope shrank to what exists. The summary-based fields (HR zone times, training effect and load, Body Battery change) need no endpoint. Sleep is missing: the owner decides whether to import Garmin's account data export instead (its file layout would be inspected first, as the Strava archive was). |
+| R10 | The Personal API may not expose some wellness data. **Resolved by W6: sleep, training readiness, recovery time, training status and load, and VO2max by day are not available; resting HR, HRV, stress, Body Battery, weight and HR zones are.** | The scope shrank to what exists. The summary-based fields (HR zone times, training effect and load, Body Battery change) need no endpoint. **Owner decision: anything that isn't available in the API we leave out.** Sleep, training readiness, recovery time, training status and VO2max by day stay cut, and there is no Garmin data-export import. |
 | R11 | Per-day endpoints make the wellness backfill long (about 3,500 days per metric). | 1 request/s, resumable, newest first, run in the background. Stop a metric after several empty weeks, because older devices didn't record it. |
 | R12 | Health data will sit in an app with no login. | run.rekar.eu is confirmed tailnet-only (2026-10-27); keep it that way (basic auth at Caddy is optional hardening). Never log health values; synthetic fixtures. |
 | R13 | Strava gear needs `profile:read_all`, which the stored connection lacks, and the `retired` flag is not confirmed in the API. | A reconnect prompt, with gear features waiting for the grant. The raw gear payload is stored so `retired` can be derived later. Until it is known, show every gear as active. |
@@ -754,7 +754,7 @@ Work in this order. Items marked "parallel" touch different files and can run at
 - [x] **W2: buttons instead of dropdowns (§5.1, §10).** Introduce the controls helper with the button group, toggle button and button, and replace the four `<select>`s: Overview distance-per-period metric (5 options), the Overview scatter's y metric (3), Pace Trends' finish distance (4). Move the hand-rolled groups (PR Progress mode and reference period, Pace Trends presets, the speed chart's 100 m / per km toggle) and the Pace Trends filter chips onto the same components. Titles follow the selection; groups wrap at 360 px. Leave the Analyze Run select for W3. Parallel with W1. Done when: no `<select>` remains outside the Analyze Run view, behaviour and `aria-pressed` are unchanged, and tests are updated.
 - [x] **W3: rebuild "Runs in the prior 90 days" (§5.5 item 9, §6).** Dot strip, brush with cycling readout, day timeline, legend, keyboard and tooltips as specified, using the W2 button group. Remove the histogram code and its tests. Done when: the pure helpers have `node --test` tests, a controller test covers the payload, and the implementer compares screenshots against the reference page named in §5.5, in light and dark at 1300 and 360 px. Depends on W2.
 - [x] **W4: one design system pass (§10).** Audit every page by screenshot in both themes at 1300 and 360 px (Overview all-time, year and month; Runs; a GPS run; an indoor run; Pace Trends; PR Progress), list the inconsistencies in buttons, pills, chips, card title rows, page headers, spacing, empty states, focus rings and hints, and fix them through the shared helpers. Done when: no control or card classes are written inline in views (a grep check), `AGENTS.md` "Views and CSS" states the final rules, and the report lists what changed. Depends on W1 to W3, and runs alone.
-- [ ] **W5: Phase 2 close-out.** In `AGENTS.md`, "the Phase 3 Pro Map" becomes "the Phase 4 Pro Map", and the new helpers and components are named. Tick this checklist. Rebuild the container and check `/up`, `/overview`, a run page, `/pace_trend` and `/pr_progress` on :9295.
+- [x] **W5: Phase 2 close-out.** In `AGENTS.md`, "the Phase 3 Pro Map" becomes "the Phase 4 Pro Map", and the new helpers and components are named. Tick this checklist. Rebuild the container and check `/up`, `/overview`, a run page, `/pace_trend` and `/pr_progress` on :9295.
 
 ### Phase 3: Wellness and gear
 
@@ -774,4 +774,4 @@ Work in this order. Items marked "parallel" touch different files and can run at
 - [ ] **W16: Progress Towards Goal (§5.10).** `goals` with CRUD, the chart, and the Overview widgets. Parallel with W14 and W15.
 - [ ] **W17: final close-out.** Update this document and `AGENTS.md`, rebuild and deploy the container, and re-check the golden values.
 
-**Owner actions along the way:** decide whether to import Garmin's data export for sleep, which W6 found missing (R10); click Reconnect Strava after the W11 deploy.
+**Owner actions along the way:** click Reconnect Strava after the W11 deploy.
