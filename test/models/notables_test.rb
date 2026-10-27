@@ -108,12 +108,6 @@ class NotablesTest < ActiveSupport::TestCase
     assert_empty notables(@activity, [build_run(Time.utc(2024, 2, 1, 7, 30), distance_m: 900_000)]).grep(/lifetime/)
   end
 
-  test "race" do
-    @activity.race = true
-
-    assert_includes notables(@activity, []), "Race"
-  end
-
   test "moon phase matches known full and new moons" do
     assert_equal :full, Notables::Moon.phase(Time.utc(2024, 4, 23, 23, 49))
     assert_equal :new, Notables::Moon.phase(Time.utc(2024, 4, 8, 18, 21))

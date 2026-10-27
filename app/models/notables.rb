@@ -14,7 +14,7 @@ class Notables
   end
 
   def all
-    [longest, fastest, climbing, temperature, sun, moon, location, start_time, streak, first_of_year, milestone, race].flatten.compact
+    [longest, fastest, climbing, temperature, sun, moon, location, start_time, streak, first_of_year, milestone].flatten.compact
   end
 
   private
@@ -91,10 +91,6 @@ class Notables
     crossed = ((before + @activity.distance_m) / MILESTONE_M).floor
 
     "Passed #{ActiveSupport::NumberHelper.number_to_delimited(crossed * 1000)} km lifetime" if crossed > (before / MILESTONE_M).floor
-  end
-
-  def race
-    "Race" if @activity.race
   end
 
   def windowed(title, runs, &beaten)

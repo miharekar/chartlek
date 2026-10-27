@@ -410,7 +410,6 @@ All metric math lives in Ruby and is unit-tested. The only JS math is interactiv
     - Extends the longest streak.
     - First run of the year.
     - Lifetime distance milestones (every 1,000 km).
-    - Race.
   - Windows: 1, 3, 6 and 12 months, and ever.
 - **Food equivalents:** a static list of foods with kcal (`Food::ITEMS`), from a banana up to a kremšnita and a pizza. `Food.for(calories)` picks the food whose multiple (1 to 12) best matches the run's Garmin or Smashrun calories.
 - **HR zones (Phase 3):** five zones from the boundaries on the profile (§5.6). Time in zone for a run is Garmin's `hrTimeInZone_1` to `hrTimeInZone_5` from its stored summary, in seconds. The per-zone bpm range is `HrZones#range(zone)`; `HrZones#bands` (floor and next floor, open at the top) feeds the HR chart's zone bands.
