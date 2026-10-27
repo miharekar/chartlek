@@ -1,6 +1,5 @@
 class Track::Metrics
   SPLIT_M = 1000.0
-  SEGMENTS = 20
   WINDOW_S = 10
 
   def initialize(recording)
@@ -11,12 +10,6 @@ class Track::Metrics
 
   def splits(size = SPLIT_M)
     (0.0...@d.last).step(size).filter_map { split(it, [it + size, @d.last].min) }
-  end
-
-  def pace_profile
-    length = @d.last / SEGMENTS
-
-    Array.new(SEGMENTS) { pace(it * length, (it + 1) * length).round(1) }
   end
 
   def pace_variability

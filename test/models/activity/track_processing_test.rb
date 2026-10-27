@@ -27,7 +27,6 @@ class Activity::TrackProcessingTest < ActiveSupport::TestCase
     assert_in_delta 1560.0, data["d"].last, 0.1
     assert_equal 161, data["cad"].first
     assert_equal [1000.0, 560.0], activity.splits.pluck("distance")
-    assert_equal 20, activity.pace_profile.size
     assert_not_nil activity.pace_variability
     assert_not activity.track.chart_metrics.key?("speed_windows")
     assert_equal 16, activity.track.chart_metrics["elevation"].size
@@ -78,7 +77,6 @@ class Activity::TrackProcessingTest < ActiveSupport::TestCase
     assert_equal 2777.8, activity.track.data["d"][5]
     assert_equal %w[t d hr], activity.track.data.keys
     assert_nil activity.splits
-    assert_nil activity.pace_profile
     assert_nil activity.pace_variability
     assert_nil activity.track.chart_metrics
   end

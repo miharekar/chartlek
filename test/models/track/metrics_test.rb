@@ -81,17 +81,6 @@ class Track::MetricsTest < ActiveSupport::TestCase
     assert_equal 1, Track::Metrics.new(Track::Recording.new(rows)).splits.size
   end
 
-  test "pace profile has 20 equal-distance segments" do
-    assert_equal Array.new(20) { 250.0 }, @metrics.pace_profile
-  end
-
-  test "pace profile follows a changing pace" do
-    rows = [{t: 0.0, d: 0.0}, {t: 100.0, d: 500.0}, {t: 300.0, d: 1000.0}]
-    profile = Track::Metrics.new(Track::Recording.new(rows)).pace_profile
-
-    assert_equal [200.0] * 10 + [400.0] * 10, profile
-  end
-
   test "pace variability is zero at a constant pace" do
     assert_equal 0.0, @metrics.pace_variability
   end

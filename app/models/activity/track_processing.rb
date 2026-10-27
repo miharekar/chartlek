@@ -14,7 +14,7 @@ module Activity::TrackProcessing
 
     transaction do
       (track || build_track).update!(data: recording.data, chart_metrics: metrics&.chart_metrics)
-      update!(splits: metrics&.splits, pace_profile: metrics&.pace_profile, pace_variability: metrics&.pace_variability)
+      update!(splits: metrics&.splits, pace_variability: metrics&.pace_variability)
     end
   end
 end

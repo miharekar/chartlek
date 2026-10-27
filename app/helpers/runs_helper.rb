@@ -85,18 +85,4 @@ module RunsHelper
   def run_finishes(run)
     PaceTrend::DISTANCES.zip(run.finish_times).map { |(label, meters), (_, seconds)| {label:, km: meters / 1000.0, seconds:} }
   end
-
-  def run_sparkline(profile)
-    paces = Array(profile).compact
-
-    if paces.size > 1
-      fastest, slowest = paces.minmax
-      span = (slowest - fastest).nonzero? || 1
-      points = paces.each_with_index.map { |pace, index| format("%.1f,%.1f", 60.0 * index / (paces.size - 1), 2 + 16 * (pace - fastest) / span) }
-
-      tag.svg viewBox: "0 0 60 20", class: "h-5 w-15", role: "img", aria: {label: "Pace profile"} do
-        tag.polyline points: points.join(" "), fill: "none", "stroke-width": 1.5, "stroke-linejoin": "round", style: "stroke: var(--chart-accent)"
-      end
-    end
-  end
 end

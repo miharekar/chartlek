@@ -10,24 +10,20 @@
           <th class="<%= WidgetsHelper::CELL %> text-left font-medium">Distance</th>
           <th class="<%= WidgetsHelper::CELL %> text-left font-medium">Date</th>
           <th class="<%= th %>">Pace</th>
-          <th class="<%= th %>">km/h</th>
+          <th class="<%= th %> hidden sm:table-cell">km/h</th>
           <th class="<%= th %>">Time</th>
-          <th class="<%= th %>">Runs</th>
-          <th class="<%= WidgetsHelper::CELL %>"></th>
-          <th class="<%= WidgetsHelper::CELL %>"></th>
+          <th class="<%= th %> hidden sm:table-cell">Runs</th>
         </tr>
       </thead>
       <tbody class="<%= WidgetsHelper::TABLE_BODY %>">
         <% records.each do |record| %>
           <tr class="<%= WidgetsHelper::TABLE_ROW %>">
-            <td class="<%= WidgetsHelper::CELL %> font-medium"><%= link_to record.name, run_path(record.activity), class: WidgetsHelper::TABLE_LINK %></td>
+            <td class="<%= WidgetsHelper::CELL %> font-medium"><%= link_to record.name, run_path(record.activity), class: WidgetsHelper::TABLE_LINK %><% if record.race %> <%= chip "race", :race %><% end %></td>
             <td class="<%= WidgetsHelper::CELL %> text-zinc-600 dark:text-zinc-300"><%= link_to overview_date(record.activity.local_started_at), run_path(record.activity), class: WidgetsHelper::TABLE_LINK %></td>
             <td class="<%= WidgetsHelper::CELL %> text-right"><%= overview_pace(record.pace) %> <span class="<%= WidgetsHelper::HINT %>">/km</span></td>
-            <td class="<%= WidgetsHelper::CELL %> text-right"><%= format("%.2f", record.speed_kmh) %></td>
+            <td class="<%= WidgetsHelper::CELL %> hidden text-right sm:table-cell"><%= format("%.2f", record.speed_kmh) %></td>
             <td class="<%= WidgetsHelper::CELL %> text-right font-medium"><%= overview_duration(record.time_s) %></td>
-            <td class="<%= WidgetsHelper::CELL %> text-right <%= WidgetsHelper::MUTED %>"><%= number_with_delimiter(record.count) %></td>
-            <td class="<%= WidgetsHelper::CELL %>"><%= run_sparkline(record.activity.pace_profile) %></td>
-            <td class="<%= WidgetsHelper::CELL %>"><% if record.race %><%= chip "race", :race %><% end %></td>
+            <td class="<%= WidgetsHelper::CELL %> hidden text-right sm:table-cell <%= WidgetsHelper::MUTED %>"><%= number_with_delimiter(record.count) %></td>
           </tr>
         <% end %>
       </tbody>
