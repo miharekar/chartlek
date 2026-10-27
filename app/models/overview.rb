@@ -1,8 +1,4 @@
 class Overview
-  WEEKDAYS = %w[Monday Tuesday Wednesday Thursday Friday Saturday Sunday].freeze
-
-  Weekday = Data.define(:name, :days, :average_km)
-
   attr_reader :period, :activities
 
   def self.for(year: nil, month: nil)
@@ -60,25 +56,6 @@ class Overview
 
   def pm_percent
     (100.0 * pm_count / count).round
-  end
-
-  def weekdays
-    @weekdays ||= begin
-      by_wday = activities.group_by { it.local_started_at.to_date.cwday }
-      WEEKDAYS.each_with_index.map do |name, index|
-        runs = by_wday[index + 1] || []
-        days = runs.map { it.local_started_at.to_date }.uniq.size
-        Weekday.new(name:, days:, average_km: days.zero? ? 0.0 : runs.sum(&:distance_m) / 1000.0 / days)
-      end
-    end
-  end
-
-  def most_often
-    weekdays.max_by(&:days)
-  end
-
-  def least_often
-    weekdays.min_by(&:days)
   end
 
   def streaks

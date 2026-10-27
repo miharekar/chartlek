@@ -110,18 +110,17 @@ The header row has a **Latest run · date · km →** button linking to the newe
 | # | Widget | Spec |
 |---|---|---|
 | 1 | Kilometers run | Big total with the number in English words underneath, Smashrun-style ("thirty three thousand four hundred sixty four"). Run count. |
-| 2 | Most / least often run on | Weekday with the most or least distinct run days; shows days and average km per run day. |
-| 3 | Average run length | km |
-| 4 | Average days run per week | Distinct run days ÷ weeks in the period. For all time, the period runs from the first run to today. |
-| 5 | Time of day | % of runs starting after noon (local time), with a small AM/PM donut. |
-| 6 | Average pace | Total timer time ÷ total distance. |
-| 7 | Longest run | km and date; links to the run. |
-| 8 | Distance per period | Bars: per month (all time), per week (year), per day (month). A button group beside the title chooses the metric: **Distance**, Elevation gained, Avg distance, Avg pace, Avg VDOT, and the title follows it. Hover shows value and run count. Clicking a bar drills into that period. |
-| 9 | Trailing days | Daily rolling sum of distance: 365 days (all-time view), 90 (year), 7 (month). |
-| 10 | Runs pace vs distance | Scatter of runs in the period. x = km. y = pace on a speed-linear axis labeled as pace (ticks 4:00, 5:00, 6:00, 7:30, 10:00, 15:00, 30:00). The last run is a plain amber dot, a little larger than the others and without an outline; it hides while a linked hover selection is active (every selected dot is amber then) and returns when the selection clears. The average is a ring marker. A button group chooses the y metric: **Pace**, Avg HR, VDOT. |
-| 11 | Consecutive days run | Longest streak and longest break with dates, plus the current streak or break. |
-| 12 | Weekly stats for each year | All-time view: heatmap with years as rows and Monday-start weeks as columns. Weekly km buckets: >1, >20, >40, >50, >60 (ring), >80 (dot). Year and month views show a day calendar colored by daily km instead. |
-| 13 | Personal records | Benchmarks: 3 km, 5 km, 10 km, 15 km, 20 km, half marathon, 40 km, marathon, 50 km, 100 km. Only benchmarks with qualifying runs in the period are shown. Each row: date, pace, km/h, time, number of runs in the bucket, and a race tag next to the distance. Below `sm` the km/h and Runs columns are hidden, so the table doesn't scroll sideways at 360 px. |
+| 2 | Average run length | km |
+| 3 | Average days run per week | Distinct run days ÷ weeks in the period. For all time, the period runs from the first run to today. |
+| 4 | Time of day | % of runs starting after noon (local time), with a small AM/PM donut. |
+| 5 | Average pace | Total timer time ÷ total distance. |
+| 6 | Longest run | km and date; links to the run. |
+| 7 | Distance per period | Bars: per month (all time), per week (year), per day (month). A button group beside the title chooses the metric: **Distance**, Elevation gained, Avg distance, Avg pace, Avg VDOT, and the title follows it. Hover shows value and run count. Clicking a bar drills into that period. |
+| 8 | Trailing days | Daily rolling sum of distance: 365 days (all-time view), 90 (year), 7 (month). |
+| 9 | Runs pace vs distance | Scatter of runs in the period. x = km. y = pace on a speed-linear axis labeled as pace (ticks 4:00, 5:00, 6:00, 7:30, 10:00, 15:00, 30:00). The last run is a plain amber dot, a little larger than the others and without an outline; it hides while a linked hover selection is active (every selected dot is amber then) and returns when the selection clears. The average is a ring marker. A button group chooses the y metric: **Pace**, Avg HR, VDOT. |
+| 10 | Consecutive days run | Longest streak and longest break with dates, plus the current streak or break. |
+| 11 | Weekly stats for each year | All-time view: heatmap with years as rows and Monday-start weeks as columns. Weekly km buckets: >1, >20, >40, >50, >60 (ring), >80 (dot). Year and month views show a day calendar colored by daily km instead. |
+| 12 | Personal records | Benchmarks: 3 km, 5 km, 10 km, 15 km, 20 km, half marathon, 40 km, marathon, 50 km, 100 km. Only benchmarks with qualifying runs in the period are shown. Each row: date, pace, km/h, time, number of runs in the bucket, and a race tag next to the distance. Below `sm` the km/h and Runs columns are hidden, so the table doesn't scroll sideways at 360 px. |
 
 **Linked hover (Smashrun-style).** Hovering one of the charts below selects a set of the period's runs and highlights them in the others; leaving clears it. The chart under the pointer keeps its own tooltip and click. Hover also works over a chart's axes and their margins: the bars and the trailing line treat the bottom axis as the nearest column or day. On the scatter, selected runs are drawn larger in amber, the others muted grey, and the mean ring (the legend's lime ring) thickens; with no selection the chart looks as usual.
 
@@ -273,8 +272,8 @@ Some of it needs no new endpoint, because the stored activity summaries already 
 - Nav item **Wellness** (between PR Progress and Gear). A shared window: the Pace Trends presets (3 mo, 6 mo, 1 yr, 2 yr, All time, default the last year) and a brush on a compact daily resting HR timeline (`createTimeline` and the preset helpers are reused), with `from` and `to` in the URL. Every chart below follows it. Hovering any chart draws a vertical line at that day on all of them, through the run page's cursor module (`helpers/run_cursor`, which carries epoch ms of the day here and metres there). The overlay of each chart is one Tab stop: Left and Right step the shared cursor by a day, Home and End jump to the window's ends, Escape clears it, and the tooltip anchors to the cursor line.
 - Charts, each shown only when its data exists (one card each, all in one `wellness` Stimulus controller):
   - **Resting HR:** daily dots with the 7-day average line (§6, computed in JS from the series, with at least 4 values in its 7 days, and none on a day without a reading).
-  - **Sleep:** one bar per night, stacked by stage (deep, light and REM, in the accent colours, so the bar is the time asleep; the awake time is in the tooltip), with Garmin's sleep score as a line on a right-hand 0 to 100 axis. Nights from before Garmin recorded stages (until early 2018) are one unstacked bar, and the score exists from about 2021. A night belongs to the date Garmin gives it, the wake-up date. The tooltip adds the average heart rate and stress during sleep.
   - **HRV:** the nightly average as a thin line, with one dot per night coloured by Garmin's status (balanced accent, unbalanced amber, low and poor red, anything else muted), over the baseline band (low to high).
+  - **Sleep:** one bar per night, stacked by stage (deep, light and REM, in the accent colours, so the bar is the time asleep; the awake time is in the tooltip), with Garmin's sleep score as a line on a right-hand 0 to 100 axis. Nights from before Garmin recorded stages (until early 2018) are one unstacked bar, and the score exists from about 2021. A night belongs to the date Garmin gives it, the wake-up date. The tooltip adds the average heart rate and stress during sleep.
   - **Body Battery:** a bar per day from its low to its high, with the value at wake as an amber mark.
   - **Stress:** the daily average as dots and a thin line.
   - **Weight:** measurements as dots with the 30-day centred moving average as the line (§6).
@@ -705,8 +704,6 @@ Smashback's values, next to smashrun.com/miharekar (all time, km), as of 2026-10
 |---|---|---|
 | Runs | 2,868 | 2,942 |
 | Total distance | 32,974.3 km | ≈ 33,464 km |
-| Most often run on | Saturday: 455 days, avg 14.8 km | Saturday: 469 days, avg 14.7 km |
-| Least often run on | Friday: 349 days, avg 10.2 km | Friday: 350 days, avg 10.2 km |
 | Average run length | 11.5 km | 11.4 km |
 | Runs after noon | 67% | 66% |
 | Average pace | 6:07 /km | 6:14 /km |

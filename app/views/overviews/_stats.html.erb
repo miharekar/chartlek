@@ -21,14 +21,6 @@
   </p>
 </section>
 
-<% [[overview.most_often, "Most often run on"], [overview.least_often, "Least often run on"]].each do |weekday, title| %>
-  <section class="<%= card %> col-span-2">
-    <h2 class="<%= label %>"><%= title %></h2>
-    <p class="<%= big %>"><%= weekday.name %></p>
-    <p class="<%= sub %>"><%= pluralize(number_with_delimiter(weekday.days), "day") %> · avg <%= overview_distance(weekday.average_km) %> km</p>
-  </section>
-<% end %>
-
 <section class="<%= card %>">
   <h2 class="<%= label %>">Average run length</h2>
   <p class="<%= big %>"><%= overview_distance(overview.average_km) %><span class="<%= unit %>">km</span></p>
