@@ -10,7 +10,7 @@ This document is the source of truth for scope. §14 is the ordered work queue w
 
 ## 1. Summary
 
-Smashback is a local, single-user Rails app. It caches your Garmin Connect running history in SQLite and rebuilds Smashrun's charts, free and Pro, with a modern Tailwind UI and charts built directly on D3. It runs as a container at run.rekar.eu. Next it brings Garmin health data (HR zones, HRV, sleep, recovery) and Strava gear next to the runs, and after that the Pro analytics.
+Smashback is a local, single-user Rails app. It caches your Garmin Connect running history in SQLite and rebuilds Smashrun's charts, free and Pro, with a modern Tailwind UI and charts built directly on D3. It runs as a container at run.rekar.eu. Next it brings Garmin health data (HR zones, resting HR, HRV, Body Battery, stress) and Strava gear next to the runs, and after that the Pro analytics.
 
 Why: Smashrun (smashrun.com/miharekar) is effectively abandonware, but its charts are still the best way to look at a long running history. The ask in [dreeveapp/dreeve#2880](https://github.com/dreeveapp/dreeve/issues/2880) was turned down because most of these charts are too runner-specific for a general-purpose app. Smashback is only about running, so it can include all of them.
 
@@ -22,7 +22,7 @@ Why: Smashrun (smashrun.com/miharekar) is effectively abandonware, but its chart
 - **G2:** Use the Garmin Connect Personal API as the primary source and cache everything in SQLite. The UI never waits on Garmin.
 - **G3:** Fill the years before Garmin from the Strava API; take their tracks, and any Smashrun-only runs, from the Smashrun API.
 - **G4:** Make the UI fast, modern and consistent: Tailwind, a System / Light / Dark theme switch, D3 charts as Stimulus controllers, and one design system (§10) in which every choice among options is a group of buttons.
-- **G5:** Show Garmin health data on runs and in trends: HR zones, training effect and load, resting HR, HRV, sleep, Body Battery, stress, weight, VO2max, and recovery metrics where the API exposes them (§5.6).
+- **G5:** Show Garmin health data on runs and in trends: HR zones, training effect and load, resting HR, HRV, Body Battery, stress, weight and VO2max (§5.6); the probe found no sleep, readiness, recovery time or training status endpoint.
 - **G6:** Show Strava gear, read-only: usage per shoe, and the runs that have no gear set, so they can be fixed on Strava (§5.7).
 
 ### Non-goals
@@ -255,18 +255,18 @@ A button group above the main chart chooses None, Resting HR, HRV or VO2max, dra
 
 ### 5.6 Wellness (Phase 3, planned)
 
-Garmin health data next to the runs, in three places: the run page, a Wellness page and Pace Trends. What exists depends on what the Personal API exposes, which W6 finds out before anything is built; what the API doesn't offer is cut from scope.
+Garmin health data next to the runs, in three places: the run page, a Wellness page and Pace Trends. The W6 probe (§7.1) found what the Personal API offers: resting HR, HRV, stress, Body Battery, weight and HR zones. **Cut because the API has no endpoint: sleep (duration, stages, score), training readiness, recovery time, training status and load, and VO2max by day** (VO2max still comes from the run summaries). Sleep missing is an owner decision (R10).
 
 Some of it needs no new endpoint, because the stored activity summaries already carry it (checked on a recent run): time in each of the five HR zones, aerobic and anaerobic training effect with its label, training load, Body Battery change, intensity minutes, VO2max, and running dynamics when the watch records them (ground contact time, vertical oscillation, stride length, vertical ratio).
 
 **HR zones**
 
-- Zone boundaries (bpm) and max HR live on the profile (`profiles.hr_zones`), read from the API when it exposes them. If it doesn't, zones are Garmin's default %max bands (50, 60, 70, 80 and 90% of the highest max HR recorded), and the pages say so. One small PORO (`HrZones`) turns a bpm into a zone and a zone into its bpm range, so the run page, the HR profile and the Phase 4 features agree.
+- Zone boundaries (bpm) and max HR live on the profile (`profiles.hr_zones`), read from `GET /biometric-service/heartRateZones/v2` (verified in W6: per-sport `zone1Floor` to `zone5Floor` and `maxHeartRateUsed`). If that call fails or has no entry, zones are Garmin's default %max bands (50, 60, 70, 80 and 90% of the highest max HR recorded), and the pages say so. One small PORO (`HrZones`) turns a bpm into a zone and a zone into its bpm range, so the run page, the HR profile and the Phase 4 features agree.
 
 **On the run page** (new sections after the elevation, HR and cadence charts)
 
 - **Heart rate zones and effort:** one stacked bar of time in zones 1 to 5 (minutes and percent, the bpm range under each label), then the training effect (aerobic and anaerobic, 0 to 5, with Garmin's label), training load, Body Battery change, intensity minutes, and a running dynamics row when recorded. Fields a run lacks are left out; a run without HR, and every pre-Garmin run, has no section. The HR chart in the profiles section also gets faint horizontal bands for the zones.
-- **Going in:** the wellness values of the run's local day: resting HR next to its 7-day average, last night's HRV (with its status when known), sleep duration and score, Body Battery at the start of the day, and training readiness and recovery time when the API has them. Values that don't exist for that day are left out; with none, the section is omitted.
+- **Going in:** the wellness values of the run's local day: resting HR next to its 7-day average, last night's HRV (with its status), Body Battery at wake time, and the day's average stress. Values that don't exist for that day are left out; with none, the section is omitted.
 
 **Wellness page (`/wellness`)**
 
@@ -274,13 +274,11 @@ Some of it needs no new endpoint, because the stored activity summaries already 
 - Charts, each shown only when its data exists:
   - **Resting HR:** daily dots with a 7-day average line.
   - **HRV:** nightly average line over Garmin's baseline band (low to high), with the status colour on each night.
-  - **Sleep:** duration per night as bars, the stage split in the tooltip, the score as a line.
   - **Body Battery:** daily high and low as a range bar.
   - **Stress:** daily average.
   - **Weight:** measurements as dots with a trend line.
   - **VO2max and VDOT:** Garmin's VO2max as a step line (from the run summaries) over the Pace Trends top-run VDOT line.
   - **Time in HR zones per week:** stacked bars (zones 1 to 5, minutes), from the run summaries.
-  - **Training readiness, status and load:** only if the probe finds them.
 - Missing days are gaps, not zeros. Before a device recorded a metric, its chart simply starts later.
 
 **Pace Trends overlay:** the button group above the main chart (None, Resting HR, HRV, VO2max) draws the chosen series on a secondary right-hand axis in a muted colour. It follows the window and adds a line to the tooltip; the regression, stats and predictions don't change.
@@ -443,20 +441,28 @@ All metric math lives in Ruby and is unit-tested. The only JS math is interactiv
 | `GET /activitylist-service/activities/search/activities?activityType=running&start&limit` | All run summaries (paged, page size 100) | 0 | Verified |
 | `GET /userprofile-service/userprofile/settings` | Profile settings | 0 | Verified |
 | `GET /download-service/files/activity/{id}` | Original file as a ZIP: one `.fit` (watch runs) or one `.tcx` (2017 bulk imports). Untrimmed, so FIT recordings are clipped (§6). | 2 | Verified |
-| `GET /biometric-service/heartRateZones` (or `/v2`) | HR zone boundaries and max HR | 3 | Unverified, W6 |
-| `GET /userprofile-service/socialProfile` | Display name, needed by some paths below | 3 | Unverified, W6 |
-| `GET /usersummary-service/usersummary/daily/{displayName}?calendarDate=` | Resting HR, stress, Body Battery, intensity minutes (one day) | 3 | Unverified, W6 |
-| `GET /usersummary-service/stats/stress/daily/{start}/{end}` | Stress (range) | 3 | Unverified, W6 |
-| `GET /wellness-service/wellness/dailyHeartRate/{displayName}?date=` | Resting HR | 3 | Unverified, W6 |
-| `GET /wellness-service/wellness/bodyBattery/reports/daily?startDate&endDate` | Body Battery | 3 | Unverified, W6 |
-| `GET /hrv-service/hrv/{date}` and `/hrv-service/hrv/daily/{from}/{to}` | HRV: nightly average, baseline band, status | 3 | Unverified, W6 |
-| `GET /sleep-service/sleep/dailySleepData?date=` | Sleep duration, stages, score | 3 | Unverified, W6 |
-| `GET /weight-service/weight/range/{start}/{end}?includeAll=true` | Weight | 3 | Unverified, W6 |
-| `GET /metrics-service/metrics/trainingreadiness/{date}` | Training readiness, recovery time | 3 | Unverified, W6 |
-| `GET /metrics-service/metrics/trainingstatus/daily/{date}` | Training status and load | 3 | Unverified, W6 |
-| `GET /metrics-service/metrics/maxmet/daily/{start}/{end}` | VO2max by day | 3 | Unverified, W6 |
+| `GET /biometric-service/heartRateZones/v2` | HR zone boundaries and max HR: an array with one entry per sport (`sport`, `zone1Floor` to `zone5Floor`, `maxHeartRateUsed`, `restingHeartRateUsed`, `lactateThresholdHeartRateUsed`, `trainingMethod`) | 3 | Verified (`/v2`; the bare path and `/all` are 404) |
+| `GET /userprofile-service/socialProfile` | Display name | 3 | Not available (404). Not needed: the paths below work without a display name, and the `{displayName}` forms are 404 |
+| `GET /usersummary-service/usersummary/daily?calendarDate=` | One day: `restingHeartRate`, `lastSevenDaysAvgRestingHeartRate`, `min/maxHeartRate`, `averageStressLevel`, `bodyBatteryHighestValue`, `bodyBatteryLowestValue`, `bodyBatteryAtWakeTime`, `bodyBatteryDuringSleep`, intensity minutes, steps, SpO2 and respiration | 3 | Verified (corrected path: without `/{displayName}`, which is 404). A day with no data returns 200 with null fields |
+| `GET /usersummary-service/stats/stress/daily/{start}/{end}` | Stress (range): array of `calendarDate` and `values` (`overallStressLevel` and the rest, low, medium and high durations) | 3 | Verified. `/wellness-service/wellness/dailyStress/{date}` is 404 |
+| `GET /wellness-service/wellness/dailyHeartRate?date=` | Resting HR, 7-day average and the day's heart rate samples | 3 | Verified (corrected path: without `/{displayName}`, which is 404). The daily summary above is the cheaper source |
+| `GET /wellness-service/wellness/bodyBattery/reports/daily?startDate&endDate` | Body Battery (range): per day `charged`, `drained`, the value series and activity events | 3 | Verified |
+| `GET /hrv-service/hrv/{date}` and `/hrv-service/hrv/daily/{from}/{to}` | HRV: `hrvSummary` (`lastNightAvg`, `weeklyAvg`, `lastNight5MinHigh`, `status`, `baseline` with `lowUpper`, `balancedLow`, `balancedUpper`) plus 5-minute readings; the range form returns `hrvSummaries` | 3 | Verified (both). A date with no data is 204 with an empty body |
+| `GET /sleep-service/sleep/dailySleepData?date=` | Sleep duration, stages, score | 3 | Not available (404; also `/wellness-service/wellness/dailySleepData` with and without `/{displayName}`, and `/sleep-service/stats/sleep/daily/{start}/{end}`) |
+| `GET /weight-service/weight/range/{start}/{end}?includeAll=true` | Weight: `dailyWeightSummaries` (one per weigh-in day), plus body fat, water, bone and muscle mass when the scale recorded them | 3 | Verified. `/weight-service/weight/dateRange` is 404 |
+| `GET /metrics-service/metrics/trainingreadiness/{date}` | Training readiness, recovery time | 3 | Not available (404) |
+| `GET /metrics-service/metrics/trainingstatus/daily/{date}` | Training status and load | 3 | Not available (404, and `/aggregated/{date}` too) |
+| `GET /metrics-service/metrics/maxmet/daily/{start}/{end}` | VO2max by day | 3 | Not available (404, and `/maxmet/latest/{date}` too). VO2max comes from the run summaries |
 
-The Phase 3 paths are Garmin Connect's web paths as best known. None has been tried against the Personal API, and the probe (W6) corrects them and fills the Status column with Verified, Not available, or the real path.
+The probe (`bin/rails garmin:probe`, W6, run on 27 Oct 2026) tried these paths against the real API with yesterday, a date a year ago and the first run's date. The Personal API takes no display name in the wellness paths: the `/{displayName}` forms are 404 and the name-less ones work. Dates with no data are a 200 with null fields (or a 204 for HRV, or an empty array for stress). Earliest data, found by bisecting (a day or window with data, not a gap-free guarantee):
+
+| Metric | Earliest data |
+|---|---|
+| Resting HR, stress, Body Battery | between mid-2017 and early 2018 |
+| Weight | mid-2017 |
+| HRV | late 2022 |
+
+The probe bisects with a few requests per metric, so each date is only good to a few months; the backfill stops a metric after several empty weeks (R11) and doesn't depend on them. The probe's output (statuses and JSON key shapes, no values) is in `/tmp/opencode/p5/probe.txt`.
 
 The Personal API has **no** time-series, splits, laps or weather endpoints. Everything per-second comes from the original file, or from Smashrun for the years before Garmin (§7.5), and weather comes from Open-Meteo. The activity summaries do carry, per run, the time in each HR zone, training effect, training load, Body Battery change, intensity minutes and running dynamics.
 
@@ -558,7 +564,7 @@ Index on `local_started_at`. All of history is about 2,900 rows. Aggregations lo
 ### Phase 3 additions (planned)
 
 - `profiles`: `hr_zones` (JSON: boundaries, max HR, and whether they came from Garmin or the default bands), `strava_scope` (string), `strava_gear_synced_at` (datetime), `wellness_synced_at` (datetime).
-- `wellness_days`: `date` (unique), `resting_hr`, `hrv_last_night`, `hrv_weekly_avg`, `hrv_baseline_low`, `hrv_baseline_high`, `hrv_status`, `sleep_s`, `sleep_score`, `body_battery_high`, `body_battery_low`, `stress_avg`, `weight_kg`, `training_readiness`, and `raw` (JSON per endpoint). The columns are finalised after the probe; a metric the API doesn't offer gets no column.
+- `wellness_days`: `date` (unique), `resting_hr`, `hrv_last_night`, `hrv_weekly_avg`, `hrv_baseline_low`, `hrv_baseline_high`, `hrv_status`, `body_battery_high`, `body_battery_low`, `stress_avg`, `weight_kg`, and `raw` (JSON per endpoint). Finalised by the W6 probe: sleep and training readiness have no endpoint, so they have no columns.
 - `gears`: `strava_id` (string, unique), `name`, `brand_name`, `model_name`, `retired` (boolean), `summary` (JSON, the raw Strava payload), `synced_at`.
 - `activities.strava_gear_id` (string, nullable, indexed): the Strava gear ID as read; matched to `gears.strava_id` by value, so activities can be read before their gear row exists.
 
@@ -638,7 +644,7 @@ One design system, defined once in helpers (`WidgetsHelper` for cards and type, 
 
 ## 11. Privacy and security
 
-- **Data sensitivity:** the app stores GPS tracks, which reveal home and routines, plus heart-rate data, and from Phase 3 health data (HRV, sleep, weight, Body Battery, stress). It is your own data, kept on your machine. Health values are never logged or printed, and test fixtures are synthetic.
+- **Data sensitivity:** the app stores GPS tracks, which reveal home and routines, plus heart-rate data, and from Phase 3 health data (HRV, weight, Body Battery, stress). It is your own data, kept on your machine. Health values are never logged or printed, and test fixtures are synthetic.
 - **Network exposure:** the container (port 9295) and the dev server (0.0.0.0:3000) are reachable on the LAN, and run.rekar.eu is served by Caddy on the Pi over Tailscale. There is no auth, so the tailnet and LAN are the boundary. run.rekar.eu is confirmed tailnet-only (2026-10-27). HTTP basic auth at Caddy stays an optional hardening (R12).
 - **Secrets:** `.env` is ignored by Rails' default `.gitignore` (`/.env*`) and is mode 600.
 - **Smashrun credentials:** `SMASHRUN_USERNAME` and `SMASHRUN_PASSWORD` grant full access to the Smashrun account. Never log them. The 12-week token is held only in memory.
@@ -724,7 +730,7 @@ Smashback's values, next to smashrun.com/miharekar (all time, km), as of 2026-10
 | R7 | Smashrun shutting down. | Its data is fetched once into stored originals (§7.5), so nothing depends on it afterwards. |
 | R8 | Garmin originals are untrimmed. | Clip FIT recordings to `started_at` and `timer_s` of recording time (§6). |
 | R9 | The Open-Meteo archive lags about 5 days. | Leave `weather` nil and retry on later syncs (§7.2). |
-| R10 | The Personal API may not expose some wellness data, and the Phase 3 paths are unverified guesses. | W6 probes first and the scope shrinks to what exists. The summary-based fields (HR zone times, training effect and load, Body Battery change) need no endpoint. If resting HR, HRV or sleep turn out to be missing, ask the owner whether to import Garmin's account data export instead (its file layout would be inspected first, as the Strava archive was). |
+| R10 | The Personal API may not expose some wellness data. **Resolved by W6: sleep, training readiness, recovery time, training status and load, and VO2max by day are not available; resting HR, HRV, stress, Body Battery, weight and HR zones are.** | The scope shrank to what exists. The summary-based fields (HR zone times, training effect and load, Body Battery change) need no endpoint. Sleep is missing: the owner decides whether to import Garmin's account data export instead (its file layout would be inspected first, as the Strava archive was). |
 | R11 | Per-day endpoints make the wellness backfill long (about 3,500 days per metric). | 1 request/s, resumable, newest first, run in the background. Stop a metric after several empty weeks, because older devices didn't record it. |
 | R12 | Health data will sit in an app with no login. | run.rekar.eu is confirmed tailnet-only (2026-10-27); keep it that way (basic auth at Caddy is optional hardening). Never log health values; synthetic fixtures. |
 | R13 | Strava gear needs `profile:read_all`, which the stored connection lacks, and the `retired` flag is not confirmed in the API. | A reconnect prompt, with gear features waiting for the grant. The raw gear payload is stored so `retired` can be derived later. Until it is known, show every gear as active. |
@@ -751,7 +757,7 @@ Work in this order. Items marked "parallel" touch different files and can run at
 
 ### Phase 3: Wellness and gear
 
-- [ ] **W6: Garmin wellness probe (spike, §7.1).** A read-only task, `bin/rails garmin:probe`, that tries each candidate endpoint for yesterday, a date a year ago and the first run's date, at ≤ 1 request/s (about 40 requests). It prints HTTP status, content type, top-level JSON keys with types and array lengths, and the earliest date with data per metric; never values. It writes nothing to the database, and its output goes to `/tmp/opencode/` at mode 600. The Status column in §7.1 is filled in with the real paths, and a short summary is written for the owner. Ask the owner only if resting HR, HRV or sleep is missing (R10). Parallel with W11.
+- [x] **W6: Garmin wellness probe (spike, §7.1).** A read-only task, `bin/rails garmin:probe`, that tries each candidate endpoint for yesterday, a date a year ago and the first run's date, at ≤ 1 request/s (about 60 requests). It prints HTTP status, content type, top-level JSON keys with types and array lengths, and the earliest date with data per metric; never values. It writes nothing to the database, and its output goes to `OUTPUT=` (default under the system tmpdir) at mode 600. The Status column in §7.1 is filled in with the real paths, and a short summary is written for the owner. Ask the owner only if resting HR, HRV or sleep is missing (R10). Parallel with W11.
 - [ ] **W7: wellness data and sync (§5.6, §7.2, §8).** `wellness_days` and the `profiles` columns, `Garmin::Client` methods for the verified endpoints, `Wellness::Sync` and `Wellness::SyncJob` (hourly), `bin/rails wellness:backfill`, `profiles.hr_zones` and the `HrZones` PORO with the default-band fallback. Done when: WebMock tests cover idempotency, the 3-day refresh and missing metrics, and a 30-day dry run on the dev database reports counts only. Depends on W6.
 - [ ] **W8: HR zones, effort and recovery on the run page (§5.6).** The zones and effort section from the stored summaries, the zone bands on the HR profile, and "Going in". Done when: controller tests cover each section being present or absent per data, a node test covers the zone bar maths, and the browser check covers a run with full data, one without HR and a pre-Garmin run. Depends on W7.
 - [ ] **W9: Wellness page (§5.6).** The nav item, the shared window and brush, the day cursor, and the charts the probe allows, with empty states. Done when the performance targets in §12 are met. Depends on W7. Parallel with W10.
@@ -767,4 +773,4 @@ Work in this order. Items marked "parallel" touch different files and can run at
 - [ ] **W16: Progress Towards Goal (§5.10).** `goals` with CRUD, the chart, and the Overview widgets. Parallel with W14 and W15.
 - [ ] **W17: final close-out.** Update this document and `AGENTS.md`, rebuild and deploy the container, and re-check the golden values.
 
-**Owner actions along the way:** decide what to do if W6 finds resting HR, HRV or sleep missing; click Reconnect Strava after the W11 deploy.
+**Owner actions along the way:** decide whether to import Garmin's data export for sleep, which W6 found missing (R10); click Reconnect Strava after the W11 deploy.

@@ -35,6 +35,10 @@ class Garmin::Client
     authorized_response(URI("#{BASE_URL}#{DOWNLOAD_PATH}/#{activity_id}")).body
   end
 
+  def probe(path)
+    unchecked_response(URI("#{BASE_URL}#{path}"))
+  end
+
   def inspect
     "#<#{self.class.name}>"
   end
@@ -48,14 +52,20 @@ class Garmin::Client
   end
 
   def authorized_response(uri)
+    response = unchecked_response(uri)
+
+    raise Error, "Garmin API responded #{response.code} for #{uri.path}" unless response.is_a?(Net::HTTPSuccess)
+
+    response
+  end
+
+  def unchecked_response(uri)
     response = request(Net::HTTP::Get, uri, "Authorization" => "Bearer #{token}")
 
     if response.code == "401"
       forget_token
       response = request(Net::HTTP::Get, uri, "Authorization" => "Bearer #{token}")
     end
-
-    raise Error, "Garmin API responded #{response.code} for #{uri.path}" unless response.is_a?(Net::HTTPSuccess)
 
     response
   end
