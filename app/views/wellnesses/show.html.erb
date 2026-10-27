@@ -1,0 +1,25 @@
+<%= tag.div data: (@trends.data? ? {controller: "wellness", wellness_payload_value: @trends.payload} : {}) do %>
+<%= page_header "Wellness", info: overview_info("Garmin health data next to your running: resting heart rate, heart rate variability, stress, Body Battery and weight from your watch, plus top-run VDOT and time in heart rate zones from your run summaries. Days Garmin has no value for are gaps, and a chart starts when your device began recording that metric. Drag the timeline to change the window, and hover a chart to mark the same day on all of them.") %>
+
+<% if @trends.data? %>
+  <div class="mt-6">
+    <div class="text-sm font-semibold tabular-nums" data-wellness-target="range"></div>
+    <div class="<%= WidgetsHelper::HINT %>">Pick a span or drag the timeline below to change the window.</div>
+    <div class="mt-2"><%= wellness_presets %></div>
+    <div data-wellness-target="timeline" class="mt-3 w-full"></div>
+  </div>
+  <div class="mt-4 space-y-4">
+    <% @trends.charts.each do |key| %>
+      <% title, info = WellnessesHelper::CHARTS.fetch(key) %>
+      <section class="<%= WidgetsHelper::CARD %>">
+        <h2 class="<%= WidgetsHelper::CARD_TITLE %>"><%= title %> <%= overview_info info %></h2>
+        <div class="mt-3 w-full" data-wellness-target="chart" data-chart="<%= key %>" data-label="<%= title %> chart"></div>
+      </section>
+    <% end %>
+  </div>
+<% else %>
+  <%= empty_state "No wellness data yet." do %>
+    The hourly wellness sync fills this in. To load the history now, run bin/rails wellness:backfill.
+  <% end %>
+<% end %>
+<% end %>

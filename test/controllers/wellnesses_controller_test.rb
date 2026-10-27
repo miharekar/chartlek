@@ -1,0 +1,36 @@
+require "test_helper"
+
+class WellnessesControllerTest < ActionDispatch::IntegrationTest
+  test "renders an empty state without wellness data" do
+    get wellness_path
+
+    assert_response :success
+    assert_select "[data-controller='wellness']", false
+    assert_select "p", /No wellness data yet/
+  end
+
+  test "renders the empty state when no column can make a chart" do
+    WellnessDay.create!(date: Date.new(2024, 3, 5), hrv_status: "BALANCED", body_battery_wake: 80)
+
+    get wellness_path
+
+    assert_response :success
+    assert_select "[data-controller='wellness']", false
+    assert_select "p", /No wellness data yet/
+  end
+
+  test "renders a card per chart that has data" do
+    WellnessDay.create!(date: Date.new(2024, 3, 5), resting_hr: 52, weight_kg: 70.5)
+
+    get wellness_path
+
+    assert_response :success
+    assert_select "[data-controller='wellness'][data-wellness-payload-value]"
+    assert_select "[data-wellness-target=chart]", count: 2
+    assert_select "[data-chart=rhr]"
+    assert_select "[data-chart=weight]"
+    assert_select "[data-chart=hrv]", false
+    assert_select "[role=group][aria-label=Window] button[data-action='wellness#preset'][aria-pressed]", count: 5
+    assert_select "nav a[href='/wellness']", "Wellness"
+  end
+end
