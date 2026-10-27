@@ -111,7 +111,7 @@ export default class extends Controller {
     this.brushGroup.select(".selection").attr("fill", "var(--chart-accent-highlight)").attr("fill-opacity", 0.2).attr("stroke", "var(--chart-accent-highlight)")
     this.brushGroup
       .on("mousemove", event => this.#move(event))
-      .on("mousedown.hover", hideTooltip, true)
+      .on("mousedown.hover", () => this.#hideOwn(), true)
       .on("mouseleave", () => this.#leave())
       .on("click", () => this.#open(this.hover))
 
@@ -323,14 +323,21 @@ export default class extends Controller {
     const [px, py] = pointer(event, this.stripSvg.node())
     this.hover = this.#hit(px, py)
     this.brushGroup.select(".overlay").style("cursor", this.hover == null ? "crosshair" : "pointer")
-    if (this.hover == null) return hideTooltip()
+    if (this.hover == null) return this.#hideOwn()
     showTooltip(this.hover === "current" ? this.#currentHtml() : this.#dotHtml(this.runsValue[this.hover]), event)
+    this.showing = true
     moveTooltip(event)
+  }
+
+  #hideOwn() {
+    if (!this.showing) return
+    this.showing = false
+    hideTooltip()
   }
 
   #leave() {
     this.hover = null
-    hideTooltip()
+    this.#hideOwn()
   }
 
   #open(target) {
