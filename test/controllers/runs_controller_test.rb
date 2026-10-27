@@ -210,6 +210,22 @@ class RunsControllerTest < ActionDispatch::IntegrationTest
     assert_select "dl[aria-label^='Estimated finish times']", false
   end
 
+  test "the performance dot is centred on its zone in the strip" do
+    best = run_at(Time.utc(2022, 1, 1, 7), distance_m: 5000, timer_s: 1200)
+    slow = run_at(Time.utc(2023, 5, 6, 7), distance_m: 5000, timer_s: 4000)
+
+    range = [slow.performance_zone - 1, 0].max..(best.performance_zone + 1)
+
+    {best => best.performance_zone, slow => slow.performance_zone}.each do |run, zone|
+      left = (zone - range.begin + 0.5) * 100.0 / range.size
+      get run_path(run)
+
+      dot = css_select("[role=img][aria-label^='Performance zone'] span.rounded-full").sole
+      assert_in_delta left, dot["style"][/left: ([\d.]+)%/, 1].to_f, 1e-6
+      assert_includes dot["class"], "-translate-y-1/2"
+    end
+  end
+
   test "without a VDOT the performance card shows dashes and no strip" do
     run = run_at(Time.utc(2023, 5, 6, 7), distance_m: 300, timer_s: 100)
 
