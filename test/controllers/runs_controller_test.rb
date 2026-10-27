@@ -76,6 +76,26 @@ class RunsControllerTest < ActionDispatch::IntegrationTest
     assert_select "h2", text: "Fastest runs at this distance"
   end
 
+  test "show renders the workout card only for workouts and the list tags them" do
+    steps = [{"splitType" => "INTERVAL_WARMUP", "distance" => 2000, "duration" => 600}, {"splitType" => "INTERVAL_ACTIVE", "noOfSplits" => 4, "distance" => 4000, "duration" => 960}, {"splitType" => "INTERVAL_REST", "distance" => 0, "duration" => 90}]
+    workout = run_at(Time.utc(2023, 5, 6, 7), summary: {"splitSummaries" => steps})
+    plain = run_at(Time.utc(2023, 5, 7, 7), summary: {"splitSummaries" => [{"splitType" => "INTERVAL_ACTIVE", "noOfSplits" => 1}]})
+
+    get run_path(workout)
+
+    assert_select "h2", text: /Workout/
+    assert_select "td", text: "Active ×4"
+    assert_select "td", text: "4:00 /km"
+
+    get run_path(plain)
+
+    assert_select "h2", text: /Workout/, count: 0
+
+    get "/runs", params: {year: 2023}
+
+    assert_select "span", text: "workout", count: 1
+  end
+
   test "show renders weather, calories, track extents and navigation" do
     earlier = run_at(Time.utc(2023, 5, 5, 7))
     run = run_at(Time.utc(2023, 5, 6, 7), name: "Full", calories: 650, avg_hr: 150, max_hr: 190, avg_cadence: 170, max_cadence: 185, location_name: "Ljubljana", elapsed_s: 3100, moving_s: 3000, pace_variability: 6.5, elevation_gain_m: 40, elevation_loss_m: 38, weather: {"temperature" => 14.2, "humidity" => 60, "wind" => 8, "precipitation" => 0})

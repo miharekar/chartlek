@@ -63,7 +63,7 @@ The scatter shows the selection as amber dots (the rest fade) and moves the aver
 
 ### Runs
 
-Every run by year and month, sortable by column. Click a gear tag (in the list or the run header) to list every run with that gear; click a "No gear" chip to list the runs Strava has no gear for, with a Suggested column of the shoes you most likely wore. Rows carry gear tags and race, PR and treadmill chips. The **PR** chip marks runs Garmin flagged as a personal record.
+Every run by year and month, sortable by column. Click a gear tag (in the list or the run header) to list every run with that gear; click a "No gear" chip to list the runs Strava has no gear for, with a Suggested column of the shoes you most likely wore. Rows carry gear tags and race, PR, workout and treadmill chips. The **PR** chip marks runs Garmin flagged as a personal record; **workout** marks runs with a warm-up, recoveries, a cool-down or repeated active steps.
 
 ![Runs list](docs/screenshots/runs.png)
 
@@ -78,6 +78,8 @@ Everything about one run.
 **Notables.** Pills for what is notable about the run, compared with your earlier runs:
 - longest run, fastest run for a similar distance (within 10%), most elevation gain, hottest and coldest run, earliest and latest start. These name the longest window they hold for: the last 1, 3, 6 or 12 months, or ever;
 - run during sunrise or sunset, run on a given moon phase, first run at a new place, first run of the year, extends your longest streak, passed N thousand km lifetime. These have no window.
+
+**Workout.** Runs Garmin recorded as a structured workout get a card with the warm-up, active, recovery, rest and cool-down totals (distance, time, pace). Garmin gives totals per step type, not per rep.
 
 **Shape of the run.**
 - **Pace variability wheel:** one wedge per 100 m clockwise from the start; the longer the wedge, the further that stretch was from your average speed, faster or slower. The number is the average gap as a percentage of average speed. Hover a wedge to see which stretch it is.

@@ -9,6 +9,9 @@
   <% end %>
   <%= render "profiles", track: @run.track, zones: zones %>
 <% end %>
+<% if @run.workout? %>
+  <%= render "workout", run: @run %>
+<% end %>
 <%= render "physiology", run: @run, zones: zones %>
 <%= render "fastest", run: @run %>
 <%= render "analyze", run: @run %>

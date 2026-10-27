@@ -25,7 +25,7 @@ module Activity::Browsing
       expression = SORTS.fetch(sort, SORTS["date"])
       direction = (dir == "asc") ? "ASC" : "DESC"
 
-      scope.select(*(column_names - %w[summary splits weather bands hr_zones]), "json_extract(summary, '$.pr') AS garmin_pr").order(Arel.sql("#{expression} #{direction} NULLS LAST"), id: :desc)
+      scope.select(*(column_names - %w[summary splits weather bands hr_zones]), "json_extract(summary, '$.pr') AS garmin_pr", "#{Activity::WORKOUT_SQL} AS garmin_workout").order(Arel.sql("#{expression} #{direction} NULLS LAST"), id: :desc)
     end
 
     def years_with_runs

@@ -30,6 +30,7 @@ module WidgetsHelper
   CHIPS = {
     race: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
     pr: "bg-lime-100 text-lime-900 dark:bg-lime-900/30 dark:text-lime-300",
+    workout: "bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300",
     treadmill: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300",
     estimated: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
     notable: "bg-lime-100 text-lime-900 dark:bg-lime-900/30 dark:text-lime-300",

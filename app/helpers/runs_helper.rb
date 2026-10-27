@@ -1,6 +1,7 @@
 module RunsHelper
   COLUMNS = [%w[Date date left], %w[Name name left], %w[km km right], %w[Time time right], %w[Pace pace right], %w[HR hr right], %w[Elev elevation right], %w[VDOT vdot right]].freeze
   GEAR_ICON = '<path d="M1.75 12.25V9.5c0-.5.3-.8.8-.9L5.25 8l1.25-2.75 1.5 1.1c.9.7 1.9 1.4 3.4 1.9 2.1.6 3.1 1.1 3.1 2.5v1.5Z"/><path d="M1.75 10.5h12.5M6.75 8.25l1-1.5"/>'.html_safe.freeze
+  WORKOUT_LABELS = {"INTERVAL_WARMUP" => "Warm-up", "INTERVAL_ACTIVE" => "Active", "INTERVAL_RECOVERY" => "Recovery", "INTERVAL_REST" => "Rest", "INTERVAL_COOLDOWN" => "Cool-down"}.freeze
   DAY = "inline-flex size-8 items-center justify-center rounded-md text-sm tabular-nums"
   DAY_STATES = {
     selected: "font-medium #{ControlsHelper::SELECTED}",
@@ -41,6 +42,10 @@ module RunsHelper
     end
   end
 
+  def workout_step_label(step)
+    [WORKOUT_LABELS.fetch(step[:type]), ("×#{step[:count]}" if step[:count])].compact.join(" ")
+  end
+
   def run_calendar_day(day, current)
     date = day[:date]
     weekend = date.saturday? || date.sunday?
@@ -65,6 +70,7 @@ module RunsHelper
     safe_join([
       (chip("race", :race) if run.race),
       (chip("PR", :pr) if run.garmin_pr?),
+      (chip("workout", :workout) if run.workout?),
       (chip("treadmill", :treadmill) if run.indoor)
     ].compact, " ")
   end

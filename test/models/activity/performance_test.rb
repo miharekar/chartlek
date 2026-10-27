@@ -102,4 +102,41 @@ class Activity::PerformanceTest < ActiveSupport::TestCase
     assert Activity.listed.find(activity.id).garmin_pr?
     assert_not Activity.listed.find(create(:activity, summary: {"pr" => false}).id).garmin_pr?
   end
+
+  def split(type, count: nil, distance: 1000, duration: 300)
+    {"splitType" => type, "noOfSplits" => count, "distance" => distance, "duration" => duration}.compact
+  end
+
+  test "workout flag and splits tell structured runs from plain ones" do
+    plain = build(:activity, summary: {"splitSummaries" => [split("INTERVAL_ACTIVE", count: 1, distance: 10_000, duration: 3000), split("RWD_RUN")]})
+    structured = build(:activity, summary: {"splitSummaries" => [split("INTERVAL_COOLDOWN", duration: 600), split("INTERVAL_REST", distance: 0, duration: 120), split("INTERVAL_ACTIVE", count: 8, distance: 4000, duration: 960), split("INTERVAL_WARMUP", duration: 500), split("INTERVAL_RECOVERY", count: 7, distance: 2000, duration: 900)]})
+    old = build(:activity, summary: {"splitSummaries" => [split("INTERVAL_WARMUP"), split("INTERVAL_ACTIVE", distance: 8000, duration: 2400), split("INTERVAL_COOLDOWN")]})
+    reps = build(:activity, summary: {"splitSummaries" => [split("INTERVAL_ACTIVE", count: 5, distance: 5000, duration: 1500)]})
+
+    assert_not plain.workout?
+    assert_nil plain.workout_splits
+    assert_not build(:activity, summary: nil).workout?
+    assert_equal %w[INTERVAL_WARMUP INTERVAL_ACTIVE INTERVAL_RECOVERY INTERVAL_REST INTERVAL_COOLDOWN], structured.workout_splits.pluck(:type)
+    assert_equal [nil, 8, 7, nil, nil], structured.workout_splits.pluck(:count)
+    assert_equal [500.0, 240.0, 450.0, nil, 600.0], structured.workout_splits.pluck(:pace)
+    assert old.workout?
+    assert_equal [nil, nil, nil], old.workout_splits.pluck(:count)
+    assert reps.workout?
+    assert_equal [5], reps.workout_splits.pluck(:count)
+  end
+
+  test "listed workout flag matches the summary" do
+    plain = create(:activity, summary: {"splitSummaries" => [split("INTERVAL_ACTIVE", count: 1)]})
+    structured = create(:activity, summary: {"splitSummaries" => [split("INTERVAL_WARMUP"), split("INTERVAL_ACTIVE")]})
+    reps = create(:activity, summary: {"splitSummaries" => [split("INTERVAL_ACTIVE", count: 3)]})
+    bare = create(:activity, summary: nil)
+
+    listed = Activity.listed.index_by(&:id)
+
+    assert_not listed[plain.id].workout?
+    assert listed[structured.id].workout?
+    assert listed[reps.id].workout?
+    assert_not listed[bare.id].workout?
+    assert_not listed[structured.id].has_attribute?(:summary)
+  end
 end

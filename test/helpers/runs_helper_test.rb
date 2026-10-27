@@ -20,4 +20,10 @@ class RunsHelperTest < ActionView::TestCase
 
     assert_match(/race.*PR.*treadmill/m, tags)
   end
+
+  test "tags show a workout chip" do
+    workout = build(:activity, summary: {"splitSummaries" => [{"splitType" => "INTERVAL_WARMUP"}]})
+
+    assert_match(/workout/, run_tags(workout))
+  end
 end
