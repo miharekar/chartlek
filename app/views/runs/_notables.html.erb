@@ -1,11 +1,8 @@
 <% notables = Notables.for(run, run.earlier_runs) %>
 <% if notables.any? %>
-  <section class="mt-4 <%= WidgetsHelper::CARD %>">
-    <h2 class="<%= WidgetsHelper::CARD_TITLE %>">Notables</h2>
-    <ul class="mt-3 list-inside list-disc space-y-1 text-sm text-zinc-700 dark:text-zinc-300">
-      <% notables.each do |notable| %>
-        <li><%= notable %></li>
-      <% end %>
-    </ul>
-  </section>
+  <ul class="mt-4 flex flex-wrap gap-2" aria-label="Notables">
+    <% notables.each do |notable| %>
+      <li><%= chip(notable, :notable) %></li>
+    <% end %>
+  </ul>
 <% end %>

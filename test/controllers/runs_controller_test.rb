@@ -71,7 +71,8 @@ class RunsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "h1", text: /Bare/
     assert_select "a[href=?]", "https://connect.garmin.com/app/activity/#{run.external_id}"
-    assert_select "section h2", text: "Notables"
+    assert_select "ul[aria-label=Notables] li span", minimum: 1
+    assert_select "h2", text: "Notables", count: 0
     assert_select "h2", text: "Fastest runs at this distance"
   end
 

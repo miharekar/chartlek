@@ -30,6 +30,7 @@ module WidgetsHelper
   CHIPS = {
     race: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
     treadmill: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300",
+    notable: "bg-lime-100 text-lime-900 dark:bg-lime-900/30 dark:text-lime-300",
     gear: "bg-zinc-100 text-zinc-600 hover:text-lime-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:text-[#9CFF44]",
     no_gear: "bg-amber-100 text-amber-800 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:hover:bg-amber-900/70"
   }.freeze
