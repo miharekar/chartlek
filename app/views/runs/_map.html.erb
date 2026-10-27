@@ -2,7 +2,10 @@
 <% token = ENV["MAPBOX_TOKEN"].to_s %>
 <% if route.size > 1 && token.start_with?("pk.") %>
   <section class="mt-4 <%= WidgetsHelper::CARD %>">
-    <h2 class="<%= WidgetsHelper::CARD_TITLE %>">Route</h2>
+    <div class="<%= WidgetsHelper::CARD_HEADER %>">
+      <h2 class="<%= WidgetsHelper::CARD_TITLE %>">Route</h2>
+      <%= action_button "Open Pro Map", run_map_path(run) %>
+    </div>
     <div class="isolate mt-3 h-80 overflow-hidden rounded-lg sm:h-[600px]" data-controller="run-map" data-run-map-route-value="<%= route.to_json %>" data-run-map-distances-value="<%= track.route_distances.to_json %>" data-run-map-token-value="<%= token %>"></div>
   </section>
 <% end %>

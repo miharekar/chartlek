@@ -5,7 +5,9 @@ Rails.application.routes.draw do
 
   resource :overview, only: :show
   get "overview/:year(/:month)", to: "overviews#show", as: :overview_period, constraints: {year: /\d{4}/, month: /0?[1-9]|1[0-2]/}
-  resources :runs, only: %i[index show]
+  resources :runs, only: %i[index show] do
+    resource :map, only: :show
+  end
   resource :pace_trend, only: :show
   resource :pr_progress, only: :show
   resource :wellness, only: :show

@@ -18,6 +18,14 @@ class Track < ApplicationRecord
     end
   end
 
+  def efforts
+    Efforts.new(data).all
+  end
+
+  def mappable?
+    route.size > 1
+  end
+
   def route
     data.fetch("lng", []).zip(data.fetch("lat", [])).reject { it.include?(nil) }
   end

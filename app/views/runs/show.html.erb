@@ -3,7 +3,7 @@
 <%= render "notables", run: @run %>
 <%= render "tiles", run: @run %>
 <% if @run.track %>
-  <%= render "map", track: @run.track %>
+  <%= render "map", run: @run, track: @run.track %>
   <% if @run.splits.present? %>
     <%= render "speed", run: @run, track: @run.track %>
   <% end %>

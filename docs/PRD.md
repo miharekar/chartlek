@@ -303,21 +303,21 @@ Strava gear, read-only (§2). Modelled on the Gear page of the owner's Dreeve in
   - the run header has a gear line (sneaker icon and the gear name linking to that gear's filtered list, or an amber "No gear" link to `/runs?gear=none`) under the date and above the weather;
   - runs without a Strava link show neither, since their gear is unknown rather than unset.
 
-### 5.8 Pro Map (Phase 4, planned)
+### 5.8 Pro Map (Phase 4, built, W14)
 
-A full-page view at `/runs/:id/map`, opened from the run page's route map ("Open Pro Map").
+A full-page view at `/runs/:id/map`, opened from the run page's route map ("Open Pro Map"). Runs without a GPS route (or without the public Mapbox token) have no button, and the URL redirects to the run page.
 
 - **Route coloring:**
-  - The route is split into segments and colored by the selected metric:
-    - **Pace:** the 37 pace zones (§6) in the shared colour ramp, from walking (dark red) to "zoom" (white), fixed across all runs so that improvement is visible.
-    - **HR:** your HR zones (§5.6).
-    - **Grade:** −10% to +10%.
-    - **Cadence:** cadence ranges.
-  - Map tiles follow the chosen theme (the OS under System).
-- **Distribution bars** under the map, using Smashrun's click cycle: 1× selects only that bucket, 2× that bucket and above, 3× that bucket and below, 4× resets. The legend shows distance, duration, average pace, HR and cadence for the selection.
-- **Fastest segments:** 250 m, 400 m, 1 km, 5 km, 10 km, half, … up to the run's length, each with pace and VDOT. Clicking one isolates it on the map and updates the stats.
-- **Splits** per km for pace, elevation, HR or cadence, following the current metric. Clicking a split isolates it.
-- **Change-in-pace graph** under the map. Hovering another metric's filter overlays that metric on a secondary axis.
+  - The route is split into segments and colored by the selected metric (a button group; metrics a run lacks are left out):
+    - **Pace:** the 37 pace zones (§6) in the shared colour ramp, from walking (dark red) to "zoom" (white), fixed across all runs so that improvement is visible. Needs the run's splits, so rebuilt-distance runs lack it.
+    - **HR:** your HR zones (§5.6), `--hr-zone-N`.
+    - **Grade:** −10% to +10% in 2% buckets (the outer ones take anything beyond), from altitude over 200 m windows.
+    - **Cadence:** under 150, then 10 spm ranges up to 190+.
+  - Map tiles follow the chosen theme (the OS under System), with the terrain layers of §5.5.
+- **Distribution bars** under the map, one per bucket of the current metric (time share), using Smashrun's click cycle: 1× selects only that bucket, 2× that bucket and above, 3× that bucket and below, 4× resets. The selection stays bright on the map and the rest dims. The legend shows distance, duration, average pace, HR and cadence for the selection.
+- **Fastest segments:** 250 m, 400 m, 1 km, 5 km, 10 km, half marathon and marathon, up to the run's length, each with time, pace and VDOT (none under 400 m). They are computed on the fly from the stored track (`Track::Efforts`), not stored. The track keeps at most 2,000 points, so on long runs a segment's start, end and time are approximate (the ⓘ says so). Clicking one isolates it on the map and updates the stats; clicking again clears it.
+- **Splits** per km, showing the current metric's column (pace, HR, elevation or cadence). Clicking a split isolates it.
+- **Change-in-pace graph** under the map (pace per 100 m). Hovering a metric button overlays that metric on a secondary axis, and hovering the graph moves a marker on the map through the shared run cursor.
 
 ### 5.9 Training Bands (Phase 4, built, W15)
 
@@ -589,7 +589,6 @@ Index on `local_started_at`. All of history is about 2,900 rows. Aggregations lo
 
 - `activities.bands` (built, W15): JSON `{"pace": [37 seconds], "hr": [5], "grade": [7]}` of whole seconds per pace zone, HR zone (zone 1 first) and grade bucket (steepest descent first), computed from the stored track (§5.9). An array whose total is 0 (no HR, no altitude) is nil, and the whole column is nil for rebuilt distances and runs without a track. HR bands use the zones in force when they were computed.
 - `goals`: `period` (month or year), `starts_on`, `distance_m`.
-- `efforts` (fastest segments for the Pro Map).
 
 ### Singleton `profile`
 
@@ -622,7 +621,7 @@ Garmin profile settings (JSON), HR zones (Phase 3), `synced_at`, `sync_started_a
 - **Routes:** REST resources only:
   - Built: `resource :overview` (with `:year`/`:month`), `resource :pace_trend`, `resource :pr_progress`, `resource :wellness` (show, with `from` and `to`), `resources :runs` (index and show), `resource :sync` (`create` = Sync now), `resource :theme` (`update`), `resource :strava_connection` and the OAuth callback.
   - Phase 3: `resources :gears` (index, served at `/gear`), `resource :gear_sync` (`create` = Refresh from Strava), and a `gear` filter param on `/runs`.
-  - Phase 4: `runs/:run_id/map` (`resource :map`, show), `resource :training_bands` (show, built), `resources :goals`.
+  - Phase 4: `runs/:run_id/map` (`resource :map`, show, built), `resource :training_bands` (show, built), `resources :goals`.
 - **Charts:**
   - One Stimulus controller per chart type (kebab-case files in `app/javascript/controllers`): `period-bars`, `trailing-line`, `pace-scatter`, `heatmap`, `streaks`, `pace-trends`, `pr-progress`, `run-speed`, `run-profiles`, `run-map`, `wellness`, `training-bands`, `pace-variability`, `elevation-profile`, `rank-distribution`, `analyze-run`, `day-tip`, `info`, and so on.
   - The server renders chart data as JSON into Stimulus values, so no JSON endpoints are needed.
@@ -784,7 +783,7 @@ Work in this order. Items marked "parallel" touch different files and can run at
 
 ### Phase 4: Pro analytics
 
-- [ ] **W14: Pro Map (§5.8).** Route colouring from the pace zones and HR zones, distribution bars with the click cycle, fastest segments (`efforts`), splits, and the change-in-pace graph. Depends on W1 and W8. Parallel with W15 and W16.
+- [x] **W14: Pro Map (§5.8).** Route colouring from the pace zones and HR zones, distribution bars with the click cycle, fastest segments (computed by `Track::Efforts`, no table), splits, and the change-in-pace graph. Depends on W1 and W8. Parallel with W15 and W16.
 - [x] **W15: Training Bands (§5.9).** `activities.bands`, computed in `process_original` and backfilled from the stored tracks with `activities:bands`, and the page. Depends on W8. Parallel with W14 and W16.
 - [ ] **W16: Progress Towards Goal (§5.10).** `goals` with CRUD, the chart, and the Overview widgets. Parallel with W14 and W15.
 - [ ] **W17: final close-out.** Update this document and `AGENTS.md`, rebuild and deploy the container, and re-check the golden values.
