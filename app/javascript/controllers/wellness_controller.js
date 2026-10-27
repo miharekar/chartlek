@@ -80,8 +80,8 @@ const CHARTS = {
   sleep: {
     unit: "hours",
     secondary: { label: "Score", domain: [0, 100] },
-    layers: [{ stroke: "none", fill: "var(--chart-accent-low)", "fill-opacity": 0.6 }, ...STAGES.map(([, , fill]) => ({ stroke: "none", fill })), { fill: "none", stroke: "var(--chart-highlight)", "stroke-width": 1.5 }, { ...DOTS, stroke: "var(--chart-highlight)", "stroke-width": 4 }],
-    domain: ({ columns }) => [0, max(columns.sleep, (_, index) => sleepTotal(columns, index) ?? 0) || 1],
+    layers: [{ stroke: "none", fill: "var(--chart-accent-low)", "fill-opacity": 0.6 }, ...STAGES.map(([, , fill]) => ({ stroke: "none", fill })), { fill: "none", stroke: "var(--chart-axis)", "stroke-width": 1.5, "stroke-dasharray": "4 3" }, { fill: "none", stroke: "var(--chart-highlight)", "stroke-width": 1.5 }, { ...DOTS, stroke: "var(--chart-highlight)", "stroke-width": 4 }],
+    domain: ({ columns }) => [0, max(columns.sleep, (_, index) => Math.max(sleepTotal(columns, index) ?? 0, hours(columns.sleep_need?.[index]) ?? 0)) || 1],
     paths: (c, view) => {
       const { columns } = c
       const width = Math.max(1, view.x(view.start + DAY_MS) - view.x(view.start) - 0.5)
@@ -92,16 +92,17 @@ const CHARTS = {
         const from = values.slice(0, stage).reduce((sum, value) => sum + value, 0)
         return values[stage] > 0 ? bar(view, index, from, from + values[stage], width) : ""
       }).join(""))
+      const need = columns.sleep_need
       const score = columns.sleep_score
       const scoreView = { ...view, y: view.y2 }
-      return [unstaged, ...staged, score ? linePath(score, scoreView) : null, score ? dotPath(score, scoreView) : null]
+      return [unstaged, ...staged, need ? linePath(need.map(hours), view) : null, score ? linePath(score, scoreView) : null, score ? dotPath(score, scoreView) : null]
     },
     rows: (c, index) => {
       const { columns } = c
       const staged = hasStages(columns, index)
       const seconds = key => columns[key]?.[index]
       const duration = key => (seconds(key) == null ? null : formatDuration(seconds(key)))
-      return [["Sleep", duration("sleep")], ...(staged ? [...STAGES.map(([key, label]) => [label, duration(key)]), ["Awake", duration("sleep_awake")]] : []), ["Score", columns.sleep_score?.[index]], ["Average heart rate", columns.sleep_hr?.[index] == null ? null : `${Math.round(columns.sleep_hr[index])} bpm`], ["Average stress", columns.sleep_stress?.[index] == null ? null : Math.round(columns.sleep_stress[index])]]
+      return [["Sleep", duration("sleep")], ["Need", duration("sleep_need")], ...(staged ? [...STAGES.map(([key, label]) => [label, duration(key)]), ["Awake", duration("sleep_awake")]] : []), ["Score", columns.sleep_score?.[index]], ["Average heart rate", columns.sleep_hr?.[index] == null ? null : `${Math.round(columns.sleep_hr[index])} bpm`], ["Average stress", columns.sleep_stress?.[index] == null ? null : Math.round(columns.sleep_stress[index])]]
     }
   },
   stress: {

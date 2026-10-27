@@ -40,6 +40,22 @@ class Wellness::TrendsTest < ActiveSupport::TestCase
     assert_equal [27_000, nil, 25_000], trends.overlay[:sleep]
   end
 
+  test "sleep need is read from the raw payload in seconds and a night without it is a gap" do
+    WellnessDay.create!(date: Date.new(2024, 3, 1), sleep_s: 27_000, raw: {"sleep" => {"sleepNeed" => {"actual" => 480, "baseline" => 450}}})
+    WellnessDay.create!(date: Date.new(2024, 3, 2), sleep_s: 25_000, raw: {"sleep" => {}})
+    WellnessDay.create!(date: Date.new(2024, 3, 3), sleep_s: 26_000, raw: {"sleep" => {"sleepNeed" => {"actual" => 495}}})
+
+    trends = Wellness::Trends.new
+
+    assert_equal [28_800, nil, 29_700], trends.payload[:columns][:sleep_need]
+  end
+
+  test "sleep need is left out when no night has it" do
+    WellnessDay.create!(date: Date.new(2024, 3, 1), sleep_s: 27_000)
+
+    assert_not Wellness::Trends.new.payload[:columns].key?(:sleep_need)
+  end
+
   test "the window defaults to the last year and follows from and to" do
     WellnessDay.create!(date: Date.new(2020, 1, 1), resting_hr: 50)
     WellnessDay.create!(date: Date.new(2024, 3, 5), resting_hr: 52)

@@ -232,7 +232,7 @@ The stored activity summaries already carry, per run: time in each HR zone, aero
 - Charts, one card each, shown only when their data exists:
   - **Resting HR:** daily dots with the 7-day average line (§5).
   - **HRV:** the nightly average as a thin line, one dot per night coloured by Garmin's status (balanced accent, unbalanced amber, low and poor red, else muted), over the baseline band.
-  - **Sleep:** one bar per night stacked by stage (deep, light, REM; the bar is the time asleep, awake time is in the tooltip) with Garmin's sleep score as a line on a right-hand 0 to 100 axis. A night without stages is one unstacked bar. A night belongs to its wake-up date. The tooltip adds average heart rate and stress during sleep.
+  - **Sleep:** one bar per night stacked by stage (deep, light, REM; the bar is the time asleep, awake time is in the tooltip) with Garmin's sleep score as a line on a right-hand 0 to 100 axis. A night without stages is one unstacked bar. A dashed line on the hours axis is Garmin's sleep need for the night (`raw["sleep"]["sleepNeed"]["actual"]` in minutes, read in SQL and sent as seconds, from 2024; a missing night is a gap, and the y domain includes it). A night belongs to its wake-up date. The tooltip adds the need, average heart rate and stress during sleep.
   - **Body Battery:** a bar per day from its low to its high, with the value at wake as an amber mark.
   - **Stress:** the daily average as dots and a thin line.
   - **Weight:** measurements as dots with the 30-day centred moving average as the line (§5).

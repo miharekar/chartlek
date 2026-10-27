@@ -18,7 +18,8 @@ class Wellness::Trends
     sleep_awake: :sleep_awake_s,
     sleep_score: :sleep_score,
     sleep_hr: :sleep_hr_avg,
-    sleep_stress: :sleep_stress_avg
+    sleep_stress: :sleep_stress_avg,
+    sleep_need: Arel.sql("json_extract(raw, '$.sleep.sleepNeed.actual') * 60")
   }.freeze
   WEEK = Arel.sql("date(local_started_at, 'weekday 0', '-6 days')")
   ZONE_SECONDS = [

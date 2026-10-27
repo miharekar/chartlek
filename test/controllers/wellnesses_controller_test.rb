@@ -40,8 +40,9 @@ class WellnessesControllerTest < ActionDispatch::IntegrationTest
     get wellness_path
     assert_select "[data-chart=sleep]", false
 
-    WellnessDay.create!(date: Date.new(2024, 3, 6), sleep_s: 26_000, sleep_score: 80)
+    WellnessDay.create!(date: Date.new(2024, 3, 6), sleep_s: 26_000, sleep_score: 80, raw: {"sleep" => {"sleepNeed" => {"actual" => 480}}})
     get wellness_path
     assert_select "[data-chart=sleep]"
+    assert_includes response.body, "sleep_need"
   end
 end

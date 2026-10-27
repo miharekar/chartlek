@@ -119,6 +119,7 @@ Development URL: <http://localhost:3000>
   - A day is found first, otherwise created, rescuing the unique-date conflict to use the winner's row, so a refresh and a backfill racing on one date update the same row.
   - `Garmin::Client#get` returns nil for an empty body (HRV 204). Weight arrives in grams. A night with no values or no date is skipped; `sleepTimeSeconds` 0 is stored as missing and all four stage values are dropped when deep, light and REM are all 0. The stress and Body Battery range endpoints are not called.
 - Wellness page: the payload is dense (`null` for missing days, all-null series left out), so lines break at gaps. The right margin is 44 px on every chart so the shared x scale and the day cursor line up; keep it when adding a chart. A spec with `secondary` (Sleep's score) gets a second y scale.
+- `Wellness::Trends` reads `sleep_need` (seconds) from `raw["sleep"]["sleepNeed"]["actual"]` (minutes) with a `json_extract` entry in `SERIES`, inside the one `pluck`; no column.
 - Pace Trends overlay: `overlay` (`rhr`, `hrv`, `sleep`) must stay in `PaceTrendsHelper::CARRIED_PARAMS` and `syncUrl` (dropped when None); the series are in the payload so switching is client-side; `this.margin` widens the right side only when overlays exist.
 
 ### Training Bands

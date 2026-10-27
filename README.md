@@ -132,7 +132,7 @@ Garmin health data for your whole history, on one shared timeline and one hover 
 
 - **Resting heart rate:** daily dots with a 7-day average.
 - **Heart rate variability:** nightly HRV over Garmin's baseline band, each dot coloured by Garmin's status for that night (balanced, unbalanced, low or poor).
-- **Sleep:** hours asleep stacked as deep, light and REM, with the sleep score on a second axis.
+- **Sleep:** hours asleep stacked as deep, light and REM, with the sleep score on a second axis and a dashed line for Garmin's sleep need (from 2024).
 - **Body Battery:** the day's range from lowest to highest.
 - **Stress:** the daily average.
 - **Weight:** weigh-ins with a 30-day trend.
