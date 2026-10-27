@@ -301,5 +301,20 @@ class RunsControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-controller=analyze-run][data-analyze-run-current-value*='\"race\":true']"
     assert_select "[data-controller=analyze-run][data-analyze-run-current-value*='\"km\":8.0']"
     assert_select "p", text: /This run.*Average.*Previous runs/m
+    assert_select "h2", text: /Runs in the prior 90 days/
+    assert_select "[role=group][aria-label=Metric] button[data-action='analyze-run#metric']", count: 4
+    assert_select "button[value=km][aria-pressed=true]", "Distance"
+    assert_select "select", false
+    assert_select "[data-analyze-run-target=strip]"
+    assert_select "[data-analyze-run-target=timeline]"
+  end
+
+  test "the analyze card says so when there are no runs in the window" do
+    run = run_at(Time.utc(2023, 5, 6, 7))
+
+    get run_path(run)
+
+    assert_select "p", text: "No runs in the 90 days before this one."
+    assert_select "[data-controller=analyze-run]", false
   end
 end

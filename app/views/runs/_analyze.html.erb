@@ -1,28 +1,26 @@
 <% runs = run.prior_training %>
 <section class="mt-4 <%= WidgetsHelper::CARD %>" <%= tag.attributes(data: (runs.any? ? {controller: "analyze-run", analyze_run_runs_value: runs, analyze_run_from_value: run.local_started_at.beginning_of_day.to_i * 1000 - Activity::TRAINING_WINDOW * 86_400_000, analyze_run_to_value: run.local_started_at.to_i * 1000, analyze_run_current_value: run.training_point.merge(race: run.race)} : {})) %>>
-  <h2 class="flex items-center gap-1.5 <%= WidgetsHelper::CARD_TITLE %>">
-    Training in the prior <%= Activity::TRAINING_WINDOW %> days
-    <%= overview_info "Runs in the 90 days before this one. The histogram groups them by distance, pace, heart rate or VDOT. Drag across it to highlight those runs on the timeline below and see their share of the training. Click a bar on the timeline to open the run." %>
-  </h2>
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <h2 class="flex items-center gap-1.5 <%= WidgetsHelper::CARD_TITLE %>">
+      Runs in the prior <%= Activity::TRAINING_WINDOW %> days
+      <%= overview_info "Every run in the #{Activity::TRAINING_WINDOW} days before this one is a dot on the chosen scale, so overlaps show where your training clusters. The bar is the average. Drag across the strip to select a range: the matching days light up below, and clicking the label above the selection cycles share of runs, hours, distance and run count. Click a dot or a day to open the run." %>
+    </h2>
+    <% if runs.any? %>
+      <%= button_group "Metric" do %>
+        <% [["Distance", "km"], ["Pace", "pace"], ["VDOT", "vdot"], ["Heart rate", "hr"]].each do |label, key| %>
+          <%= segment label, selected: key == "km", value: key, data: {action: "analyze-run#metric", analyze_run_target: "metric"} %>
+        <% end %>
+      <% end %>
+    <% end %>
+  </div>
   <% if runs.any? %>
-    <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-      <label class="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400">
-        Group by
-        <select class="field-sizing-content cursor-pointer rounded bg-transparent font-semibold text-lime-700 dark:text-[#9CFF44]" data-action="analyze-run#metric" aria-label="Metric">
-          <option value="km" class="text-zinc-900">distance</option>
-          <option value="pace" class="text-zinc-900">pace</option>
-          <option value="hr" class="text-zinc-900">avg HR</option>
-          <option value="vdot" class="text-zinc-900">VDOT</option>
-        </select>
-      </label>
-      <div class="tabular-nums" data-analyze-run-target="summary"></div>
-    </div>
-    <div class="mt-2" data-analyze-run-target="histogram"></div>
-    <div class="mt-2" data-analyze-run-target="timeline"></div>
+    <div class="mt-3 text-sm tabular-nums" data-analyze-run-target="summary"></div>
+    <div class="mt-2" data-analyze-run-target="strip"></div>
+    <div data-analyze-run-target="timeline"></div>
     <p class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 <%= WidgetsHelper::HINT %>">
-      <span class="inline-flex items-center gap-1.5"><span class="size-2.5 rounded-sm" style="background: var(--chart-highlight)"></span>This run</span>
-      <span class="inline-flex items-center gap-1.5"><span class="h-0 w-3 border-t border-dashed" style="border-color: var(--chart-axis)"></span>Average</span>
-      <span class="inline-flex items-center gap-1.5"><span class="size-2.5 rounded-sm" style="background: var(--chart-accent)"></span>Previous runs</span>
+      <span class="inline-flex items-center gap-1.5"><span class="size-2 rounded-full ring-1 ring-current" style="background: var(--chart-highlight)"></span>This run</span>
+      <span class="inline-flex items-center gap-1.5"><span class="h-3 w-0.5" style="background: var(--chart-accent-highlight)"></span>Average</span>
+      <span class="inline-flex items-center gap-1.5"><span class="size-3.5 rounded-full opacity-40" style="background: var(--chart-accent)"></span>Previous runs</span>
     </p>
   <% else %>
     <p class="mt-3 <%= WidgetsHelper::HINT %>">No runs in the 90 days before this one.</p>

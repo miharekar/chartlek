@@ -1,233 +1,392 @@
 import { Controller } from "@hotwired/stimulus"
-import { axisBottom, axisLeft } from "d3-axis"
 import { brushX } from "d3-brush"
-import { max } from "d3-array"
-import { scaleLinear, scaleUtc } from "d3-scale"
-import { select } from "d3-selection"
+import { scaleLinear } from "d3-scale"
+import { pointer, select } from "d3-selection"
 import { formatDate, formatDistance, formatDuration, formatPace } from "helpers/formatters"
-import { METRICS, average, daysBefore, histogram, sameDayRuns, selectRuns, summarize, timelineTicks } from "helpers/analyze_run"
+import { DAY_MS, METRICS, average, axis, brushSelection, dayLabel, dayStart, edgeLabelPositions, formatValue, groupDays, lit, nextReadout, readoutText, summarize, timelineTicks, valueOrder } from "helpers/analyze_run"
 import { observeSize } from "helpers/resize"
-import { parseTime } from "helpers/time"
-import { hideTooltip, moveTooltip, showTooltip, tooltipHtml } from "helpers/tooltip"
+import { noMouseFocus, rovingTarget } from "helpers/roving"
+import { hideTooltip, isTooltipFor, moveTooltip, showTooltip, showTooltipFor, tooltipHtml } from "helpers/tooltip"
 
-const MARGIN = { top: 8, right: 12, bottom: 24, left: 36 }
-const HISTOGRAM_HEIGHT = 176
-const HISTOGRAM_TOP = 12
-const TIMELINE_HEIGHT = 112
+const MARGIN = { left: 16, right: 16 }
+const STRIP = { top: 30, band: 40, height: 98 }
+const TIMELINE = { top: 4, bar: 24, height: 54 }
+const DOT = 8
+const CURRENT_DOT = 4.5
+const HIT = 10
+const GLIDE = "transform 400ms ease, opacity 400ms ease"
 
-const LABELS = { km: "km", pace: "/km", hr: "bpm", vdot: "VDOT" }
+const UNITS = { km: "km", pace: "min/km", vdot: "VDOT", hr: "bpm" }
+const LABELS = { km: "distance", pace: "pace", vdot: "VDOT", hr: "heart rate" }
 
 export default class extends Controller {
-  static targets = ["histogram", "timeline", "summary"]
+  static targets = ["strip", "timeline", "summary", "metric"]
   static values = { runs: Array, current: Object, from: Number, to: Number, metric: { type: String, default: "km" } }
 
   connect() {
-    this.histogramSvg = select(this.histogramTarget).append("svg").attr("class", "block w-full").attr("height", HISTOGRAM_HEIGHT)
-    this.timelineSvg = select(this.timelineTarget).append("svg").attr("class", "block w-full").attr("height", TIMELINE_HEIGHT)
-    this.stopObserving = observeSize(this.histogramTarget, ({ width }) => {
+    this.selected = null
+    this.hoverDay = null
+    this.hover = null
+    this.focused = null
+    this.mode = "share"
+    this.days = groupDays(this.runsValue)
+    this.stripSvg = select(this.stripTarget).append("svg").attr("class", "block")
+    this.timelineSvg = select(this.timelineTarget).append("svg").attr("class", "block")
+    this.onKey = event => {
+      if (event.key === "Escape") this.#clear()
+    }
+    document.addEventListener("keydown", this.onKey)
+    this.stopObserving = observeSize(this.stripTarget, ({ width }) => {
+      if (width === this.width) return
       this.width = width
-      this.draw()
+      this.#layout()
     })
   }
 
   disconnect() {
     this.stopObserving()
-    this.histogramSvg.remove()
+    document.removeEventListener("keydown", this.onKey)
+    this.stripSvg.remove()
     this.timelineSvg.remove()
     hideTooltip()
   }
 
   metric(event) {
-    this.metricValue = event.target.value
+    this.metricValue = event.currentTarget.value
   }
 
   metricValueChanged() {
-    if (this.width) this.draw()
+    this.metricTargets.forEach(button => button.setAttribute("aria-pressed", button.value === this.metricValue))
+    if (!this.width) return
+    hideTooltip()
+    this.hoverDay = null
+    this.#clear()
+    this.#place(true)
   }
 
-  draw() {
-    this.selected = null
-    this.bins = histogram(this.runsValue, this.metricValue)
-    this.drawHistogram()
-    this.drawTimeline()
-    this.renderSummary()
-  }
-
-  drawHistogram() {
-    const metric = this.metricValue
-    const { width, bins } = this
-    const flipped = metric === "pace"
-    const own = METRICS[metric](this.currentValue)
-    const binDomain = bins.length ? [bins[0].x0, bins[bins.length - 1].x1] : [0, 1]
-    const domain = own == null ? binDomain : [Math.min(binDomain[0], own), Math.max(binDomain[1], own)]
-    const x = scaleLinear()
-      .domain(flipped ? [domain[1], domain[0]] : domain)
-      .range([MARGIN.left, width - MARGIN.right])
-    const y = scaleLinear()
-      .domain([0, max(bins, bin => bin.runs.length) || 1])
-      .nice()
-      .range([HISTOGRAM_HEIGHT - MARGIN.bottom, HISTOGRAM_TOP])
-    const svg = this.histogramSvg.attr("width", width)
-    svg.selectAll("*").remove()
-
-    svg
-      .append("g")
-      .attr("fill", "var(--chart-accent)")
-      .selectAll("rect")
-      .data(bins)
-      .join("rect")
-      .attr("x", bin => Math.min(x(bin.x0), x(bin.x1)) + 0.5)
-      .attr("width", bin => Math.max(1, Math.abs(x(bin.x1) - x(bin.x0)) - 1))
-      .attr("y", bin => y(bin.runs.length))
-      .attr("height", bin => y(0) - y(bin.runs.length))
-
-    const xAxis = svg
-      .append("g")
-      .attr("transform", `translate(0,${HISTOGRAM_HEIGHT - MARGIN.bottom})`)
-      .call(
-        axisBottom(x)
-          .ticks(Math.max(2, Math.floor(width / 80)))
-          .tickFormat(value => (flipped ? formatPace(3600 / value) : value))
-          .tickSizeOuter(0)
-      )
-    const yAxis = svg
-      .append("g")
-      .attr("transform", `translate(${MARGIN.left},0)`)
-      .call(axisLeft(y).ticks(4).tickSize(-(width - MARGIN.left - MARGIN.right)).tickFormat(value => (Number.isInteger(value) ? value : "")).tickSizeOuter(0))
-    for (const axis of [xAxis, yAxis]) {
-      axis.select(".domain").remove()
-      axis.selectAll("text").attr("fill", "var(--chart-axis)")
-      axis.selectAll("line").attr("stroke", "var(--chart-grid)")
-    }
-    svg.append("text").attr("fill", "var(--chart-axis)").attr("font-size", 11).attr("x", MARGIN.left).attr("y", 9).text(LABELS[metric])
-
-    if (!bins.length) return
-    this.drawMarkers(svg, x)
-    const brush = brushX()
-      .extent([
-        [MARGIN.left, HISTOGRAM_TOP],
-        [width - MARGIN.right, HISTOGRAM_HEIGHT - MARGIN.bottom]
-      ])
-      .on("brush end", event => {
-        if (!event.selection) this.selected = null
-        else this.selected = selectRuns(this.bins, event.selection.map(x.invert).sort((a, b) => a - b))
-        this.averageLine?.attr("display", this.selected ? "none" : null)
-        this.drawTimeline()
-        this.renderSummary()
-      })
-    const group = svg.append("g").call(brush)
-    group.select(".selection").attr("fill", "var(--chart-accent-highlight)").attr("fill-opacity", 0.25).attr("stroke", "var(--chart-accent-highlight)")
-  }
-
-  drawMarkers(svg, x) {
-    const bottom = HISTOGRAM_HEIGHT - MARGIN.bottom
-    const mean = average(this.runsValue, this.metricValue)
-    const own = METRICS[this.metricValue](this.currentValue)
-    const [low, high] = x.range()
-    const place = value => Math.max(low, Math.min(high, x(value)))
-    this.averageLine = null
-
-    if (mean != null) {
-      this.averageLine = svg.append("line").attr("x1", place(mean)).attr("x2", place(mean)).attr("y1", HISTOGRAM_TOP).attr("y2", bottom)
-        .attr("stroke", "var(--chart-axis)").attr("stroke-width", 1.5).attr("stroke-dasharray", "4 3").attr("pointer-events", "none")
-    }
-    if (own != null) {
-      svg.append("line").attr("x1", place(own)).attr("x2", place(own)).attr("y1", HISTOGRAM_TOP).attr("y2", bottom)
-        .attr("stroke", "var(--chart-highlight)").attr("stroke-width", 2).attr("pointer-events", "none")
-      svg.append("circle").attr("cx", place(own)).attr("cy", HISTOGRAM_TOP).attr("r", 3).attr("fill", "var(--chart-highlight)").attr("pointer-events", "none")
-    }
-  }
-
-  drawTimeline() {
+  #layout() {
     const { width } = this
-    const x = scaleUtc()
-      .domain([this.fromValue, this.toValue])
-      .range([MARGIN.left, width - MARGIN.right])
-    const y = scaleLinear()
-      .domain([0, Math.max(max(this.runsValue, run => run.km) || 1, this.currentValue.km || 0)])
-      .range([TIMELINE_HEIGHT - MARGIN.bottom, MARGIN.top])
-    const svg = this.timelineSvg.attr("width", width)
+    this.selected = null
+    this.selection = null
+    this.hoverDay = null
+    this.#leave()
+    this.x = scaleLinear().range([MARGIN.left, width - MARGIN.right])
+    const svg = this.stripSvg.attr("width", width).attr("height", STRIP.height)
+    svg.selectAll("*").remove()
+    svg.on("mousedown.focus", noMouseFocus, true)
+
+    this.unitLabel = svg.append("text").attr("x", MARGIN.left).attr("y", 11).attr("font-size", 11).attr("fill", "var(--chart-axis)")
+    const axisTop = STRIP.top + STRIP.band
+    svg.append("line").attr("x1", MARGIN.left).attr("x2", width - MARGIN.right).attr("y1", axisTop).attr("y2", axisTop).attr("stroke", "var(--chart-grid)")
+    this.ticks = svg.append("g").attr("transform", `translate(0,${axisTop})`)
+    this.edges = svg.append("g").attr("transform", `translate(0,${axisTop})`).attr("display", "none")
+    const middle = STRIP.top + STRIP.band / 2
+
+    this.mean = svg.append("rect").attr("x", -1).attr("width", 2).attr("y", STRIP.top + 2).attr("height", STRIP.band - 4).attr("fill", "var(--chart-accent-highlight)").attr("pointer-events", "none")
+    this.dotsGroup = svg
+      .append("g")
+      .attr("role", "group")
+      .style("outline", "none")
+      .on("focus", () => this.#focusAt(this.focusPosition ?? 0))
+      .on("blur", () => this.#blur())
+      .on("keydown", event => this.#key(event))
+    this.dots = this.dotsGroup
+      .selectAll("circle")
+      .data(this.runsValue)
+      .join("circle")
+      .attr("cx", 0)
+      .attr("cy", middle)
+      .attr("r", DOT)
+      .attr("fill", "var(--chart-accent)")
+      .attr("pointer-events", "none")
+    this.currentDot = svg.append("circle").attr("cx", 0).attr("cy", middle).attr("r", CURRENT_DOT).attr("fill", "var(--chart-highlight)").attr("stroke", "currentColor").attr("stroke-width", 1.5).attr("pointer-events", "none")
+
+    this.brush = brushX()
+      .extent([
+        [MARGIN.left, STRIP.top],
+        [width - MARGIN.right, STRIP.top + STRIP.band]
+      ])
+      .on("brush end", event => this.#brushed(event.selection))
+    this.brushGroup = svg.append("g").call(this.brush)
+    this.brushGroup.select(".selection").attr("fill", "var(--chart-accent-highlight)").attr("fill-opacity", 0.2).attr("stroke", "var(--chart-accent-highlight)")
+    this.brushGroup
+      .on("mousemove", event => this.#move(event))
+      .on("mousedown.hover", hideTooltip, true)
+      .on("mouseleave", () => this.#leave())
+      .on("click", () => this.#open(this.hover))
+
+    this.readout = svg.append("g").attr("display", "none").style("cursor", "pointer").on("click", () => {
+      this.mode = nextReadout(this.mode)
+      this.#render()
+    })
+    this.readoutBox = this.readout.append("path").attr("class", "fill-lime-700 dark:fill-[#6ACD12]")
+    this.readoutText = this.readout.append("text").attr("class", "fill-white dark:fill-zinc-950").attr("text-anchor", "middle").attr("font-size", 12).attr("font-weight", 600).attr("y", 17)
+
+    this.#layoutTimeline()
+    this.#place(false)
+  }
+
+  #place(animate) {
+    const metric = this.metricValue
+    const value = METRICS[metric]
+    const { domain, ticks } = axis(metric, this.runsValue, this.currentValue)
+    this.x.domain(domain)
+    const px = known => this.x(Math.max(domain[0], Math.min(domain[1], known)))
+    const glide = animate && !matchMedia("(prefers-reduced-motion: reduce)").matches ? GLIDE : "none"
+
+    this.unitLabel.text(UNITS[metric])
+    this.dots.style("transition", glide).style("transform", (run, index) => this.#shift(value(run), px, index))
+    const own = value(this.currentValue)
+    this.currentDot.style("transition", glide).style("transform", this.#shift(own, px, null)).style("opacity", own == null ? 0 : 1)
+    const mean = average(this.runsValue, metric)
+    this.meanValue = mean
+    this.mean.style("transition", glide).style("transform", `translateX(${mean == null ? MARGIN.left : px(mean)}px)`)
+
+    this.ticks.selectAll("*").remove()
+    this.ticks.style("transition", "none").style("opacity", 0)
+    for (const tick of ticks) {
+      const group = this.ticks.append("g").attr("transform", `translate(${px(tick)},0)`)
+      group.append("line").attr("y2", 4).attr("stroke", "var(--chart-axis)")
+      group.append("text").attr("y", 16).attr("text-anchor", "middle").attr("font-size", 11).attr("fill", "var(--chart-axis)").text(formatValue(metric, tick))
+    }
+    this.ticks.node().getBoundingClientRect()
+    this.ticks.style("transition", animate ? "opacity 250ms ease" : "none").style("opacity", 1)
+
+    this.order = valueOrder(this.runsValue, metric)
+    this.focusPosition = null
+    this.focused = null
+    this.dotsGroup.attr("tabindex", this.order.length ? 0 : -1).attr("aria-label", `Previous runs by ${LABELS[metric]}. Left and Right arrows move between runs, Enter opens the run.`)
+    this.#render()
+  }
+
+  #shift(known, px, index) {
+    if (known != null) return `translateX(${px(known)}px)`
+    return index == null ? `translateX(${MARGIN.left}px)` : this.dots.nodes()[index].style.transform || `translateX(${MARGIN.left}px)`
+  }
+
+  #brushed(selection) {
+    this.selection = selection
+    this.selected = selection ? brushSelection(this.runsValue, this.metricValue, selection.map(this.x.invert).sort((a, b) => a - b)) : null
+    this.#render()
+  }
+
+  #clear() {
+    if (!this.brushGroup) return
+    if (this.selection) this.brushGroup.call(this.brush.move, null)
+  }
+
+  #render() {
+    const value = METRICS[this.metricValue]
+    this.dots
+      .style("opacity", (run, index) => (value(run) == null ? 0 : this.selected ? (this.selected.has(index) ? 0.6 : 0.12) : 0.35))
+      .attr("stroke", (_, index) => (index === this.focused ? "var(--chart-axis)" : this.#litDots().has(index) ? "var(--chart-highlight)" : null))
+      .attr("stroke-width", (_, index) => (index === this.focused ? 2 : 1.5))
+    this.mean.attr("display", this.selected || this.meanValue == null ? "none" : null)
+    this.ticks.attr("display", this.selected ? "none" : null)
+    this.#renderEdges()
+    this.#renderReadout()
+    this.#paintDays()
+    this.#renderSummary()
+  }
+
+  #litDots() {
+    const day = this.hoverDay == null ? null : this.days[this.hoverDay]
+    return new Set(day ? lit(day.indexes, this.selected) : [])
+  }
+
+  #renderEdges() {
+    this.edges.selectAll("*").remove()
+    this.edges.attr("display", this.selected ? null : "none")
+    if (!this.selection) return
+    const positions = edgeLabelPositions(this.selection, this.width)
+    const [low, high] = this.x.domain()
+    this.selection.forEach((position, side) => {
+      this.edges.append("text").attr("x", positions[side]).attr("y", 16).attr("font-size", 11).attr("fill", "var(--chart-axis)").attr("text-anchor", side === 0 ? "end" : "start").text(formatValue(this.metricValue, Math.max(low, Math.min(high, this.x.invert(position))), true))
+    })
+  }
+
+  #renderReadout() {
+    this.readout.attr("display", this.selection ? null : "none")
+    if (!this.selection) return
+    const [from, to] = this.selection
+    this.readoutText.text(readoutText(this.runsValue, this.selected, this.mode))
+    const half = this.readoutText.node().getComputedTextLength() / 2 + 8
+    const centre = Math.max(half, Math.min(this.width - half, (from + to) / 2))
+    const tip = Math.max(-half + 8, Math.min(half - 8, (from + to) / 2 - centre))
+    this.readout.attr("transform", `translate(${centre},0)`)
+    this.readoutBox.attr("d", `M${-half},3H${half}V22H${tip + 5}L${tip},27L${tip - 5},22H${-half}Z`)
+  }
+
+  #layoutTimeline() {
+    const { width } = this
+    const run = this.currentValue
+    const start = this.fromValue
+    const end = dayStart(this.toValue) + DAY_MS
+    this.tx = scaleLinear().domain([start, end]).range([MARGIN.left, width - MARGIN.right])
+    const svg = this.timelineSvg.attr("width", width).attr("height", TIMELINE.height)
     svg.selectAll("*").remove()
 
-    const ticks = timelineTicks(this.fromValue, this.toValue, this.currentValue.race)
-    const axis = svg
-      .append("g")
-      .attr("transform", `translate(0,${TIMELINE_HEIGHT - MARGIN.bottom})`)
-      .call(
-        axisBottom(x)
-          .tickValues(ticks.map(tick => new Date(tick.t)))
-          .tickFormat((_, index) => ticks[index].label)
-          .tickSizeOuter(0)
-      )
-    axis.select(".domain").attr("stroke", "var(--chart-grid)")
-    axis.selectAll(".tick line").attr("stroke", "var(--chart-grid)")
-    axis.selectAll("text").attr("fill", "var(--chart-axis)")
-    axis.selectAll(".tick text").attr("text-anchor", (_, index) => (index === 0 ? "start" : index === ticks.length - 1 ? "end" : "middle"))
+    const bottom = TIMELINE.top + TIMELINE.bar
+    const ticks = timelineTicks(start, this.toValue, run.race)
+    ticks.forEach((tick, index) => {
+      const last = index === ticks.length - 1
+      if (width < 140 * ticks.length && index > 0 && !last) return
+      const position = index === 0 ? this.tx(tick.t) : last ? this.tx(tick.t + DAY_MS) : this.tx(tick.t)
+      svg.append("text").attr("x", position).attr("y", bottom + 18).attr("font-size", 11).attr("fill", "var(--chart-axis)").attr("text-anchor", index === 0 ? "start" : last ? "end" : "middle").text(tick.label)
+    })
 
-    const fill = (_, index) => (!this.selected ? "var(--chart-accent)" : this.selected.has(index) ? "var(--chart-highlight)" : "var(--chart-muted)")
-    svg
+    const runDay = dayStart(this.toValue)
+    const dayWidth = this.tx(start + DAY_MS) - this.tx(start)
+    const split = this.days.some(({ day }) => day === runDay)
+    const barWidth = Math.max(1.5, dayWidth - 1)
+    this.dayMarks = svg
       .append("g")
       .selectAll("rect")
-      .data(this.runsValue)
+      .data(this.days)
       .join("rect")
-      .attr("x", run => x(parseTime(run.t)) - 1.5)
-      .attr("width", 3)
-      .attr("y", run => y(run.km))
-      .attr("height", run => y(0) - y(run.km))
-      .attr("fill", fill)
-      .attr("fill-opacity", (_, index) => (!this.selected || this.selected.has(index) ? 1 : 0.5))
+      .attr("x", ({ day }) => this.tx(day))
+      .attr("width", ({ day }) => (day === runDay ? barWidth / 2 : barWidth))
+      .attr("y", TIMELINE.top)
+      .attr("height", TIMELINE.bar)
+      .attr("fill", "var(--chart-accent)")
       .style("cursor", "pointer")
-      .on("mousemove", (event, run) => {
-        showTooltip(this.tooltipHtml(run), event)
+      .on("mousemove", (event, day) => {
+        const index = this.days.indexOf(day)
+        if (index !== this.hoverDay) {
+          this.hoverDay = index
+          showTooltip(this.#dayHtml(day), event)
+          this.#render()
+        }
         moveTooltip(event)
       })
-      .on("mouseleave", hideTooltip)
-      .on("click", (_, run) => {
+      .on("mouseleave", () => {
+        this.hoverDay = null
         hideTooltip()
-        window.Turbo.visit(run.url)
+        this.#render()
       })
-
+      .on("click", (_, day) => {
+        hideTooltip()
+        this.#open(day.indexes[0])
+      })
+    const ownWidth = split ? barWidth / 2 : barWidth
     svg
       .append("rect")
-      .attr("x", x(this.toValue) - 1.5)
-      .attr("width", 3)
-      .attr("y", y(this.currentValue.km))
-      .attr("height", y(0) - y(this.currentValue.km))
+      .attr("x", this.tx(runDay) + (split ? barWidth / 2 : 0))
+      .attr("width", ownWidth)
+      .attr("y", TIMELINE.top)
+      .attr("height", TIMELINE.bar)
       .attr("fill", "var(--chart-highlight)")
       .on("mousemove", event => {
-        showTooltip(tooltipHtml("This run", [["Distance", `${formatDistance(this.currentValue.km)} km`]]), event)
+        showTooltip(tooltipHtml(`${formatDate(this.toValue)} · ${dayLabel(this.toValue, this.toValue, run.race)}`, [["Distance", `${formatDistance(run.km)} km`], ["Pace", `${formatPace(run.pace)} /km`]], { heading: "This run" }), event)
         moveTooltip(event)
       })
       .on("mouseleave", hideTooltip)
   }
 
-  renderSummary() {
+  #paintDays() {
+    const lights = this.selected ? new Set(this.days.map((day, index) => (lit(day.indexes, this.selected).length ? index : -1))) : null
+    this.dayMarks
+      .attr("fill", (_, index) => (!lights ? "var(--chart-accent)" : lights.has(index) ? "var(--chart-highlight)" : "var(--chart-muted)"))
+      .attr("fill-opacity", (_, index) => (!lights || lights.has(index) ? 1 : 0.5))
+      .attr("stroke", (_, index) => (index === this.hoverDay ? "var(--chart-axis)" : null))
+  }
+
+  #renderSummary() {
     const runs = this.runsValue
-    const all = new Set(runs.map((_, index) => index))
-    const { count, km, seconds, share } = summarize(runs, this.selected || all)
+    const { count, km, seconds, share } = summarize(runs, this.selected || new Set(runs.map((_, index) => index)))
     const scope = this.selected ? "Selected" : "All"
     this.summaryTarget.innerHTML = `${scope}: <strong>${count}</strong> ${count === 1 ? "run" : "runs"} · <strong>${formatDistance(km)} km</strong> · <strong>${formatDuration(seconds)}</strong> · <strong>${share.toFixed(0)}%</strong> of training distance`
   }
 
-  tooltipHtml(run) {
-    const title = this.dayTitle(run)
-    const sameDay = sameDayRuns(this.runsValue, run)
-    if (sameDay.length > 1) {
-      return tooltipHtml(title, sameDay.map(other => [`${formatDistance(other.km)} km`, `${formatPace(other.pace)} /km · ${formatDuration(other.s)}`]))
-    }
+  #hit(px, py) {
+    const metric = METRICS[this.metricValue]
+    const middle = STRIP.top + STRIP.band / 2
+    const [low, high] = this.x.domain()
+    const spot = known => this.x(Math.max(low, Math.min(high, known)))
+    const own = metric(this.currentValue)
+    if (own != null && Math.hypot(spot(own) - px, middle - py) <= CURRENT_DOT + 3) return "current"
+    let best = null
+    let nearest = HIT + DOT
+    this.runsValue.forEach((run, index) => {
+      const known = metric(run)
+      if (known == null || Math.abs(middle - py) > DOT + 2) return
+      const distance = Math.abs(spot(known) - px)
+      if (distance <= nearest) {
+        best = index
+        nearest = distance
+      }
+    })
+    return best
+  }
 
-    return tooltipHtml(title, [
+  #move(event) {
+    const [px, py] = pointer(event, this.stripSvg.node())
+    this.hover = this.#hit(px, py)
+    this.brushGroup.select(".overlay").style("cursor", this.hover == null ? "crosshair" : "pointer")
+    if (this.hover == null) return hideTooltip()
+    showTooltip(this.hover === "current" ? this.#currentHtml() : this.#dotHtml(this.runsValue[this.hover]), event)
+    moveTooltip(event)
+  }
+
+  #leave() {
+    this.hover = null
+    hideTooltip()
+  }
+
+  #open(target) {
+    if (target == null || target === "current") return
+    hideTooltip()
+    window.Turbo.visit(this.runsValue[target].url)
+  }
+
+  #focusAt(position) {
+    if (!this.order.length) return
+    this.focusPosition = position
+    this.focused = this.order[position]
+    this.#render()
+    showTooltipFor(this.#dotHtml(this.runsValue[this.focused]), this.dots.nodes()[this.focused])
+  }
+
+  #blur() {
+    const node = this.focused == null ? null : this.dots.nodes()[this.focused]
+    this.focused = null
+    this.#render()
+    if (node && isTooltipFor(node)) hideTooltip()
+  }
+
+  #key(event) {
+    const position = this.focusPosition ?? 0
+    const target = rovingTarget(event.key, position, this.order.length - 1)
+    if (target != null) {
+      event.preventDefault()
+      this.#focusAt(target)
+    } else if (event.key === "Enter") {
+      event.preventDefault()
+      this.#open(this.order[position])
+    } else if (event.key === "Escape") {
+      hideTooltip()
+    }
+  }
+
+  #dotHtml(run) {
+    return tooltipHtml(`${formatDate(run.t)} · ${dayLabel(this.toValue, run.t, false)}`, [
       ["Distance", `${formatDistance(run.km)} km`],
       ["Pace", `${formatPace(run.pace)} /km`],
       ["Time", formatDuration(run.s)],
-      ["HR", run.hr == null ? "–" : run.hr],
+      ["HR", run.hr > 0 ? `${run.hr} bpm` : "–"],
       ["VDOT", run.vdot == null ? "–" : run.vdot.toFixed(1)]
     ])
   }
 
-  dayTitle(run) {
-    const days = daysBefore(this.toValue, run.t)
-    const when = days === 0 ? "Same day" : `${days} ${days === 1 ? "day" : "days"} before`
-    return `${when} · ${formatDate(run.t)}`
+  #currentHtml() {
+    const run = this.currentValue
+    return tooltipHtml(formatDate(this.toValue), [["Distance", `${formatDistance(run.km)} km`], ["Pace", `${formatPace(run.pace)} /km`], ["VDOT", run.vdot == null ? "–" : run.vdot.toFixed(1)]], { heading: "This run" })
+  }
+
+  #dayHtml({ day, indexes }) {
+    return tooltipHtml(`${formatDate(day)} · ${dayLabel(this.toValue, day, this.currentValue.race)}`, indexes.map(index => {
+      const run = this.runsValue[index]
+      return [`${formatDistance(run.km)} km`, `${formatPace(run.pace)} /km`]
+    }))
   }
 }
