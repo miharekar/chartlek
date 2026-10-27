@@ -84,7 +84,7 @@
       <% first = finishes.first %>
       <div data-controller="estimated-finish" data-estimated-finish-finishes-value="<%= finishes.to_json %>">
         <h2 class="<%= label %>">Estimated finish</h2>
-        <div class="flex items-start gap-3">
+        <div class="flex items-start justify-between gap-3">
           <div aria-live="polite" aria-atomic="true">
             <p class="<%= big %>" data-estimated-finish-target="time"><%= overview_duration(first[:seconds]) %></p>
             <p class="<%= small %>"><span data-estimated-finish-target="label"><%= first[:label] %></span> · <span data-estimated-finish-target="pace"><%= overview_pace(first[:seconds] / first[:km]) %></span> /km</p>
