@@ -10,22 +10,22 @@
           <%= overview_info "Every run by distance and pace. Distance across on a log scale, pace up (faster is higher). The solid line is your all-time best at each benchmark distance; what lies above it is still to be achieved. The dashed line is your best at each distance inside the window below. PRs you can beat predicts each distance from the best VDOT run of the last 30, 60 or 90 days, or any run you click. Magic PRs shows the next round time below each PR, with the three closest targets pulsing." %>
         </h1>
       </div>
-      <div class="flex gap-1 rounded-lg bg-zinc-100 p-1 dark:bg-zinc-900" role="group" aria-label="Mode">
-        <button type="button" data-action="pr-progress#setMode" data-mode="progress" aria-pressed="false" class="<%= pr_progress_button_class %>">Progress</button>
-        <button type="button" data-action="pr-progress#setMode" data-mode="beat" aria-pressed="false" class="<%= pr_progress_button_class %>">PRs you can beat</button>
-        <button type="button" data-action="pr-progress#setMode" data-mode="magic" aria-pressed="false" class="<%= pr_progress_button_class %>">Magic PRs</button>
-      </div>
+      <%= button_group "Mode" do %>
+        <%= segment "Progress", data: {action: "pr-progress#setMode", mode: "progress"} %>
+        <%= segment "PRs you can beat", data: {action: "pr-progress#setMode", mode: "beat"} %>
+        <%= segment "Magic PRs", data: {action: "pr-progress#setMode", mode: "magic"} %>
+      <% end %>
     </div>
 
     <section class="<%= WidgetsHelper::CARD %>">
       <div class="mb-3 flex min-h-8 flex-wrap items-center gap-x-4 gap-y-2 text-sm">
         <div class="hidden flex-wrap items-center gap-3" data-pr-progress-target="beat">
           <span class="text-zinc-500">Best run of the last</span>
-          <div class="flex gap-1 rounded-lg bg-zinc-100 p-1 dark:bg-zinc-900" role="group" aria-label="Reference period">
+          <%= button_group "Reference period" do %>
             <% PrProgress::REFERENCE_DAYS.each do |days| %>
-              <button type="button" data-action="pr-progress#setDays" data-days="<%= days %>" aria-pressed="false" class="<%= pr_progress_button_class %> !py-0.5"><%= days %> days</button>
+              <%= segment "#{days} days", data: {action: "pr-progress#setDays", days: days} %>
             <% end %>
-          </div>
+          <% end %>
           <span class="text-zinc-500" data-pr-progress-target="reference"></span>
         </div>
         <p class="hidden <%= WidgetsHelper::HINT %>" data-pr-progress-target="magic">Next round time below each PR. The three closest targets pulse.</p>

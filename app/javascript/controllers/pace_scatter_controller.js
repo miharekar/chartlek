@@ -39,7 +39,7 @@ const METRICS = {
 }
 
 export default class extends Controller {
-  static targets = ["chart"]
+  static targets = ["chart", "metric", "title"]
   static values = { data: Object, metric: { type: String, default: "pace" } }
 
   connect() {
@@ -90,10 +90,13 @@ export default class extends Controller {
   }
 
   metric(event) {
-    this.metricValue = event.target.value
+    this.metricValue = event.currentTarget.value
   }
 
   metricValueChanged() {
+    const pressed = this.metricTargets.find(button => button.value === this.metricValue)
+    this.metricTargets.forEach(button => button.setAttribute("aria-pressed", button === pressed))
+    this.titleTarget.textContent = `${pressed.textContent.trim()} vs distance`
     if (this.size) this.draw()
   }
 

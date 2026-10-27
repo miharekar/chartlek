@@ -16,7 +16,9 @@ class PaceTrendsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "[data-controller='pace-trends'][data-pace-trends-payload-value]"
-    assert_select "select option[selected]", "Marathon"
+    assert_select "[role=group][aria-label='Finish distance'] button[data-action='pace-trends#changeDistance']", count: 4
+    assert_select "button[data-distance=Marathon][aria-pressed=true]", "Marathon"
+    assert_select "button[data-distance='5K'][aria-pressed=false]"
     assert_select "button[data-controller=info]", minimum: 2
   end
 

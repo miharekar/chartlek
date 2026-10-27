@@ -16,6 +16,11 @@ class OverviewsControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-controller='trailing-line']"
     assert_select "[data-controller='pace-scatter']"
     assert_select "[data-controller='heatmap']"
+    assert_select "[role=group][aria-label=Metric] button[data-action='period-bars#metric']", count: 5
+    assert_select "button[value=distance][aria-pressed=true]", "Distance"
+    assert_select "[data-period-bars-target=title]", /Distance per/
+    assert_select "[role=group][aria-label=Metric] button[data-action='pace-scatter#metric']", count: 3
+    assert_select "select", false
     assert_select "table", text: /5 km/
     assert_select "p", text: /fifteen/i
     assert_select "a[href='/overview/2023']"

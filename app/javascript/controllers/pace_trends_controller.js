@@ -66,8 +66,8 @@ export default class extends Controller {
     this.#syncUrl()
   }
 
-  changeDistance() {
-    this.distance = this.distanceTarget.value
+  changeDistance(event) {
+    this.distance = event.currentTarget.dataset.distance
     this.#renderHeader()
     this.#syncUrl()
   }
@@ -171,6 +171,7 @@ export default class extends Controller {
   #renderHeader() {
     const active = activePreset(this.range, this.domain)
     this.presetTargets.forEach(button => button.setAttribute("aria-pressed", button.dataset.preset === active))
+    this.distanceTargets.forEach(button => button.setAttribute("aria-pressed", button.dataset.distance === this.distance))
     const [start, end] = this.range
     this.rangeTarget.textContent = `${formatDate(start)} – ${formatDate(utcDay.offset(new Date(end), -1))}`
     this.messageTarget.hidden = Boolean(this.fit)

@@ -4,10 +4,10 @@
       Change in speed over route
     </h2>
     <% if run.splits.present? %>
-      <div class="flex gap-1 rounded-lg bg-zinc-100 p-1 dark:bg-zinc-900" role="group" aria-label="Bar size">
-        <button type="button" data-action="run-speed#unit" data-run-speed-target="unit" value="bars" aria-pressed="true" class="<%= pr_progress_button_class %>">per 100 m</button>
-        <button type="button" data-action="run-speed#unit" data-run-speed-target="unit" value="splits" aria-pressed="false" class="<%= pr_progress_button_class %>">per km</button>
-      </div>
+      <%= button_group "Bar size" do %>
+        <%= segment "per 100 m", selected: true, value: "bars", data: {action: "run-speed#unit", run_speed_target: "unit"} %>
+        <%= segment "per km", value: "splits", data: {action: "run-speed#unit", run_speed_target: "unit"} %>
+      <% end %>
     <% end %>
     <p class="text-sm tabular-nums text-zinc-600 dark:text-zinc-300" data-run-speed-target="stats"></p>
   </div>

@@ -3,7 +3,7 @@
   <h1 class="text-2xl font-semibold"><%= overview_period_title(period) %></h1>
   <% latest = @overview.latest %>
   <% if latest %>
-    <%= link_to "Latest run · #{latest.local_started_at.strftime("%-d %b")} · #{overview_distance(latest.distance_m / 1000.0)} km →", run_path(latest), class: "rounded-md border border-zinc-300 px-2.5 py-1 text-sm tabular-nums text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900" %>
+    <%= action_button "Latest run · #{latest.local_started_at.strftime("%-d %b")} · #{overview_distance(latest.distance_m / 1000.0)} km →", run_path(latest) %>
   <% end %>
 </div>
 

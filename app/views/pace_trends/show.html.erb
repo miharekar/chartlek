@@ -20,12 +20,15 @@
       <div class="text-sm tabular-nums sm:text-right">
         <div data-pace-trends-target="change"></div>
         <div data-pace-trends-target="cut">
-          <span data-pace-trends-target="verb"></span> <strong data-pace-trends-target="delta"></strong> from your estimated
-          <select data-action="pace-trends#changeDistance" data-pace-trends-target="distance" aria-label="Finish distance" class="rounded border border-zinc-300 bg-transparent px-1 py-0.5 text-sm font-medium dark:border-zinc-700 dark:bg-zinc-950">
-            <%= options_for_select(PaceTrend::DISTANCES.map(&:first), @pace_trend.distance) %>
-          </select>
-          finish time
+          <span data-pace-trends-target="verb"></span> <strong data-pace-trends-target="delta"></strong> from your estimated finish time
           <%= overview_info "Predicted time at the chosen distance from the regression VDOT at the start of the window versus the end. Faster is Cut, slower is Added." %>
+          <div class="mt-2 sm:flex sm:justify-end">
+            <%= button_group "Finish distance" do %>
+              <% PaceTrend::DISTANCES.each do |label, _| %>
+                <%= segment label, selected: label == @pace_trend.distance, data: {action: "pace-trends#changeDistance", pace_trends_target: "distance", distance: label} %>
+              <% end %>
+            <% end %>
+          </div>
         </div>
         <div class="text-zinc-500" data-pace-trends-target="message" hidden>Not enough top runs in this window to draw a trend.</div>
       </div>

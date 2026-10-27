@@ -1,7 +1,6 @@
 <% previous = run.previous_run %>
 <% following = run.next_run %>
 <% same_day = run.same_day_runs.to_a %>
-<% link = "rounded-md border border-zinc-300 px-2.5 py-1 text-sm text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900" %>
 <header>
   <div class="flex flex-wrap items-start justify-between gap-4">
     <div>
@@ -15,13 +14,13 @@
       <% end %>
     </div>
     <nav class="flex flex-wrap items-center gap-2" aria-label="Runs">
-      <%= link_to "← Previous", run_path(previous), class: link if previous %>
-      <%= link_to "Next →", run_path(following), class: link if following %>
+      <%= action_button "← Previous", run_path(previous) if previous %>
+      <%= action_button "Next →", run_path(following) if following %>
       <% if run.garmin_url %>
-        <%= link_to "Open in Garmin", run.garmin_url, target: "_blank", rel: "noopener", class: link %>
+        <%= action_button "Open in Garmin", run.garmin_url, target: "_blank", rel: "noopener" %>
       <% end %>
       <% if run.strava_url %>
-        <%= link_to "Open in Strava", run.strava_url, target: "_blank", rel: "noopener", class: link %>
+        <%= action_button "Open in Strava", run.strava_url, target: "_blank", rel: "noopener" %>
       <% end %>
     </nav>
   </div>
