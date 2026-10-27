@@ -1,6 +1,5 @@
-<div class="mt-6 rounded-xl border border-zinc-200 p-10 text-center dark:border-zinc-800">
-  <p class="text-lg font-medium">No runs in <%= overview_period_title(period).downcase.sub("all time", "your history") %> yet.</p>
+<%= empty_state "No runs in #{overview_period_title(period).downcase.sub("all time", "your history")} yet." do %>
   <% unless period.all_time? %>
-    <p class="mt-2 text-sm text-zinc-500"><%= link_to "Show all time", overview_path, class: "text-lime-700 underline dark:text-[#9CFF44]" %></p>
+    <%= link_to "Show all time", overview_path, class: WidgetsHelper::LINK %>
   <% end %>
-</div>
+<% end %>

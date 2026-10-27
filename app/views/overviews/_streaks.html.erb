@@ -1,7 +1,7 @@
 <% streaks = overview.streaks %>
 <% current = streaks.current %>
 <section class="<%= WidgetsHelper::CARD %>">
-  <h2 class="flex flex-wrap items-center gap-1.5 <%= WidgetsHelper::CARD_TITLE %>">
+  <h2 class="<%= WidgetsHelper::CARD_TITLE %>">
     Consecutive days run
     <%= overview_info "A streak is days in a row with at least one run. A break is days in a row without one, counted from your first run." %>
   </h2>
@@ -14,7 +14,7 @@
             <p class="<%= WidgetsHelper::TILE_VALUE %>"><%= segment.days %><span class="<%= WidgetsHelper::TILE_UNIT %>">days</span></p>
             <p class="<%= WidgetsHelper::TILE_SUB %>"><%= overview_range(segment.from, segment.to) %></p>
           <% else %>
-            <span class="text-zinc-400">None</span>
+            <span class="<%= WidgetsHelper::PLACEHOLDER %>">None</span>
           <% end %>
         </dd>
       <% end %>

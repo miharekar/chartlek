@@ -1,6 +1,6 @@
 <% period = overview.period %>
 <section class="mt-4 <%= WidgetsHelper::CARD %>" data-controller="heatmap" data-heatmap-data-value="<%= overview.heatmap.to_json %>">
-  <h2 class="flex items-center gap-1.5 <%= WidgetsHelper::CARD_TITLE %>">
+  <h2 class="<%= WidgetsHelper::CARD_TITLE %>">
     <%= period.all_time? ? "Weekly stats for each year" : "Daily stats for #{overview_period_title(period)}" %>
     <%= overview_info(period.all_time? ? "One cell per week (Monday start), colored by kilometers run. Rings mark weeks over 60 km, rings with a dot over 80 km." : "One cell per day, colored by kilometers run. Click a day to open its run.") %>
   </h2>

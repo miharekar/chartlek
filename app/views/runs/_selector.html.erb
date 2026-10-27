@@ -1,23 +1,18 @@
 <% years = Activity.years_with_runs %>
 <% years = ([year] + years).compact.uniq.sort.reverse %>
-<nav class="mt-4 flex flex-wrap items-center gap-1" aria-label="Period">
-  <%= overview_pill "All", runs_path(year: "all"), year.nil? ? :selected : :idle %>
-  <% years.each do |candidate| %>
-    <%= overview_pill candidate, runs_path(year: candidate), year == candidate ? :selected : :idle %>
-  <% end %>
-</nav>
-<% if year %>
-  <% active_months = Activity.months_with_runs(year) %>
-  <nav class="mt-2 flex flex-wrap items-center gap-1" aria-label="Month">
-    <% (1..12).each do |number| %>
-      <% state = if month == number
-        :selected
-      elsif active_months.include?(number)
-        :idle
-      else
-        :disabled
-      end %>
-      <%= overview_pill Date::ABBR_MONTHNAMES[number], runs_path(year:, month: (month == number ? nil : number)), state %>
+<div class="mt-4 flex flex-col items-start gap-2">
+  <%= button_group "Period", nav: true do %>
+    <%= segment "All", href: runs_path(year: "all"), selected: year.nil? %>
+    <% years.each do |candidate| %>
+      <%= segment candidate, href: runs_path(year: candidate), selected: year == candidate %>
     <% end %>
-  </nav>
-<% end %>
+  <% end %>
+  <% if year %>
+    <% active_months = Activity.months_with_runs(year) %>
+    <%= button_group "Month", nav: true do %>
+      <% (1..12).each do |number| %>
+        <%= segment Date::ABBR_MONTHNAMES[number], href: runs_path(year:, month: (month == number ? nil : number)), selected: month == number, disabled: !active_months.include?(number) && month != number %>
+      <% end %>
+    <% end %>
+  <% end %>
+</div>

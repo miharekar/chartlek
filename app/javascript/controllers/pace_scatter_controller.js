@@ -8,7 +8,7 @@ import { formatDate, formatDistance, formatPace } from "helpers/formatters"
 import { paceScale } from "helpers/pace_scale"
 import { clearRuns, clearSelection, hoverSelection, publish, selectionMean, setRuns, subscribe } from "helpers/linked_selection"
 import { observeSize } from "helpers/resize"
-import { escapeHtml, hideTooltip, moveTooltip, showTooltip } from "helpers/tooltip"
+import { hideTooltip, moveTooltip, showTooltip, tooltipHtml } from "helpers/tooltip"
 
 const MARGIN = { top: 8, right: 12, bottom: 24, left: 44 }
 const PACE_TICKS = [180, 240, 300, 360, 450, 600, 900, 1800]
@@ -228,6 +228,6 @@ export default class extends Controller {
   tooltip(run) {
     const hr = run.hr == null ? "–" : `${run.hr} bpm`
     const vdot = run.vdot == null ? "–" : run.vdot.toFixed(1)
-    return `<div class="font-medium">${formatDate(run.t)}</div><div>${escapeHtml(run.name || "Run")}</div><div>${formatDistance(run.km)} km · ${formatPace(run.pace)} /km</div><div class="text-zinc-500">HR ${hr} · VDOT ${vdot}</div>`
+    return tooltipHtml(formatDate(run.t), [["Distance", `${formatDistance(run.km)} km`], ["Pace", `${formatPace(run.pace)} /km`], ["HR", hr], ["VDOT", vdot]], { heading: run.name || "Run" })
   }
 }

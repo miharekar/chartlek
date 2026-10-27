@@ -1,7 +1,7 @@
 <% runs = run.prior_training %>
 <section class="mt-4 <%= WidgetsHelper::CARD %>" <%= tag.attributes(data: (runs.any? ? {controller: "analyze-run", analyze_run_runs_value: runs, analyze_run_from_value: run.local_started_at.beginning_of_day.to_i * 1000 - Activity::TRAINING_WINDOW * 86_400_000, analyze_run_to_value: run.local_started_at.to_i * 1000, analyze_run_current_value: run.training_point.merge(race: run.race)} : {})) %>>
-  <div class="flex flex-wrap items-center justify-between gap-2">
-    <h2 class="flex items-center gap-1.5 <%= WidgetsHelper::CARD_TITLE %>">
+  <div class="<%= WidgetsHelper::CARD_HEADER %>">
+    <h2 class="<%= WidgetsHelper::CARD_TITLE %>">
       Runs in the prior <%= Activity::TRAINING_WINDOW %> days
       <%= overview_info "Every run in the #{Activity::TRAINING_WINDOW} days before this one is a dot on the chosen scale, so overlaps show where your training clusters. The bar is the average. Drag across the strip to select a range: the matching days light up below, and clicking the label above the selection cycles share of runs, hours, distance and run count. Click a dot or a day to open the run." %>
     </h2>
@@ -17,7 +17,7 @@
     <div class="mt-3 text-sm tabular-nums" data-analyze-run-target="summary"></div>
     <div class="mt-2" data-analyze-run-target="strip"></div>
     <div data-analyze-run-target="timeline"></div>
-    <p class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 <%= WidgetsHelper::HINT %>">
+    <p class="mt-1 <%= WidgetsHelper::LEGEND %>">
       <span class="inline-flex items-center gap-1.5"><span class="size-2 rounded-full ring-1 ring-current" style="background: var(--chart-highlight)"></span>This run</span>
       <span class="inline-flex items-center gap-1.5"><span class="h-3 w-0.5" style="background: var(--chart-accent-highlight)"></span>Average</span>
       <span class="inline-flex items-center gap-1.5"><span class="size-3.5 rounded-full opacity-40" style="background: var(--chart-accent)"></span>Previous runs</span>

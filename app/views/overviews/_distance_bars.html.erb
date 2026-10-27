@@ -1,6 +1,6 @@
 <section class="<%= WidgetsHelper::CARD %>" data-controller="period-bars" data-period-bars-data-value="<%= overview.bars.to_json %>">
-  <div class="flex flex-wrap items-center justify-between gap-2">
-    <h2 class="flex items-center gap-1.5 <%= WidgetsHelper::CARD_TITLE %>">
+  <div class="<%= WidgetsHelper::CARD_HEADER %>">
+    <h2 class="<%= WidgetsHelper::CARD_TITLE %>">
       <span data-period-bars-target="title">Distance per <%= overview.period.granularity %></span>
       <%= overview_info "Each bar sums or averages your runs in that #{overview.period.granularity}. Pick another metric on the right. Click a bar to drill in." %>
     </h2>

@@ -14,6 +14,12 @@ class ControlsHelperTest < ActionView::TestCase
     assert_not_includes segment("A", href: "/x"), "aria-current"
   end
 
+  test "a disabled segment is a span, and a nav group is a labelled nav" do
+    assert_includes segment("Jan", href: "/x", disabled: true), "<span"
+    assert_not_includes segment("Jan", href: "/x", disabled: true), "href"
+    assert_includes button_group("Period", nav: true) { segment("A", href: "/x") }, "<nav"
+  end
+
   test "toggle buttons report pressed" do
     assert_includes toggle_button("A", pressed: true, href: "/x"), 'aria-pressed="true"'
     assert_includes toggle_button("A"), "<button"

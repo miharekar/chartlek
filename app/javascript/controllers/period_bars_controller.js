@@ -8,7 +8,7 @@ import { formatDate, formatDistance, formatPace } from "helpers/formatters"
 import { bucketShares, bucketSpan, clearSelection, getRuns, getTimes, publish, spanSelection, subscribe } from "helpers/linked_selection"
 import { observeSize } from "helpers/resize"
 import { parseTime } from "helpers/time"
-import { escapeHtml, hideTooltip, moveTooltip, showTooltip } from "helpers/tooltip"
+import { hideTooltip, moveTooltip, showTooltip, tooltipHtml } from "helpers/tooltip"
 
 const MARGIN = { top: 8, right: 8, bottom: 24, left: 44 }
 const DAY_MS = 86400000
@@ -183,7 +183,8 @@ export default class extends Controller {
     const title = granularity === "month" ? monthYearLabel(date) : granularity === "week" ? `Week of ${formatDate(bucket.from)}` : formatDate(bucket.from)
     const value = metric.value(bucket)
     const text = value == null ? "–" : metric.text(value)
-    return `<div class="font-medium">${escapeHtml(title)}</div><div>${escapeHtml(text)}</div><div class="text-zinc-500">${bucket.runs} ${bucket.runs === 1 ? "run" : "runs"}</div>`
+    const label = this.metricTargets.find(button => button.value === this.metricValue).textContent.trim()
+    return tooltipHtml(title, [[label, text], ["Runs", bucket.runs]])
   }
 
   open(bucket) {

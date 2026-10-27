@@ -34,7 +34,7 @@
       <p class="<%= big %>"><%= number_with_delimiter(run.calories) %><span class="<%= unit %>">kcal</span></p>
       <% if food %><p class="<%= small %>">≈ <%= food %></p><% end %>
     <% else %>
-      <p class="<%= big %> text-zinc-400">–</p>
+      <p class="<%= big %> <%= WidgetsHelper::PLACEHOLDER %>">–</p>
     <% end %>
   </section>
 
@@ -44,7 +44,7 @@
       <p class="<%= big %>"><%= run.avg_hr %><span class="<%= unit %>">bpm</span></p>
       <% if hr_extent %><p class="<%= small %>"><%= hr_extent %></p><% end %>
     <% else %>
-      <p class="<%= big %> text-zinc-400">–</p>
+      <p class="<%= big %> <%= WidgetsHelper::PLACEHOLDER %>">–</p>
     <% end %>
   </section>
 
@@ -54,7 +54,7 @@
       <p class="<%= big %>"><%= run.avg_cadence.round %><span class="<%= unit %>">spm</span></p>
       <% if cadence_extent %><p class="<%= small %>"><%= cadence_extent %></p><% end %>
     <% else %>
-      <p class="<%= big %> text-zinc-400">–</p>
+      <p class="<%= big %> <%= WidgetsHelper::PLACEHOLDER %>">–</p>
     <% end %>
   </section>
 
@@ -95,7 +95,7 @@
     <% else %>
       <div>
         <h2 class="<%= label %>">Estimated finish</h2>
-        <p class="<%= big %> text-zinc-400">–</p>
+        <p class="<%= big %> <%= WidgetsHelper::PLACEHOLDER %>">–</p>
       </div>
     <% end %>
   </section>

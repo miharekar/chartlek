@@ -112,3 +112,9 @@
 svg :focus:not(:focus-visible) {
     outline: none;
 }
+
+a:focus-visible,
+button:focus-visible {
+    outline: 2px solid var(--chart-accent);
+    outline-offset: 2px;
+}

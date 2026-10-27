@@ -1,41 +1,39 @@
-<div class="flex flex-wrap items-center justify-between gap-4">
-  <h1 class="text-2xl font-semibold"><%= runs_period_title(@year, @month) %></h1>
-  <p class="text-sm tabular-nums text-zinc-500 dark:text-zinc-400"><%= pluralize(number_with_delimiter(@runs.size), "run") %></p>
-</div>
+<%= page_header runs_period_title(@year, @month) do %>
+  <p class="text-sm tabular-nums <%= WidgetsHelper::MUTED %>"><%= pluralize(number_with_delimiter(@runs.size), "run") %></p>
+<% end %>
 
 <%= render "selector", year: @year, month: @month %>
 
 <% if @runs.empty? %>
-  <div class="mt-6 rounded-xl border border-zinc-200 p-10 text-center dark:border-zinc-800">
-    <p class="text-lg font-medium">No runs in <%= runs_period_title(@year, @month).downcase.sub("all time", "your history") %> yet.</p>
+  <%= empty_state "No runs in #{runs_period_title(@year, @month).downcase.sub("all time", "your history")} yet." do %>
     <% if @year %>
-      <p class="mt-2 text-sm text-zinc-500"><%= link_to "Show all time", runs_path(year: "all"), class: "text-lime-700 underline dark:text-[#9CFF44]" %></p>
+      <%= link_to "Show all time", runs_path(year: "all"), class: WidgetsHelper::LINK %>
     <% end %>
-  </div>
+  <% end %>
 <% else %>
   <section class="mt-6 <%= WidgetsHelper::CARD %>">
     <div class="overflow-x-auto">
-      <table class="w-full text-sm tabular-nums">
-        <thead class="text-zinc-500 dark:text-zinc-400">
-          <tr class="border-b border-zinc-200 dark:border-zinc-800">
+      <table class="<%= WidgetsHelper::TABLE %>">
+        <thead class="<%= WidgetsHelper::TABLE_HEAD %>">
+          <tr class="<%= WidgetsHelper::TABLE_HEAD_ROW %>">
             <% RunsHelper::COLUMNS.each do |label, key, align| %>
               <%= runs_sort_header label, key, align, info: (key == "vdot") %>
             <% end %>
-            <th class="px-3 py-2"></th>
+            <th class="<%= WidgetsHelper::CELL %>"></th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+        <tbody class="<%= WidgetsHelper::TABLE_BODY %>">
           <% @runs.each do |run| %>
-            <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40">
-              <td class="px-3 py-2 text-zinc-600 dark:text-zinc-300"><%= link_to overview_date(run.local_started_at), run_path(run), class: "hover:underline" %></td>
-              <td class="px-3 py-2 font-medium"><%= link_to run.name.presence || "Run", run_path(run), class: "hover:text-lime-700 dark:hover:text-[#9CFF44]" %></td>
-              <td class="px-3 py-2 text-right"><%= overview_distance(run.distance_m / 1000) %></td>
-              <td class="px-3 py-2 text-right"><%= overview_duration(run.timer_s) %></td>
-              <td class="px-3 py-2 text-right"><%= overview_pace(run.pace) %></td>
-              <td class="px-3 py-2 text-right"><%= run.avg_hr %></td>
-              <td class="px-3 py-2 text-right"><%= run.elevation_gain_m&.round %></td>
-              <td class="px-3 py-2 text-right"><%= run.vdot&.round(1) %></td>
-              <td class="px-3 py-2"><%= run_tags(run) %></td>
+            <tr class="<%= WidgetsHelper::TABLE_ROW %>">
+              <td class="<%= WidgetsHelper::CELL %> text-zinc-600 dark:text-zinc-300"><%= link_to overview_date(run.local_started_at), run_path(run), class: WidgetsHelper::TABLE_LINK %></td>
+              <td class="<%= WidgetsHelper::CELL %> font-medium"><%= link_to run.name.presence || "Run", run_path(run), class: WidgetsHelper::TABLE_LINK %></td>
+              <td class="<%= WidgetsHelper::CELL %> text-right"><%= overview_distance(run.distance_m / 1000) %></td>
+              <td class="<%= WidgetsHelper::CELL %> text-right"><%= overview_duration(run.timer_s) %></td>
+              <td class="<%= WidgetsHelper::CELL %> text-right"><%= overview_pace(run.pace) %></td>
+              <td class="<%= WidgetsHelper::CELL %> text-right"><%= run.avg_hr %></td>
+              <td class="<%= WidgetsHelper::CELL %> text-right"><%= run.elevation_gain_m&.round %></td>
+              <td class="<%= WidgetsHelper::CELL %> text-right"><%= run.vdot&.round(1) %></td>
+              <td class="<%= WidgetsHelper::CELL %>"><%= run_tags(run) %></td>
             </tr>
           <% end %>
         </tbody>

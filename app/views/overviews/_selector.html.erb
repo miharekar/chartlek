@@ -1,23 +1,18 @@
 <% period = overview.period %>
 <% years = overview.years(period.year) %>
-<nav class="mt-4 flex flex-wrap items-center gap-1" aria-label="Period">
-  <%= overview_pill "All time", overview_path, period.all_time? ? :selected : :idle %>
-  <% years.each do |year| %>
-    <%= overview_pill year, overview_period_path(year), period.year == year ? :selected : :idle %>
-  <% end %>
-</nav>
-<% if period.year %>
-  <% active_months = overview.months_with_runs(period.year) %>
-  <nav class="mt-2 flex flex-wrap items-center gap-1" aria-label="Month">
-    <% (1..12).each do |month| %>
-      <% state = if period.month == month
-        :selected
-      elsif active_months.include?(month)
-        :idle
-      else
-        :disabled
-      end %>
-      <%= overview_pill Date::ABBR_MONTHNAMES[month], (period.month == month ? overview_period_path(period.year) : overview_period_path(period.year, month)), state %>
+<div class="mt-4 flex flex-col items-start gap-2">
+  <%= button_group "Period", nav: true do %>
+    <%= segment "All time", href: overview_path, selected: period.all_time? %>
+    <% years.each do |year| %>
+      <%= segment year, href: overview_period_path(year), selected: period.year == year %>
     <% end %>
-  </nav>
-<% end %>
+  <% end %>
+  <% if period.year %>
+    <% active_months = overview.months_with_runs(period.year) %>
+    <%= button_group "Month", nav: true do %>
+      <% (1..12).each do |month| %>
+        <%= segment Date::ABBR_MONTHNAMES[month], href: (period.month == month ? overview_period_path(period.year) : overview_period_path(period.year, month)), selected: period.month == month, disabled: !active_months.include?(month) && period.month != month %>
+      <% end %>
+    <% end %>
+  <% end %>
+</div>

@@ -109,8 +109,8 @@ class RunsControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Run calendar']" do
       assert_select "a", text: /^2023$|^2022$/, count: 2
       assert_select "a[href=?]", run_path(race), text: "2023"
-      assert_select "a.bg-lime-700", text: "2023"
-      assert_select "a.bg-lime-700", text: "May"
+      assert_select "a[aria-current=page]", text: "2023"
+      assert_select "a[aria-current=page]", text: "May"
       assert_select "a[href=?]", run_path(march), text: "Mar"
       assert_select "span", text: "Jan"
       assert_select "a", text: "Feb", count: 0

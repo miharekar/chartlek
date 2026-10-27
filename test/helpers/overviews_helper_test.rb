@@ -42,9 +42,4 @@ class OverviewsHelperTest < ActionView::TestCase
     assert_includes text, "marathon #{overview_duration(Vdot.time_for(42_195, 50))}."
     assert_includes text, "one point is worth about 2% of race time"
   end
-
-  test "disabled pills are not links" do
-    assert_includes overview_pill("Jan", "/x", :disabled), "<span"
-    assert_includes overview_pill("Jan", "/x", :idle), 'href="/x"'
-  end
 end

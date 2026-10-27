@@ -2,13 +2,12 @@ module RunsHelper
   COLUMNS = [%w[Date date left], %w[Name name left], %w[km km right], %w[Time time right], %w[Pace pace right], %w[HR hr right], %w[Elev elevation right], %w[VDOT vdot right]].freeze
   DAY = "inline-flex size-8 items-center justify-center rounded-md text-sm tabular-nums"
   DAY_STATES = {
-    selected: OverviewsHelper::PILL_STATES[:selected],
+    selected: "font-medium #{ControlsHelper::SELECTED}",
     idle: "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800",
     weekend: "bg-zinc-100 text-zinc-800 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700",
     race: "bg-amber-100 font-medium text-amber-800 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:hover:bg-amber-900/70",
-    disabled: OverviewsHelper::PILL_STATES[:disabled]
+    disabled: "cursor-default text-zinc-300 dark:text-zinc-700"
   }.freeze
-  TAG = "rounded px-1.5 py-0.5 text-xs font-medium"
 
   def runs_period_title(year, month)
     if year && month
@@ -30,7 +29,7 @@ module RunsHelper
     end
     next_dir = (current == key && descending) ? "asc" : "desc"
 
-    tag.th class: "px-3 py-2 font-medium text-#{align}", aria: {sort: (current == key) ? (descending ? "descending" : "ascending") : nil} do
+    tag.th class: "#{WidgetsHelper::CELL} font-medium text-#{align}", aria: {sort: (current == key) ? (descending ? "descending" : "ascending") : nil} do
       link = link_to "#{label}#{arrow}", runs_path(request.query_parameters.slice("year", "month").merge("sort" => key, "dir" => next_dir)), class: "hover:text-zinc-900 dark:hover:text-zinc-100"
 
       if info
@@ -63,8 +62,8 @@ module RunsHelper
 
   def run_tags(run)
     safe_join([
-      (tag.span("race", class: "#{TAG} bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300") if run.race),
-      (tag.span("treadmill", class: "#{TAG} bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300") if run.indoor)
+      (chip("race", :race) if run.race),
+      (chip("treadmill", :treadmill) if run.indoor)
     ].compact, " ")
   end
 

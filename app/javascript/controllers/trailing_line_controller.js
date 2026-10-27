@@ -8,7 +8,7 @@ import { formatDate, formatDistance } from "helpers/formatters"
 import { observeSize } from "helpers/resize"
 import { parseTime } from "helpers/time"
 import { clearSelection, getTimes, publish, spanSelection } from "helpers/linked_selection"
-import { hideTooltip, moveTooltip, showTooltip } from "helpers/tooltip"
+import { hideTooltip, moveTooltip, showTooltip, tooltipHtml } from "helpers/tooltip"
 
 const MARGIN = { top: 8, right: 12, bottom: 24, left: 44 }
 const DAY_MS = 86400000
@@ -83,7 +83,7 @@ export default class extends Controller {
       .on("mousemove", event => {
         const point = points[bisect(points, x.invert(pointer(event)[0]))]
         marker.attr("display", null).attr("cx", x(point.date)).attr("cy", y(point.km))
-        showTooltip(`<div class="font-medium">${formatDate(point.date)}</div><div>${formatDistance(point.km)} km in ${this.dataValue.days} days</div>`, event)
+        showTooltip(tooltipHtml(formatDate(point.date), [[`Last ${this.dataValue.days} days`, `${formatDistance(point.km)} km`]]), event)
         const end = point.date.getTime() + DAY_MS
         publish(spanSelection(getTimes(), end - this.dataValue.days * DAY_MS, end, "trailing"))
       })

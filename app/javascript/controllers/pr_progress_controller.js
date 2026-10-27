@@ -25,9 +25,11 @@ const X_LABELS = [
   [100, "100 km"]
 ]
 
-const CELL = "px-4 py-2"
-const HEAD = "px-4 py-2 text-left font-medium text-zinc-500"
-const MUTED = "text-zinc-500"
+const CELL = "px-3 py-2"
+const HEAD = "px-3 py-2 text-left font-medium"
+const MUTED = "text-zinc-500 dark:text-zinc-400"
+const TABLE_LINK = "hover:text-lime-700 hover:underline dark:hover:text-[#9CFF44]"
+const CHIP = "rounded px-1.5 py-0.5 text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
 
 export default class extends Controller {
   static targets = ["chart", "timeline", "table", "range", "beat", "magic", "reference", "legend"]
@@ -342,7 +344,7 @@ export default class extends Controller {
   }
 
   tag(label) {
-    return `<span class="rounded bg-amber-100 px-1 text-[0.65rem] font-medium text-amber-800 dark:bg-amber-950 dark:text-amber-300">${label}</span>`
+    return `<span class="${CHIP}">${label}</span>`
   }
 
   syncControls() {
@@ -378,7 +380,7 @@ export default class extends Controller {
 
   renderTable(best, since, sincePr) {
     const rows = this.benchmarks.map((benchmark, bucket) => this.row(benchmark, bucket, best[bucket], since[bucket], sincePr[bucket])).join("")
-    this.tableTarget.innerHTML = `<thead><tr class="border-b border-zinc-200 dark:border-zinc-800"><th class="${HEAD}">Distance</th><th class="${HEAD}">All-time PR</th><th class="${HEAD}">Best in window</th><th class="${HEAD}">vs PR</th><th class="${HEAD} text-right">Days since last run</th><th class="${HEAD} text-right">Days since PR</th></tr></thead><tbody class="divide-y divide-zinc-100 dark:divide-zinc-900">${rows}</tbody>`
+    this.tableTarget.innerHTML = `<thead class="${MUTED}"><tr class="border-b border-zinc-200 dark:border-zinc-800"><th class="${HEAD}">Distance</th><th class="${HEAD}">All-time PR</th><th class="${HEAD}">Best in window</th><th class="${HEAD}">vs PR</th><th class="${HEAD} text-right">Days since last run</th><th class="${HEAD} text-right">Days since PR</th></tr></thead><tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/60">${rows}</tbody>`
   }
 
   row({ name }, bucket, best, since, sincePr) {
@@ -388,10 +390,10 @@ export default class extends Controller {
     const versus = best ? (best.best <= record.time ? this.tag("PR") : `+${percentSlower(best.best, record.time).toFixed(1)}%`) : `<span class="${MUTED}">–</span>`
     const days = since == null ? `<span class="${MUTED}">–</span>` : since
     const prDays = sincePr == null ? `<span class="${MUTED}">–</span>` : sincePr
-    return `<tr><td class="${CELL} font-medium">${escapeHtml(name)}</td><td class="${CELL}">${this.cell(record.time, record.date, record.url)}</td><td class="${CELL}">${best ? this.cell(best.best, best.time, best.url) : `<span class="${MUTED}">–</span>`}</td><td class="${CELL}">${versus}</td><td class="${CELL} text-right">${days}</td><td class="${CELL} text-right">${prDays}</td></tr>`
+    return `<tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40"><td class="${CELL} font-medium">${escapeHtml(name)}</td><td class="${CELL}">${this.cell(record.time, record.date, record.url)}</td><td class="${CELL}">${best ? this.cell(best.best, best.time, best.url) : `<span class="${MUTED}">–</span>`}</td><td class="${CELL}">${versus}</td><td class="${CELL} text-right">${days}</td><td class="${CELL} text-right">${prDays}</td></tr>`
   }
 
   cell(time, date, url) {
-    return `<a href="${escapeHtml(url)}" class="hover:underline">${formatDuration(time)}</a> <span class="${MUTED}">${formatDate(date)}</span>`
+    return `<a href="${escapeHtml(url)}" class="${TABLE_LINK}">${formatDuration(time)}</a> <span class="${MUTED}">${formatDate(date)}</span>`
   }
 }

@@ -16,8 +16,8 @@
   <h2 class="<%= label %>">Longest run</h2>
   <p class="<%= big %>"><%= overview_distance(longest.distance_m / 1000) %><span class="<%= unit %>">km</span></p>
   <p class="<%= sub %>">
-    <%= link_to overview_date(longest.local_started_at), run_path(longest), class: "underline decoration-zinc-300 hover:text-lime-700 dark:decoration-zinc-600 dark:hover:text-[#9CFF44]" %>
-    <span class="text-zinc-500"><%= longest.name %></span>
+    <%= link_to overview_date(longest.local_started_at), run_path(longest), class: WidgetsHelper::LINK %>
+    <span class="<%= WidgetsHelper::MUTED %>"><%= longest.name %></span>
   </p>
 </section>
 
