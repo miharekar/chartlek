@@ -4,6 +4,7 @@ class OpenMeteo::Client
   class Error < StandardError; end
 
   ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
+  FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
   HOURLY = "temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation,weather_code"
   DAILY = "sunrise,sunset"
   MIN_INTERVAL = 1.0
@@ -12,8 +13,8 @@ class OpenMeteo::Client
 
   class_attribute :sleeper, default: ->(seconds) { sleep(seconds) }
 
-  def weather(lat:, lng:, date:)
-    uri = URI(ARCHIVE_URL)
+  def weather(lat:, lng:, date:, recent: false)
+    uri = URI(recent ? FORECAST_URL : ARCHIVE_URL)
     uri.query = URI.encode_www_form(
       latitude: lat.round(2), longitude: lng.round(2),
       start_date: date.iso8601, end_date: date.iso8601,

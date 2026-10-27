@@ -40,7 +40,9 @@ class WeatherHelperTest < ActionView::TestCase
   test "values keep their units and every icon is decorative" do
     html = run_weather(run_with(DAY.merge("precipitation" => 0.4)))
 
-    ["Partly cloudy", "14°C", "60% humidity", "wind 8 km/h", "0.4 mm rain"].each { assert_includes html, it }
+    ["Partly cloudy", "14°C", "60%", "8 km/h", "0.4 mm"].each { assert_includes html, it }
+    %w[humidity wind rain].each { assert_includes html, %(<span class="sr-only">#{it} </span>) }
+    assert_not_includes html.gsub(/<span class="sr-only">[^<]*<\/span>/, ""), "humidity"
     assert_equal 5, html.scan("<svg").size
     assert_equal 5, html.scan('aria-hidden="true"').size
   end

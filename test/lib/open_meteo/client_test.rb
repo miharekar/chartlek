@@ -26,6 +26,20 @@ class OpenMeteo::ClientTest < ActiveSupport::TestCase
     assert_equal [12.5], result.dig("hourly", "temperature_2m")
   end
 
+  test "recent asks the forecast endpoint for the same variables" do
+    request = stub_request(:get, OpenMeteo::Client::FORECAST_URL).with(query: {
+      latitude: "10.12", longitude: "-20.35",
+      start_date: "2016-08-20", end_date: "2016-08-20",
+      hourly: "temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation,weather_code",
+      daily: "sunrise,sunset", timezone: "auto", wind_speed_unit: "kmh"
+    }).to_return(body: {hourly: {temperature_2m: [9.5]}}.to_json)
+
+    result = @client.weather(lat: 10.1234, lng: -20.3456, date: Date.new(2016, 8, 20), recent: true)
+
+    assert_requested request
+    assert_equal [9.5], result.dig("hourly", "temperature_2m")
+  end
+
   test "spaces calls one second apart" do
     stub_request(:get, URL).with(query: hash_including({})).to_return(body: "{}")
 

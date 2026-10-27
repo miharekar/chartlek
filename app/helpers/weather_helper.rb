@@ -48,12 +48,12 @@ module WeatherHelper
     items = [
       condition,
       (weather["temperature"] && [:temperature, "#{weather["temperature"].round}°C"]),
-      (weather["humidity"] && [:humidity, "#{weather["humidity"].round}% humidity"]),
-      (weather["wind"] && [:wind, "wind #{weather["wind"].round} km/h"]),
-      (weather["precipitation"]&.positive? && [:precipitation, "#{weather["precipitation"]} mm rain"])
+      (weather["humidity"] && [:humidity, "#{weather["humidity"].round}%", "humidity"]),
+      (weather["wind"] && [:wind, "#{weather["wind"].round} km/h", "wind"]),
+      (weather["precipitation"]&.positive? && [:precipitation, "#{weather["precipitation"]} mm", "rain"])
     ].compact_blank
 
-    safe_join(items.map { |icon, text| tag.span(safe_join([weather_icon(icon), text]), class: WidgetsHelper::META_ITEM) })
+    safe_join(items.map { |icon, text, word| tag.span(safe_join([weather_icon(icon), (tag.span("#{word} ", class: "sr-only") if word), text]), class: WidgetsHelper::META_ITEM) })
   end
 
   private

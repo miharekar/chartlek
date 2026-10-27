@@ -6,7 +6,7 @@ module Activity::GarminSync
   RUNNING_TYPES = %w[running trail_running treadmill_running indoor_running virtual_run track_running street_running ultra_run obstacle_run]
   INDOOR_TYPES = %w[treadmill_running indoor_running virtual_run]
   UTC = ActiveSupport::TimeZone["UTC"]
-  WEATHER_WINDOW = 60.days..6.days
+  WEATHER_WINDOW = 60.days
   PROCESSING_ATTRIBUTES = %w[started_at timer_s distance_m]
 
   class_methods do
@@ -123,7 +123,7 @@ module Activity::GarminSync
     def sync_garmin_weather
       client = OpenMeteo::Client.new
 
-      weatherable.where(weather: nil, local_started_at: WEATHER_WINDOW.begin.ago..WEATHER_WINDOW.end.ago).find_each do |activity|
+      weatherable.where(weather: nil).where(local_started_at: WEATHER_WINDOW.ago..).find_each do |activity|
         activity.fetch_weather(client)
       rescue => error
         logger.warn("Weather skipped for #{activity.external_id}: #{error.class}: #{error.message.truncate(200)}")

@@ -1,6 +1,8 @@
 module Activity::Weather
   extend ActiveSupport::Concern
 
+  ARCHIVE_LAG = 5.days
+
   class_methods do
     def weatherable
       where(indoor: false).where.not(start_lat: nil).where.not(start_lng: nil)
@@ -33,7 +35,7 @@ module Activity::Weather
   def fetch_weather(client = OpenMeteo::Client.new)
     if weatherable?
       midpoint = local_midpoint
-      data = client.weather(lat: start_lat, lng: start_lng, date: midpoint.to_date)
+      data = client.weather(lat: start_lat, lng: start_lng, date: midpoint.to_date, recent: midpoint > ARCHIVE_LAG.ago)
 
       update!(weather: weather_at(data, midpoint))
     end

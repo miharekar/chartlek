@@ -48,6 +48,41 @@ class Activity::WeatherTest < ActiveSupport::TestCase
     assert_nil activity.reload.weather
   end
 
+  test "a run from the last days comes from the forecast and keeps that value" do
+    started = Time.current.utc.beginning_of_day - 1.day + 9.hours
+    activity = create(:activity, local_started_at: started, elapsed_s: 3600, start_lat: 46.05, start_lng: 14.5)
+    forecast = stub_archive(date: started.to_date.iso8601, url: OpenMeteo::Client::FORECAST_URL)
+
+    activity.fetch_weather
+
+    assert_requested forecast
+    assert_not_requested :get, URL
+    assert_equal 10.0, activity.reload.weather["temperature"]
+  end
+
+  test "the archive takes over from the forecast after the lag" do
+    recent = create(:activity, local_started_at: 4.days.ago.utc.beginning_of_day + 9.hours, elapsed_s: 3600, start_lat: 46.05, start_lng: 14.5)
+    older = create(:activity, local_started_at: 6.days.ago.utc.beginning_of_day + 9.hours, elapsed_s: 3600, start_lat: 46.05, start_lng: 14.5)
+    forecast = stub_archive(date: recent.local_started_at.to_date.iso8601, url: OpenMeteo::Client::FORECAST_URL)
+    archive = stub_archive(date: older.local_started_at.to_date.iso8601)
+
+    recent.fetch_weather
+    older.fetch_weather
+
+    assert_requested forecast, times: 1
+    assert_requested archive, times: 1
+  end
+
+  test "a forecast with no data leaves weather nil so a later sync retries" do
+    started = Time.current.utc.beginning_of_day - 1.day + 9.hours
+    activity = create(:activity, local_started_at: started, elapsed_s: 3600, start_lat: 46.05, start_lng: 14.5)
+    stub_archive(date: started.to_date.iso8601, url: OpenMeteo::Client::FORECAST_URL, temperatures: [nil] * 24)
+
+    activity.fetch_weather
+
+    assert_nil activity.reload.weather
+  end
+
   test "skips indoor runs and runs without coordinates" do
     indoor = create(:activity, indoor: true, start_lat: 46.05, start_lng: 14.5)
     unlocated = create(:activity)
@@ -79,11 +114,11 @@ class Activity::WeatherTest < ActiveSupport::TestCase
   end
 
   private
-  def stub_archive(date:, temperatures: (0..23).map { it.to_f })
+  def stub_archive(date:, url: URL, temperatures: (0..23).map { it.to_f })
     temperatures = temperatures.each_with_index.map { |value, hour| (hour == 9) ? (value && 10.0) : value }
     hours = (0..23).map { format("%sT%02d:00", date, it) }
 
-    stub_request(:get, URL).with(query: hash_including(start_date: date)).to_return(body: {
+    stub_request(:get, url).with(query: hash_including(start_date: date)).to_return(body: {
       hourly: {
         time: hours, temperature_2m: temperatures, relative_humidity_2m: [60] * 24, wind_speed_10m: [5.5] * 24,
         precipitation: [0.0] * 24, weather_code: [3] * 24

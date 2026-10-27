@@ -7,7 +7,7 @@ namespace :weather do
       puts "#{progress[:done]}/#{progress[:total]} runs" if (progress[:done] % 50).zero?
     end
 
-    puts "Fetched #{report[:fetched]}, pending #{report[:pending]} (archive not ready), skipped #{report[:skipped]} (indoor or no coordinates), failed #{report[:failed].size}"
+    puts "Fetched #{report[:fetched]}, pending #{report[:pending]} (no data yet), skipped #{report[:skipped]} (indoor or no coordinates), failed #{report[:failed].size}"
     report[:failed].each { |id, reason| puts "  #{id}: #{reason}" }
   end
 end

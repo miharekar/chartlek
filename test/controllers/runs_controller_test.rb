@@ -85,8 +85,10 @@ class RunsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "span", text: "14°C"
-    assert_select "span", text: "60% humidity"
-    assert_select "span", text: "wind 8 km/h"
+    assert_select "span", text: /60%/
+    assert_select "span.sr-only", text: "humidity"
+    assert_select "span", text: /8 km\/h/
+    assert_select "span.sr-only", text: "wind"
     assert_select "p", text: /Ljubljana/
     assert_select "p", text: /120–180/
     assert_select "p", text: /160–180/

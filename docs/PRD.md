@@ -222,7 +222,7 @@ A button group above the main chart chooses None, Resting HR, HRV or VO2max, dra
 
 1. **Header**
    - Local date and time, start-end clock time.
-   - Weather, from Open-Meteo at the run's midpoint hour, as one line of icon and value items (`run_weather`): the condition from the WMO code with its label (clear, partly cloudy, cloudy, fog, drizzle, rain, showers, snow, thunderstorm; clear and partly cloudy turn to a moon when the midpoint is outside sunrise to sunset), then temperature, humidity, wind and, only above 0, rain. The icons are inline SVG and decorative, the text carries the meaning, and a missing field leaves no item. Runs without weather show nothing.
+   - Weather, from Open-Meteo at the run's midpoint hour, as one line of icon and value items (`run_weather`): the condition from the WMO code with its label (clear, partly cloudy, cloudy, fog, drizzle, rain, showers, snow, thunderstorm; clear and partly cloudy turn to a moon when the midpoint is outside sunrise to sunset), then temperature, humidity, wind and, only above 0, rain, each as an icon and its value (`14°C`, `60%`, `8 km/h`, `1.2 mm`); the words "humidity", "wind" and "rain" are `sr-only` text for screen readers. The icons are inline SVG and decorative, the text carries the meaning, and a missing field leaves no item. Runs without weather show nothing.
    - Location name (Garmin only), previous/next run, and Open in Garmin and Open in Strava buttons side by side. Garmin shows for Garmin runs; Strava shows for runs with a `strava_id` (§7.6). A Smashrun-only run has neither. Phase 3 adds the gear tag (§5.7).
    - If there were several runs that day, a switcher between them.
    - A Smashrun-style date navigator: every year with runs (newest first), the 12 months of the run's year, and every day of its month, with the run's year, month and day selected. A year or month with runs opens its latest run, and a day opens its first run; the others are inert. Weekends look distinct, race days are amber, and hovering or focusing a day shows its weekday, date and distance in the shared tooltip. (Smashrun's own year and month buttons open its overview pages instead.)
@@ -476,7 +476,7 @@ The Personal API has **no** time-series, splits, laps or weather endpoints. Ever
   - `bin/rails activities:download` is the one-time backfill: about 2,514 files at ≤ 1 request/s (about 45 min of downloads), in the foreground with progress output. FIT parsing is slower than the download (2 to 8 s per file), so the whole run takes hours single-process. The class methods respect relation scoping, so split it across processes, for example `Activity.where("activities.id % 4 = ?", k).download_originals` in 4 `bin/rails runner` processes. Each process throttles itself to 1 request/s, so together they exceed 1 request/s: the real backfill averaged about 1.6 requests/s with 4 processes and saw no errors.
   - The sync downloads the original of every run it pages through that has none, processes a run that has an original but no track, and reprocesses a run whose `started_at`, `timer_s` or `distance_m` changed, which picks up trims. A failure for one run is logged and skipped, and the next sync retries it. The sync refreshes `sync_started_at` after each run, so a long sync keeps counting as running.
   - `bin/rails activities:reprocess` rebuilds all derived data from stored originals whenever the algorithms change.
-- **Weather:** each sync also fetches weather for runs 6 to 60 days old that still have none, because the archive lags about 5 days. `bin/rails weather:fetch` is the full backfill.
+- **Weather:** each sync also fetches weather for every run up to 60 days old that still has none: from the forecast API for the last 5 days (§7.4), from the archive for older runs. `bin/rails weather:fetch` is the full backfill.
 - **Wellness (Phase 3):** a separate hourly recurring job (`Wellness::SyncJob`), so a wellness failure never blocks run syncing. It refreshes today and the last 3 days, because Garmin fills in late data. `bin/rails wellness:backfill` is the one-time backfill from the first run date onward: throttled to 1 request/s, newest first so recent data appears first, resumable, idempotent upserts, in 30-day chunks where the endpoint takes a range and per day where it doesn't.
 
 ### 7.3 Strava gap fill (Phase 0, one-time)
@@ -489,12 +489,12 @@ The Personal API has **no** time-series, splits, laps or weather endpoints. Ever
 
 ### 7.4 Weather (Phase 2)
 
-- Source: the Open-Meteo historical archive API (free, no key).
+- Source: the Open-Meteo historical archive API (free, no key) for runs older than 5 days, and the forecast API (`https://api.open-meteo.com/v1/forecast`, same variables, `start_date` and `end_date`, which serves the recent past) for runs from the last 5 days, so yesterday's run has weather. A stored value is never refetched from the archive.
 - Fetch hourly temperature, humidity, wind and precipitation at the run's local midpoint hour, plus the daily sunrise and sunset, with `timezone=auto`.
 - Coordinates are rounded to 0.01° before sending.
 - Results are cached on the activity.
 - Treadmill and indoor runs, and runs without start coordinates, get no weather.
-- The archive lags about 5 days. When it returns nulls, `weather` stays nil and a later sync retries it (§7.2).
+- The archive was seen to lag about 5 days, so the 5-day cut-off (`Activity::Weather::ARCHIVE_LAG`) stays even though a live check on 2026-10-27 found the archive already returned values for today. When either API returns nulls, `weather` stays nil and a later sync retries it (§7.2).
 
 ### 7.5 Smashrun (Phase 2)
 
@@ -730,7 +730,7 @@ Smashback's values, next to smashrun.com/miharekar (all time, km), as of 2026-10
 | R6 | Personal API key expiry (≤ 1 year). | Clear banner and rotation docs (§11). |
 | R7 | Smashrun shutting down. | Its data is fetched once into stored originals (§7.5), so nothing depends on it afterwards. |
 | R8 | Garmin originals are untrimmed. | Clip FIT recordings to `started_at` and `timer_s` of recording time (§6). |
-| R9 | The Open-Meteo archive lags about 5 days. | Leave `weather` nil and retry on later syncs (§7.2). |
+| R9 | The Open-Meteo archive lags about 5 days. | Runs from the last 5 days use the forecast API; when either API returns nulls, leave `weather` nil and retry on later syncs (§7.2, §7.4). |
 | R10 | The Personal API may not expose some wellness data. **Resolved by W6: sleep, training readiness, recovery time, training status and load, and VO2max by day are not available; resting HR, HRV, stress, Body Battery, weight and HR zones are.** | The scope shrank to what exists. The summary-based fields (HR zone times, training effect and load, Body Battery change) need no endpoint. **Owner decision: anything that isn't available in the API we leave out.** Sleep, training readiness, recovery time, training status and VO2max by day stay cut, and there is no Garmin data-export import. |
 | R11 | Per-day endpoints make the wellness backfill long (about 3,500 days per metric). | 1 request/s, resumable, newest first, run in the background. Stop a metric after several empty weeks, because older devices didn't record it. |
 | R12 | Health data will sit in an app with no login. | run.rekar.eu is confirmed tailnet-only (2026-10-27); keep it that way (basic auth at Caddy is optional hardening). Never log health values; synthetic fixtures. |
