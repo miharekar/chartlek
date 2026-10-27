@@ -77,7 +77,7 @@ const CHARTS = {
     rows: (c, index) => {
       const { sleep_bed: bed, sleep_wake: wake } = c.columns
       const inBed = c.columns.sleep_in_bed?.[index]
-      return [["Bedtime", bed[index] == null ? null : clockLabel(bed[index])], ["Wake time", wake[index] == null ? null : clockLabel(wake[index])], ["In bed", inBed == null ? null : formatDuration(inBed)]]
+      return [["Fell asleep", bed[index] == null ? null : clockLabel(bed[index])], ["Woke", wake[index] == null ? null : clockLabel(wake[index])], ["Sleep window", inBed == null ? null : formatDuration(inBed)]]
     }
   },
   bb: {
