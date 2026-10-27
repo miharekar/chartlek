@@ -12,7 +12,7 @@ registerHooks({
   }
 })
 
-const { seriesColor, initialHidden, toggled, cumulative, stackRows, monthRows } = await import("helpers/gear_charts")
+const { seriesColor, initialHidden, toggled, cumulative, stackRows, monthRows, visibleSpan, zoom } = await import("helpers/gear_charts")
 
 const gears = [
   { id: "g1", retired: false, km: [10, 0, 5] },
@@ -47,4 +47,37 @@ test("month rows keep only gear used that month", () => {
 test("series colours differ per index", () => {
   assert.notEqual(seriesColor(0), seriesColor(1))
   assert.equal(seriesColor(3), seriesColor(3))
+})
+
+const months = ["m0", "m1", "m2", "m3", "m4", "m5"]
+const old = { id: "a", km: [5, 5, 0, 0, 0, 0] }
+const recent = { id: "b", km: [0, 0, 0, 7, 0, 3] }
+const later = { id: "c", km: [0, 0, 0, 0, 2, 0] }
+
+test("visible span runs from the first to the last month any visible gear was used", () => {
+  assert.deepEqual(visibleSpan([recent]), [3, 5])
+  assert.deepEqual(visibleSpan([old, recent]), [0, 5])
+  assert.deepEqual(visibleSpan([{ id: "x", km: [0, 0] }]), null)
+  assert.equal(visibleSpan([]), null)
+})
+
+test("zoom slices months and every gear to the visible span", () => {
+  const zoomed = zoom(months, [recent, later])
+
+  assert.deepEqual(zoomed.months, ["m3", "m4", "m5"])
+  assert.deepEqual(zoomed.gears.map(gear => gear.km), [[7, 0, 3], [0, 2, 0]])
+  assert.deepEqual(recent.km, [0, 0, 0, 7, 0, 3])
+})
+
+test("zoom keeps gaps between used months", () => {
+  assert.deepEqual(zoom(months, [old, later]).months, months.slice(0, 5))
+})
+
+test("a lead month is kept for the cumulative chart but never before the first month", () => {
+  assert.deepEqual(zoom(months, [recent], 1).months, ["m2", "m3", "m4", "m5"])
+  assert.deepEqual(zoom(months, [old], 1).months, ["m0", "m1"])
+})
+
+test("with nothing visible the full range stays", () => {
+  assert.deepEqual(zoom(months, []), { months, gears: [] })
 })

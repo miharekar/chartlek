@@ -291,8 +291,8 @@ Strava gear, read-only (§2). Modelled on the Gear page of the owner's Dreeve in
 - **Gear page (`/gear`):**
   - **Active gear table:** one row per gear, most used first: name (brand and model under it), runs, distance, moving time, distance in the last 12 months and last used date. Retired gear sits under a collapsed "Retired (n)" toggle button. Distance and time are summed from our runs, not taken from Strava's gear totals.
   - **No gear set:** a separate amber row for linked runs with no gear (count, distance, last run), linking to the runs list filtered to them.
-  - **Distance per month per gear:** stacked bars over all time.
-  - **Distance over time per gear:** cumulative lines. In both charts a toggle button per gear turns it on or off; retired gear starts off.
+  - **Distance per month per gear:** stacked bars.
+  - **Distance over time per gear:** cumulative lines. In both charts a toggle button per gear turns it on or off; retired gear starts off. Both x axes cover only the visible gear, from the first month any of it was used to the last (the lines start one month earlier, at zero), and redraw on every toggle; with no gear visible the full range stays. Up to 18 months the bars are labelled by month, longer by year.
   - **Refresh from Strava:** a button that starts a full gear scan (about 15 requests).
   - Until the first gear scan has finished, the page says so, instead of listing every run as having no gear.
   - Gear Strava no longer knows (a 404 on `GET /gear/{id}`, stored with a nil `name` and `summary`) is listed by its Strava id in the active table, with the runs and distance our runs still carry for it, under a "Gear no longer on Strava" label.

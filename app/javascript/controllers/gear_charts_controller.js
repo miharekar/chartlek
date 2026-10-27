@@ -6,13 +6,15 @@ import { select } from "d3-selection"
 import { line, stack } from "d3-shape"
 import { utcFormat } from "d3-time-format"
 import { formatDistance } from "helpers/formatters"
-import { cumulative, initialHidden, monthRows, seriesColor, stackRows, toggled } from "helpers/gear_charts"
+import { cumulative, initialHidden, monthRows, seriesColor, stackRows, toggled, zoom } from "helpers/gear_charts"
 import { observeSize } from "helpers/resize"
 import { parseTime } from "helpers/time"
 import { hideTooltip, moveTooltip, showTooltip, tooltipHtml } from "helpers/tooltip"
 
 const MARGIN = { top: 8, right: 12, bottom: 24, left: 52 }
 const monthYear = utcFormat("%b %Y")
+const monthShort = utcFormat("%b %y")
+const MAX_MONTH_TICKS = 18
 
 export default class extends Controller {
   static targets = ["bars", "lines", "toggle"]
@@ -81,19 +83,20 @@ export default class extends Controller {
     }
   }
 
-  #yearTicks(indexes) {
-    return indexes.filter(index => this.months[index].getUTCMonth() === 0 || index === 0)
+  #xTicks(months) {
+    const indexes = months.map((_, index) => index)
+    return months.length <= MAX_MONTH_TICKS ? indexes : indexes.filter(index => months[index].getUTCMonth() === 0 || index === 0)
   }
 
   #drawBars() {
-    const visible = this.visible
-    const rows = stackRows(this.months, visible)
+    const { months, gears: visible } = zoom(this.months, this.visible)
+    const rows = stackRows(months, visible)
     const stacked = stack().keys(visible.map(gear => gear.id)).value((row, key) => row[key])(rows)
     const { chart, y, innerWidth, innerHeight, yAxis } = this.#frame("bars", max(stacked.at(-1) || [], row => row[1]))
-    const indexes = this.months.map((_, index) => index)
+    const indexes = months.map((_, index) => index)
     const x = scaleBand().domain(indexes).range([0, innerWidth]).padding(0.15)
     const xAxis = chart.append("g").attr("transform", `translate(0,${innerHeight})`).call(
-      axisBottom(x).tickValues(this.#yearTicks(indexes).filter((_, position, all) => all.length <= Math.ceil(innerWidth / 48) || position % Math.ceil(all.length / Math.ceil(innerWidth / 48)) === 0)).tickFormat(index => this.months[index].getUTCFullYear()).tickSize(4)
+      axisBottom(x).tickValues(this.#xTicks(months).filter((_, position, all) => all.length <= Math.ceil(innerWidth / 48) || position % Math.ceil(all.length / Math.ceil(innerWidth / 48)) === 0)).tickFormat(index => (months.length <= MAX_MONTH_TICKS ? monthShort(months[index]) : months[index].getUTCFullYear())).tickSize(4)
     )
     this.#style(xAxis, yAxis)
     xAxis.selectAll("line").attr("stroke", "var(--chart-axis)")
@@ -105,19 +108,19 @@ export default class extends Controller {
       .attr("height", row => Math.max(0, y(row[0]) - y(row[1])))
       .attr("class", "pointer-events-none")
 
-    this.#hitAreas(chart, indexes, index => x(index) - x.step() * 0.075, x.step(), innerHeight, visible, (gear, index) => gear.km[index])
+    this.#hitAreas(chart, indexes, index => x(index) - x.step() * 0.075, x.step(), innerHeight, visible, (gear, index) => gear.km[index], months)
   }
 
   #drawLines() {
-    const visible = this.visible
+    const { months, gears: visible } = zoom(this.months, this.visible, 1)
     const series = visible.map(gear => ({ gear, totals: cumulative(gear.km) }))
     const { chart, y, innerWidth, innerHeight, yAxis } = this.#frame("lines", max(series, entry => max(entry.totals, value => value)))
-    const x = scaleUtc().domain([this.months[0], this.months.at(-1)]).range([0, innerWidth])
-    const indexes = this.months.map((_, index) => index)
+    const x = scaleUtc().domain([months[0], months.at(-1)]).range([0, innerWidth])
+    const indexes = months.map((_, index) => index)
     const xAxis = chart.append("g").attr("transform", `translate(0,${innerHeight})`).call(axisBottom(x).ticks(Math.max(2, Math.floor(innerWidth / 80))).tickSizeOuter(0))
     this.#style(xAxis, yAxis)
 
-    const path = line().defined(value => value != null).x((_, index) => x(this.months[index])).y(value => y(value ?? 0))
+    const path = line().defined(value => value != null).x((_, index) => x(months[index])).y(value => y(value ?? 0))
     chart.append("g").selectAll("path").data(series).join("path")
       .attr("fill", "none")
       .attr("stroke", entry => this.colors.get(entry.gear.id))
@@ -126,25 +129,25 @@ export default class extends Controller {
       .attr("d", entry => path(entry.totals))
     this.lineTotals = new Map(series.map(entry => [entry.gear.id, entry.totals]))
 
-    const step = this.months.length > 1 ? innerWidth / (this.months.length - 1) : innerWidth
-    this.#hitAreas(chart, indexes, index => x(this.months[index]) - step / 2, step, innerHeight, visible, (gear, index) => this.lineTotals.get(gear.id)[index], true)
+    const step = months.length > 1 ? innerWidth / (months.length - 1) : innerWidth
+    this.#hitAreas(chart, indexes, index => x(months[index]) - step / 2, step, innerHeight, visible, (gear, index) => this.lineTotals.get(gear.id)[index], months, true)
   }
 
-  #hitAreas(chart, indexes, left, step, innerHeight, visible, value, running = false) {
+  #hitAreas(chart, indexes, left, step, innerHeight, visible, value, months, running = false) {
     chart.append("g").selectAll("rect").data(indexes).join("rect")
       .attr("x", left)
       .attr("width", step)
       .attr("height", innerHeight + MARGIN.bottom)
       .attr("fill", "transparent")
-      .on("mouseenter", (event, index) => showTooltip(this.#tooltip(index, visible, value, running), event))
+      .on("mouseenter", (event, index) => showTooltip(this.#tooltip(index, visible, value, months, running), event))
       .on("mousemove", event => moveTooltip(event))
       .on("mouseleave", () => hideTooltip())
   }
 
-  #tooltip(index, visible, value, running) {
+  #tooltip(index, visible, value, months, running) {
     const rows = running ? visible.map(gear => [gear, value(gear, index)]).filter(([, km]) => km > 0) : monthRows(visible, index)
     const lines = rows.map(([gear, km]) => [gear.name, `${formatDistance(km)} km`])
     if (!running && rows.length > 1) lines.push(["Total", `${formatDistance(rows.reduce((sum, [, km]) => sum + km, 0))} km`])
-    return tooltipHtml(monthYear(this.months[index]), lines.length ? lines : [["Runs", "none with gear"]])
+    return tooltipHtml(monthYear(months[index]), lines.length ? lines : [["Runs", "none with gear"]])
   }
 }
