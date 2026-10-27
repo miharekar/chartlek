@@ -33,4 +33,11 @@ class HrZonesTest < ActiveSupport::TestCase
   test "is nil without stored zones or recorded heart rate" do
     assert_nil HrZones.current
   end
+
+  test "bands give each zone its floor and the next floor, open at the top" do
+    bands = HrZones.new(floors: [100, 120, 140, 160, 180], max_hr: 200, source: "garmin").bands
+
+    assert_equal [1, 2, 3, 4, 5], bands.pluck(:zone)
+    assert_equal [[100, 120], [120, 140], [140, 160], [160, 180], [180, nil]], bands.map { [it[:from], it[:to]] }
+  end
 end

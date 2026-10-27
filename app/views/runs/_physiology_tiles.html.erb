@@ -1,0 +1,9 @@
+<div class="flex flex-wrap gap-x-6 gap-y-4">
+  <% tiles.each do |tile| %>
+    <div class="min-w-28 flex-1">
+      <h3 class="<%= WidgetsHelper::TILE_LABEL %>"><%= tile[:label] %></h3>
+      <p class="<%= WidgetsHelper::TILE_VALUE %>"><%= tile[:value] %><% if tile[:unit] %><span class="<%= WidgetsHelper::TILE_UNIT %>"><%= tile[:unit] %></span><% end %></p>
+      <% if tile[:sub] %><p class="<%= WidgetsHelper::TILE_SUB %>"><%= tile[:sub] %></p><% end %>
+    </div>
+  <% end %>
+</div>

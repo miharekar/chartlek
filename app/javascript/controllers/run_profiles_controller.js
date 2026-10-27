@@ -5,6 +5,7 @@ import { scaleLinear } from "d3-scale"
 import { pointer, select } from "d3-selection"
 import { area, line } from "d3-shape"
 import { formatDistance } from "helpers/formatters"
+import { zoneBands } from "helpers/hr_zones"
 import { observeSize } from "helpers/resize"
 import { clear, publish, subscribe } from "helpers/run_cursor"
 
@@ -22,7 +23,7 @@ const BY_DISTANCE = bisector(distance => distance)
 
 export default class extends Controller {
   static targets = ["chart"]
-  static values = { series: Object }
+  static values = { series: Object, zones: Array }
 
   connect() {
     this.root = select(this.chartTarget).append("div")
@@ -60,7 +61,7 @@ export default class extends Controller {
     this.#show()
   }
 
-  #drawChart({ label, unit, fill }, values, distances, x, innerWidth, last) {
+  #drawChart({ key, label, unit, fill }, values, distances, x, innerWidth, last) {
     const innerHeight = CHART_HEIGHT - MARGIN.top - MARGIN.bottom
     const height = CHART_HEIGHT + (last ? AXIS_HEIGHT : 0)
     const [low, high] = extent(values)
@@ -70,6 +71,13 @@ export default class extends Controller {
     const svg = this.root.append("svg").attr("class", "block").attr("width", this.width).attr("height", height)
     const chart = svg.append("g").attr("transform", `translate(${MARGIN.left},${MARGIN.top})`)
     const defined = (_, index) => values[index] != null
+
+    if (key === "hr") {
+      const [bottom, top] = y.domain()
+      for (const { zone, from, to } of zoneBands(this.zonesValue, bottom, top)) {
+        chart.append("rect").attr("x", 0).attr("width", innerWidth).attr("y", y(to)).attr("height", y(from) - y(to)).attr("fill", `var(--hr-zone-${zone})`).attr("fill-opacity", 0.14).attr("pointer-events", "none")
+      }
+    }
 
     const yAxis = chart.append("g").call(axisLeft(y).ticks(3).tickSize(-innerWidth))
     yAxis.select(".domain").remove()

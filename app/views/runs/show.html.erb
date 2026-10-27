@@ -1,3 +1,4 @@
+<% zones = HrZones.current if @run.avg_hr || @run.hr_zone_times(nil) %>
 <%= render "header", run: @run %>
 <%= render "tiles", run: @run %>
 <% if @run.track %>
@@ -5,8 +6,9 @@
   <% if @run.splits.present? %>
     <%= render "speed", run: @run, track: @run.track %>
   <% end %>
-  <%= render "profiles", track: @run.track %>
+  <%= render "profiles", track: @run.track, zones: zones %>
 <% end %>
+<%= render "physiology", run: @run, zones: zones %>
 <%= render "notables", run: @run %>
 <%= render "fastest", run: @run %>
 <%= render "analyze", run: @run %>

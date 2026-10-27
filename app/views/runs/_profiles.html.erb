@@ -1,6 +1,6 @@
 <% series = track.data.slice("d", "alt", "hr", "cad") %>
 <% if series.key?("alt") || series.key?("hr") || series.key?("cad") %>
-  <section class="mt-4 <%= WidgetsHelper::CARD %>" data-controller="run-profiles" data-run-profiles-series-value="<%= series.to_json %>">
+  <section class="mt-4 <%= WidgetsHelper::CARD %>" data-controller="run-profiles" data-run-profiles-series-value="<%= series.to_json %>" data-run-profiles-zones-value="<%= (series.key?("hr") && zones ? zones.bands : []).to_json %>">
     <h2 class="<%= WidgetsHelper::CARD_TITLE %>">Elevation, heart rate and cadence</h2>
     <div class="mt-3" data-run-profiles-target="chart"></div>
   </section>

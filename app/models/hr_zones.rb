@@ -31,6 +31,10 @@ class HrZones
     floors[zone - 1]..last
   end
 
+  def bands
+    ZONES.map { {zone: it, from: floors[it - 1], to: (floors[it] if it < ZONES.last)} }
+  end
+
   def garmin?
     source == "garmin"
   end

@@ -85,4 +85,44 @@ module RunsHelper
   def run_finishes(run)
     PaceTrend::DISTANCES.zip(run.finish_times).map { |(label, meters), (_, seconds)| {label:, km: meters / 1000.0, seconds:} }
   end
+
+  def run_effort_tiles(effort)
+    intensity = [effort[:moderate], effort[:vigorous]].compact
+
+    [
+      (tile("Aerobic effect", format("%.1f", effort[:aerobic]), "/ 5", effort[:label]&.humanize&.sub("Vo2", "VO2")) if effort[:aerobic]),
+      (tile("Anaerobic effect", format("%.1f", effort[:anaerobic]), "/ 5") if effort[:anaerobic]),
+      (tile("Training load", effort[:load].round) if effort[:load]),
+      (tile("Body Battery change", effort[:body_battery].negative? ? "−#{effort[:body_battery].abs}" : "+#{effort[:body_battery]}") if effort[:body_battery]),
+      (tile("Intensity minutes", intensity.sum.round, "min", [("#{effort[:moderate]} moderate" if effort[:moderate]), ("#{effort[:vigorous]} vigorous" if effort[:vigorous])].compact.join(" · ")) if intensity.any?)
+    ].compact
+  end
+
+  def run_dynamics(dynamics)
+    [
+      (["Ground contact", "#{dynamics[:ground_contact].round} ms"] if dynamics[:ground_contact]),
+      (["Vertical oscillation", "#{format("%.1f", dynamics[:vertical_oscillation])} cm"] if dynamics[:vertical_oscillation]),
+      (["Stride length", "#{(dynamics[:stride_length] / 100).round(2)} m"] if dynamics[:stride_length]),
+      (["Vertical ratio", "#{format("%.1f", dynamics[:vertical_ratio])}%"] if dynamics[:vertical_ratio])
+    ].compact
+  end
+
+  def run_going_in_tiles(going_in)
+    baseline = "baseline #{going_in[:hrv_baseline_low]}–#{going_in[:hrv_baseline_high]} ms" if going_in[:hrv_baseline_low] && going_in[:hrv_baseline_high]
+
+    [
+      (tile("Resting HR", going_in[:resting_hr], "bpm", ("7-day average #{going_in[:resting_hr_avg_7d]} bpm" if going_in[:resting_hr_avg_7d])) if going_in[:resting_hr]),
+      (tile("HRV last night", going_in[:hrv_last_night], "ms", [going_in[:hrv_status]&.humanize, baseline].compact.join(" · ")) if going_in[:hrv_last_night]),
+      (tile("Body Battery at wake", going_in[:body_battery_wake], "/ 100") if going_in[:body_battery_wake])
+    ].compact
+  end
+
+  def run_zone_minutes(seconds)
+    "#{(seconds / 60).round} min"
+  end
+
+  private
+  def tile(label, value, unit = nil, sub = nil)
+    {label:, value:, unit:, sub: sub.presence}
+  end
 end
