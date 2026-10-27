@@ -4,6 +4,7 @@
 <% unit = WidgetsHelper::TILE_UNIT %>
 <% small = WidgetsHelper::TILE_SUB %>
 <% food = Food.for(run.calories) %>
+<% finishes = run.finish_times && run_finishes(run) %>
 <% hr_extent = run_extent(run, "hr", run.max_hr) %>
 <% cadence_extent = run_extent(run, "cad", run.max_cadence) %>
 <div class="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -57,33 +58,50 @@
     <% end %>
   </section>
 
-  <section class="<%= card %>">
-    <h2 class="<%= label %>">Elevation</h2>
-    <% if run.elevation_gain_m %>
-      <p class="<%= big %>">+<%= run.elevation_gain_m.round %><span class="<%= unit %>">m</span></p>
-      <% if run.elevation_loss_m %><p class="<%= small %>">−<%= run.elevation_loss_m.round %> m</p><% end %>
-    <% else %>
-      <p class="<%= big %> text-zinc-400">–</p>
-    <% end %>
-  </section>
-
-  <section class="<%= card %>">
-    <h2 class="<%= label %> flex items-center gap-1.5">VDOT <%= vdot_info %></h2>
-    <p class="<%= big %>"><%= run.vdot ? run.vdot.round(1) : "–" %></p>
-    <% if run.finish_times %>
-      <dl class="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 tabular-nums" aria-label="Estimated finish times at this VDOT">
-        <% run.finish_times.each do |name, seconds| %>
-          <div>
-            <dt class="<%= WidgetsHelper::HINT %>"><%= name %></dt>
-            <dd class="text-sm font-semibold"><%= overview_duration(seconds) %></dd>
+  <section class="<%= card %> col-span-2 grid gap-5 sm:grid-cols-2">
+    <div>
+      <h2 class="<%= label %> flex items-center gap-1.5">Performance index <%= vdot_info %></h2>
+      <p class="<%= big %>"><%= run.vdot ? run.vdot.round(1) : "–" %></p>
+      <% if finishes %>
+        <% zone = run.performance_zone %>
+        <% zones = run.performance_zone_range %>
+        <% five_k_pace = overview_pace(finishes.first[:seconds] / finishes.first[:km]) %>
+        <div class="mt-3" role="img" aria-label="Performance zone <%= PaceZones.label(zone) %>, 5K pace <%= five_k_pace %> per kilometre">
+          <div class="relative h-3">
+            <span class="absolute top-0 size-3 -translate-x-1/2 rounded-full border-2 border-white shadow dark:border-zinc-900" style="left: <%= (zone - zones.begin + 0.5) * 100.0 / zones.size %>%; background: var(--chart-highlight)"></span>
           </div>
-        <% end %>
-      </dl>
+          <div class="mt-1 flex h-3 overflow-hidden rounded-sm ring-1 ring-zinc-200 dark:ring-zinc-700">
+            <% zones.each do |index| %>
+              <span class="flex-1" style="background: var(--pace-zone-<%= index %>)" title="<%= PaceZones.label(index) %>"></span>
+            <% end %>
+          </div>
+          <p class="mt-1 <%= WidgetsHelper::HINT %> tabular-nums">5K pace <%= five_k_pace %> /km</p>
+        </div>
+      <% end %>
+    </div>
+
+    <% if finishes %>
+      <% first = finishes.first %>
+      <div data-controller="estimated-finish" data-estimated-finish-finishes-value="<%= finishes.to_json %>">
+        <h2 class="<%= label %>">Estimated finish</h2>
+        <div class="flex items-start gap-3">
+          <div aria-live="polite" aria-atomic="true">
+            <p class="<%= big %>" data-estimated-finish-target="time"><%= overview_duration(first[:seconds]) %></p>
+            <p class="<%= small %>"><span data-estimated-finish-target="label"><%= first[:label] %></span> · <span data-estimated-finish-target="pace"><%= overview_pace(first[:seconds] / first[:km]) %></span> /km</p>
+          </div>
+          <button type="button" class="mt-2 h-10 <%= ControlsHelper::BUTTON %>" aria-label="Show the estimate for the next distance" data-action="estimated-finish#next">▶</button>
+        </div>
+      </div>
+    <% else %>
+      <div>
+        <h2 class="<%= label %>">Estimated finish</h2>
+        <p class="<%= big %> text-zinc-400">–</p>
+      </div>
     <% end %>
   </section>
 
   <% if run.pace_variability %>
-    <section class="<%= card %> col-span-2 sm:col-span-1">
+    <section class="<%= card %> col-span-2 lg:col-span-1">
       <h2 class="<%= label %> flex items-center gap-1.5">Pace variability <%= overview_info "How much your speed varied. Each wedge is 100 metres, clockwise from the start. The longer the wedge, the further that stretch was from your average speed, faster or slower (hover for which). The number is the average gap, measured over 10 second stretches, as a percentage of average speed. Stops with the timer running count; pauses are excluded." %></h2>
       <% bars = run.track&.wheel_bars %>
       <% if bars.to_a.size > 1 %>
@@ -98,9 +116,10 @@
   <% end %>
 
   <% has_variability = run.pace_variability.present? %>
-  <% has_elevation = run.track&.data&.dig("alt")&.any? %>
+  <% has_altitude = run.track&.data&.dig("alt")&.any? %>
+  <% has_elevation = has_altitude || run.elevation_gain_m.present? %>
   <% rank = run.longest_rank %>
-  <section class="<%= card %> col-span-2 <%= has_variability ? "sm:col-span-1" : (has_elevation ? "" : "sm:col-span-1 lg:col-span-2") %>">
+  <section class="<%= card %> col-span-2 <%= "lg:col-span-1" if has_variability %>">
     <h2 class="<%= label %>"><%= rank.ordinalize %> longest run</h2>
     <p class="<%= small %>">of <%= number_with_delimiter(run.run_count) %> runs</p>
     <%= render "rank_distribution", values: run.distance_distribution, current: run.distance_m / 1000.0, metric: "distance" %>
@@ -108,12 +127,14 @@
 
   <% if has_elevation %>
     <section class="<%= card %> col-span-2">
-      <h2 class="<%= label %> flex items-center gap-1.5">Elevation profile <%= overview_info "The run's height along its distance, drawn on a scale of at least 150 m so a flat run looks flat. The amber dot is the highest point. Hill difficulty is 1 to 5: 1 when the run climbs under 1.5 m per km, then one more step for every 8 m per km, up to 5. It was fitted to Smashrun's own ratings." %></h2>
+      <h2 class="<%= label %> flex items-center gap-1.5"><%= has_altitude ? "Elevation profile" : "Elevation" %> <%= overview_info "The run's height along its distance, drawn on a scale of at least 150 m so a flat run looks flat. The amber dot is the highest point. Hill difficulty is 1 to 5: 1 when the run climbs under 1.5 m per km, then one more step for every 8 m per km, up to 5. It was fitted to Smashrun's own ratings." %></h2>
       <div class="mt-3 grid gap-4 sm:grid-cols-3 sm:items-center">
-        <div class="min-w-0 sm:col-span-2" data-controller="elevation-profile" data-elevation-profile-distances-value="<%= run.track.data["d"].to_json %>" data-elevation-profile-altitudes-value="<%= run.track.data["alt"].to_json %>">
-          <div data-elevation-profile-target="chart" role="img" aria-label="Elevation profile, highest point <%= run.track.data["alt"].compact.max.round %> metres"></div>
-        </div>
-        <dl class="grid grid-cols-1 gap-x-4 gap-y-2">
+        <% if has_altitude %>
+          <div class="min-w-0 sm:col-span-2" data-controller="elevation-profile" data-elevation-profile-distances-value="<%= run.track.data["d"].to_json %>" data-elevation-profile-altitudes-value="<%= run.track.data["alt"].to_json %>">
+            <div data-elevation-profile-target="chart" role="img" aria-label="Elevation profile, highest point <%= run.track.data["alt"].compact.max.round %> metres"></div>
+          </div>
+        <% end %>
+        <dl class="grid grid-cols-1 gap-x-4 gap-y-2 <%= "sm:col-span-3 sm:grid-cols-3" unless has_altitude %>">
           <div>
             <dt class="<%= label %>">Gained</dt>
             <dd class="<%= big %>"><%= run.elevation_gain_m ? "+#{run.elevation_gain_m.round}" : "–" %><% if run.elevation_gain_m %><span class="<%= unit %>">m</span><% end %></dd>
@@ -132,7 +153,7 @@
   <% end %>
 
   <% similar_rank = run.similar_rank %>
-  <section class="<%= card %> col-span-2 <%= (has_variability || has_elevation) ? (has_elevation ? "lg:col-span-4" : "") : "sm:col-span-1 lg:col-span-2" %>">
+  <section class="<%= card %> col-span-2 <%= "lg:col-span-4" if has_elevation %>">
     <h2 class="<%= label %>"><%= similar_rank.ordinalize %> fastest for a similar distance</h2>
     <p class="<%= small %>">of <%= number_with_delimiter(run.similar_count) %> runs within ±10%</p>
     <%= render "rank_distribution", values: run.similar_pace_distribution, current: run.pace, metric: "pace" %>

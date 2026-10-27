@@ -25,6 +25,49 @@
   --chart-muted: #a1a1aa;
   --chart-grid: #e4e4e7;
   --chart-axis: #71717a;
+  --pace-stop-0: #7f1d1d;
+  --pace-stop-1: #ea580c;
+  --pace-stop-2: #eab308;
+  --pace-stop-3: #22c55e;
+  --pace-stop-4: #2563eb;
+  --pace-stop-5: #cbd5e1;
+  --pace-zone-0: var(--pace-stop-0);
+  --pace-zone-1: color-mix(in oklab, var(--pace-stop-0), var(--pace-stop-1) 17%);
+  --pace-zone-2: color-mix(in oklab, var(--pace-stop-0), var(--pace-stop-1) 33%);
+  --pace-zone-3: color-mix(in oklab, var(--pace-stop-0), var(--pace-stop-1) 50%);
+  --pace-zone-4: color-mix(in oklab, var(--pace-stop-0), var(--pace-stop-1) 67%);
+  --pace-zone-5: color-mix(in oklab, var(--pace-stop-0), var(--pace-stop-1) 83%);
+  --pace-zone-6: color-mix(in oklab, var(--pace-stop-0), var(--pace-stop-1) 100%);
+  --pace-zone-7: color-mix(in oklab, var(--pace-stop-1), var(--pace-stop-2) 14%);
+  --pace-zone-8: color-mix(in oklab, var(--pace-stop-1), var(--pace-stop-2) 29%);
+  --pace-zone-9: color-mix(in oklab, var(--pace-stop-1), var(--pace-stop-2) 43%);
+  --pace-zone-10: color-mix(in oklab, var(--pace-stop-1), var(--pace-stop-2) 57%);
+  --pace-zone-11: color-mix(in oklab, var(--pace-stop-1), var(--pace-stop-2) 71%);
+  --pace-zone-12: color-mix(in oklab, var(--pace-stop-1), var(--pace-stop-2) 86%);
+  --pace-zone-13: color-mix(in oklab, var(--pace-stop-1), var(--pace-stop-2) 100%);
+  --pace-zone-14: color-mix(in oklab, var(--pace-stop-2), var(--pace-stop-3) 14%);
+  --pace-zone-15: color-mix(in oklab, var(--pace-stop-2), var(--pace-stop-3) 29%);
+  --pace-zone-16: color-mix(in oklab, var(--pace-stop-2), var(--pace-stop-3) 43%);
+  --pace-zone-17: color-mix(in oklab, var(--pace-stop-2), var(--pace-stop-3) 57%);
+  --pace-zone-18: color-mix(in oklab, var(--pace-stop-2), var(--pace-stop-3) 71%);
+  --pace-zone-19: color-mix(in oklab, var(--pace-stop-2), var(--pace-stop-3) 86%);
+  --pace-zone-20: color-mix(in oklab, var(--pace-stop-2), var(--pace-stop-3) 100%);
+  --pace-zone-21: color-mix(in oklab, var(--pace-stop-3), var(--pace-stop-4) 13%);
+  --pace-zone-22: color-mix(in oklab, var(--pace-stop-3), var(--pace-stop-4) 25%);
+  --pace-zone-23: color-mix(in oklab, var(--pace-stop-3), var(--pace-stop-4) 38%);
+  --pace-zone-24: color-mix(in oklab, var(--pace-stop-3), var(--pace-stop-4) 50%);
+  --pace-zone-25: color-mix(in oklab, var(--pace-stop-3), var(--pace-stop-4) 63%);
+  --pace-zone-26: color-mix(in oklab, var(--pace-stop-3), var(--pace-stop-4) 75%);
+  --pace-zone-27: color-mix(in oklab, var(--pace-stop-3), var(--pace-stop-4) 88%);
+  --pace-zone-28: color-mix(in oklab, var(--pace-stop-3), var(--pace-stop-4) 100%);
+  --pace-zone-29: color-mix(in oklab, var(--pace-stop-4), var(--pace-stop-5) 13%);
+  --pace-zone-30: color-mix(in oklab, var(--pace-stop-4), var(--pace-stop-5) 25%);
+  --pace-zone-31: color-mix(in oklab, var(--pace-stop-4), var(--pace-stop-5) 38%);
+  --pace-zone-32: color-mix(in oklab, var(--pace-stop-4), var(--pace-stop-5) 50%);
+  --pace-zone-33: color-mix(in oklab, var(--pace-stop-4), var(--pace-stop-5) 63%);
+  --pace-zone-34: color-mix(in oklab, var(--pace-stop-4), var(--pace-stop-5) 75%);
+  --pace-zone-35: color-mix(in oklab, var(--pace-stop-4), var(--pace-stop-5) 88%);
+  --pace-zone-36: var(--pace-stop-5);
 }
 
 :root[data-theme="light"] {
@@ -40,6 +83,12 @@
     --chart-muted: #71717a;
     --chart-grid: #27272a;
     --chart-axis: #a1a1aa;
+    --pace-stop-0: #b91c1c;
+    --pace-stop-1: #f97316;
+    --pace-stop-2: #facc15;
+    --pace-stop-3: #4ade80;
+    --pace-stop-4: #3b82f6;
+    --pace-stop-5: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -51,6 +100,12 @@
     --chart-muted: #71717a;
     --chart-grid: #27272a;
     --chart-axis: #a1a1aa;
+    --pace-stop-0: #b91c1c;
+    --pace-stop-1: #f97316;
+    --pace-stop-2: #facc15;
+    --pace-stop-3: #4ade80;
+    --pace-stop-4: #3b82f6;
+    --pace-stop-5: #ffffff;
   }
 }
 

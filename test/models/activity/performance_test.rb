@@ -59,4 +59,27 @@ class Activity::PerformanceTest < ActiveSupport::TestCase
     assert_equal 5, build(:activity, distance_m: 10_000, elevation_gain_m: 900).hill_difficulty
     assert_nil build(:activity, distance_m: 10_000, elevation_gain_m: nil).hill_difficulty
   end
+
+  test "performance zone is the zone of the 5K pace at this vdot" do
+    activity = build(:activity, vdot: Vdot.for(5000, 1500))
+
+    assert_equal PaceZones.zone_for(5.0 / Vdot.time_for(5000, activity.vdot) * 3600), activity.performance_zone
+    assert_equal 14, activity.performance_zone
+  end
+
+  test "performance zone is nil without a vdot" do
+    assert_nil build(:activity, vdot: nil).performance_zone
+  end
+
+  test "performance zone range spans the history's 25th percentile to its best, padded" do
+    create(:activity, distance_m: 5000, timer_s: 1500)
+    best = create(:activity, distance_m: 5000, timer_s: 1200)
+    easy = create(:activity, distance_m: 5000, timer_s: 1800)
+
+    range = easy.performance_zone_range
+
+    assert_equal easy.performance_zone - 1, range.begin
+    assert_equal best.performance_zone + 1, range.end
+    assert_nil build(:activity, vdot: nil).performance_zone_range
+  end
 end

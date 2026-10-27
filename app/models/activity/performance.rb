@@ -18,6 +18,14 @@ module Activity::Performance
     timer_s / distance_m * 1000
   end
 
+  def performance_zone
+    PaceZones.zone_for_vdot(vdot) if vdot
+  end
+
+  def performance_zone_range
+    PaceZones.range(Activity.where.not(vdot: nil).pluck(:vdot), performance_zone) if vdot
+  end
+
   def hill_difficulty
     if elevation_gain_m
       gain_per_km = elevation_gain_m / (distance_m / 1000)

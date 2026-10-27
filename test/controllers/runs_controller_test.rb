@@ -186,29 +186,37 @@ class RunsControllerTest < ActionDispatch::IntegrationTest
     assert_select "h2", text: /1st longest run/
   end
 
-  test "the finish times sit inside the VDOT tile as a grid of four" do
+  test "the performance card shows the vdot, the zone strip and one finish at a time" do
     run = run_at(Time.utc(2023, 5, 6, 7), distance_m: 10_000, timer_s: 3000)
 
     get run_path(run)
 
-    assert_select "dl[aria-label^='Estimated finish times'] dt", text: "5K"
-    assert_select "dl[aria-label^='Estimated finish times'] dt", text: "Marathon"
-    vdot_tile = css_select("section").find { it.at_css("h2")&.text&.strip&.start_with?("VDOT") }
-    assert vdot_tile.at_css("dl")
-    assert_equal 4, vdot_tile.css("dt").size
-    assert_equal 1, css_select("dl[aria-label^='Estimated finish times']").size
+    card = css_select("section").find { it.at_css("h2")&.text&.strip&.start_with?("Performance index") }
+    assert_equal run.vdot.round(1).to_s, card.at_css("p").text.strip
+    assert_equal run.performance_zone_range.size, card.css("span[title][style*='--pace-zone-']").size
+    assert_operator card.css("span[title][style*='--pace-zone-']").size, :<, PaceZones::COUNT
+    assert_includes card.text, "5K pace #{ApplicationController.helpers.overview_pace(Vdot.time_for(5000, run.vdot) / 5)} /km"
+    assert_equal "5K", card.at_css("[data-estimated-finish-target=label]").text
+    assert_equal ApplicationController.helpers.overview_duration(Vdot.time_for(5000, run.vdot)), card.at_css("[data-estimated-finish-target=time]").text
+    assert_equal 1, card.css("[aria-live=polite]").size
+    assert_equal 1, card.css("button[data-action='estimated-finish#next']").size
+    finishes = JSON.parse(card.at_css("[data-controller=estimated-finish]")["data-estimated-finish-finishes-value"])
+    assert_equal %w[5K 10K Half Marathon], finishes.pluck("label")
+    assert_select "dl[aria-label^='Estimated finish times']", false
   end
 
-  test "without a VDOT the tile shows a dash and no grid" do
+  test "without a VDOT the performance card shows dashes and no strip" do
     run = run_at(Time.utc(2023, 5, 6, 7), distance_m: 300, timer_s: 100)
 
     get run_path(run)
 
     assert_response :success
-    vdot_tile = css_select("section").find { it.at_css("h2")&.text&.strip&.start_with?("VDOT") }
-    assert_equal "–", vdot_tile.at_css("p").text.strip
-    assert_nil vdot_tile.at_css("dl")
-    assert_select "dl[aria-label^='Estimated finish times']", false
+    card = css_select("section").find { it.at_css("h2")&.text&.strip&.start_with?("Performance index") }
+    assert_equal "–", card.at_css("p").text.strip
+    assert_equal 2, card.css("p").size
+    assert_nil card.at_css("span[title]")
+    assert_nil card.at_css("[data-controller=estimated-finish]")
+    assert_nil card.at_css("button[data-action^='estimated-finish']")
   end
 
   test "show draws the pace variability wheel from the 100 m bars" do
@@ -221,7 +229,7 @@ class RunsControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-controller=pace-variability][data-pace-variability-bars-value=?]", [{from: 0.0, to: 0.1, distance: 100.0, time: 30.0}, {from: 0.1, to: 0.2, distance: 100.0, time: 20.0}, {from: 0.2, to: 0.3, distance: 100.0, time: 40.0}].to_json
     assert_select "[data-pace-variability-target=chart][role=group][aria-label*='100 metres']"
     assert_select "p", text: /Green: faster/, count: 0
-    assert_select "section.col-span-2.sm\\:col-span-1 h2", text: /Pace variability/
+    assert_select "section.col-span-2.lg\\:col-span-1 h2", text: /Pace variability/
   end
 
   test "show has no wheel when the variability is missing" do
@@ -231,8 +239,8 @@ class RunsControllerTest < ActionDispatch::IntegrationTest
 
     assert_select "[data-controller=pace-variability]", false
     assert_select "h2", text: /Pace variability/, count: 0
-    assert_select "section.lg\\:col-span-2 h2", text: /longest run/
-    assert_select "section.sm\\:col-span-1.lg\\:col-span-2 h2", text: /fastest for a similar distance/
+    assert_select "section.col-span-2:not(.lg\\:col-span-1) h2", text: /longest run/
+    assert_select "section.col-span-2:not(.lg\\:col-span-4) h2", text: /fastest for a similar distance/
   end
 
   test "show is a 404 for an unknown run" do
@@ -268,6 +276,20 @@ class RunsControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-controller=elevation-profile]", false
     assert_select "h2", text: /Elevation profile/, count: 0
     assert_select "section.lg\\:col-span-4", false
+  end
+
+  test "a run with elevation gain but no altitude track shows its totals without the chart" do
+    run = run_at(Time.utc(2023, 5, 6, 7), distance_m: 10_000, timer_s: 3000, elevation_gain_m: 150.4, elevation_loss_m: 148.2)
+
+    get run_path(run)
+
+    assert_select "h2", text: "Elevation"
+    assert_select "h2", text: /Elevation profile/, count: 0
+    assert_select "[data-controller=elevation-profile]", false
+    assert_select "dd", text: "+150m"
+    assert_select "dd", text: "−148m"
+    assert_select "dt", text: "Hill difficulty"
+    assert_select "section.col-span-2.lg\\:col-span-4 h2", text: /fastest for a similar distance/
   end
 
   test "the analyze chart gets this run's figures and a legend" do

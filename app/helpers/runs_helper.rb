@@ -94,6 +94,10 @@ module RunsHelper
     end
   end
 
+  def run_finishes(run)
+    PaceTrend::DISTANCES.zip(run.finish_times).map { |(label, meters), (_, seconds)| {label:, km: meters / 1000.0, seconds:} }
+  end
+
   def run_sparkline(profile)
     paces = Array(profile).compact
 
