@@ -15,8 +15,25 @@ export function movingMean(values, before, after, minValues = 1) {
     const low = Math.max(0, index - before)
     const high = Math.min(values.length, index + after + 1)
     const count = counts[high] - counts[low]
-    return count && counts[index + 1] >= minValues ? (sums[high] - sums[low]) / count : null
+    return count >= minValues ? (sums[high] - sums[low]) / count : null
   })
+}
+
+export function weightTrend(values) {
+  const first = values.findIndex(value => value != null)
+  const last = values.findLastIndex(value => value != null)
+  const means = movingMean(values, 15, 15).map((mean, index) => (index < first || index > last ? null : mean))
+  let before = first
+  for (let index = first + 1; index <= last; index++) {
+    if (means[index] == null) continue
+    for (let gap = before + 1; gap < index; gap++) means[gap] = means[before] + ((means[index] - means[before]) * (gap - before)) / (index - before)
+    before = index
+  }
+  return means
+}
+
+export function dailyAverage(values) {
+  return movingMean(values, 6, 0, 4).map((mean, index) => (values[index] == null ? null : mean))
 }
 
 export function dayIndex(start, ms) {

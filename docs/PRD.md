@@ -177,9 +177,9 @@ Toggle buttons:
 
 Shows date, name, VDOT, distance, pace and time. Clicking a run opens its run page, which includes the 90 days of training before that run.
 
-**Overlay (Phase 3)**
+**Overlay (Phase 3, built, W10)**
 
-A button group above the main chart chooses None, Resting HR or HRV, drawn on a secondary axis (§5.6).
+A button group above the main chart chooses None (default), Resting HR or HRV, drawn as a thin muted line on a secondary right-hand axis (§5.6). An option appears only when `WellnessDay` has that series, and the whole group is hidden without wellness data. The choice is the `overlay` URL param (`rhr` or `hrv`, kept like `distance` by the preset, brush and filter chip links; unknown or empty values mean None).
 
 ### 5.4 PR Progress (Phase 1, built)
 
@@ -272,7 +272,7 @@ Some of it needs no new endpoint, because the stored activity summaries already 
 
 - Nav item **Wellness** (between PR Progress and Gear). A shared window: the Pace Trends presets (3 mo, 6 mo, 1 yr, 2 yr, All time, default the last year) and a brush on a compact daily resting HR timeline (`createTimeline` and the preset helpers are reused), with `from` and `to` in the URL. Every chart below follows it. Hovering any chart draws a vertical line at that day on all of them, through the run page's cursor module (`helpers/run_cursor`, which carries epoch ms of the day here and metres there). The overlay of each chart is one Tab stop: Left and Right step the shared cursor by a day, Home and End jump to the window's ends, Escape clears it, and the tooltip anchors to the cursor line.
 - Charts, each shown only when its data exists (one card each, all in one `wellness` Stimulus controller):
-  - **Resting HR:** daily dots with the 7-day average line (§6, computed in JS from the series, shown from the fourth value on).
+  - **Resting HR:** daily dots with the 7-day average line (§6, computed in JS from the series, with at least 4 values in its 7 days, and none on a day without a reading).
   - **HRV:** the nightly average as a thin line, with one dot per night coloured by Garmin's status (balanced accent, unbalanced amber, low and poor red, anything else muted), over the baseline band (low to high).
   - **Body Battery:** a bar per day from its low to its high, with the value at wake as an amber mark.
   - **Stress:** the daily average as dots and a thin line.
@@ -282,7 +282,7 @@ Some of it needs no new endpoint, because the stored activity summaries already 
 - Missing days are gaps, not zeros: the days are sent densely (one entry per day from the first to the last day with a value, `null` where there is none), so a line breaks at a gap; an empty-marker row counts as no data. Before a device recorded a metric, its chart simply starts later (and is empty when the window ends before that).
 - Data: `Wellness::Trends` builds one payload (columnar JSON: `start`, `domain`, `window`, a dense array per series, and tuple lists for VDOT and zone weeks; about 165 KB on the full history) from five queries. With no wellness data at all the page shows an empty state.
 
-**Pace Trends overlay:** the button group above the main chart (None, Resting HR, HRV) draws the chosen series on a secondary right-hand axis in a muted colour. It follows the window and adds a line to the tooltip; the regression, stats and predictions don't change.
+**Pace Trends overlay:** the button group above the main chart (None, Resting HR, HRV) draws the chosen series on a secondary right-hand axis in a muted colour. Resting HR is the 7-day average and HRV the nightly value; a missing day is a gap in the line. The second axis is fitted to the window and follows the brush, the tooltip gains a line with the value for the run's day, and the regression, stats and predictions don't change. Data: `Wellness::Trends#overlay` (the dense `rhr` and `hrv` columns and their start, about 25 KB on the full history), sent in the Pace Trends payload so switching needs no request; the averaging is `movingMean` in JS, as on the Wellness page.
 
 ### 5.7 Gear (Phase 3, built)
 
@@ -414,8 +414,8 @@ All metric math lives in Ruby and is unit-tested. The only JS math is interactiv
   - Windows: 1, 3, 6 and 12 months, and ever.
 - **Food equivalents:** a static list of foods with kcal (`Food::ITEMS`), from a banana up to a kremšnita and a pizza. `Food.for(calories)` picks the food whose multiple (1 to 12) best matches the run's Garmin or Smashrun calories.
 - **HR zones (Phase 3):** five zones from the boundaries on the profile (§5.6). Time in zone for a run is Garmin's `hrTimeInZone_1` to `hrTimeInZone_5` from its stored summary, in seconds. The per-zone bpm range is `HrZones#range(zone)`; `HrZones#bands` (floor and next floor, open at the top) feeds the HR chart's zone bands.
-- **7-day average (Phase 3):** the mean of the values in the 7 calendar days ending on the day, shown from the fourth value on; days without a value are skipped, not counted as zero.
-- **Weight trend (Phase 3):** a 30-day centred moving average of the daily weight (the day's latest weigh-in).
+- **7-day average (Phase 3):** the mean of the values in the 7 calendar days ending on the day, shown only when that window holds at least 4 values and the day has a value of its own, so a gap in the readings is a gap in the line; missing days inside the window are skipped, not counted as zero.
+- **Weight trend (Phase 3):** a 30-day centred moving average of the daily weight (the day's latest weigh-in). Unlike the 7-day average it bridges gaps between weigh-ins, however long (days the window can't reach are interpolated in a straight line between the neighbouring trend values), but draws nothing before the first or after the last one.
 - **Gear stats (Phase 3):** distance = Σ `distance_m` and time = Σ `timer_s` of the runs with that gear; "last 12 months" = runs in the 365 days ending on the latest run's date; last used = the latest `local_started_at`. The suggested gear for a run with none is the gear used on most runs in the 14 days either side.
 
 ## 7. Data sources and sync
@@ -763,7 +763,7 @@ Work in this order. Items marked "parallel" touch different files and can run at
 - [x] **W7: wellness data and sync (§5.6, §7.2, §8).** `wellness_days` and the `profiles` columns, `Garmin::Client` methods for the verified endpoints, `Wellness::Sync` and `Wellness::SyncJob` (hourly), `bin/rails wellness:backfill`, `profiles.hr_zones` and the `HrZones` PORO with the default-band fallback. Done when: WebMock tests cover idempotency, the 3-day refresh and missing metrics, and a 30-day dry run on the dev database reports counts only. Depends on W6.
 - [x] **W8: HR zones, effort and recovery on the run page (§5.6).** The zones and effort section from the stored summaries, the zone bands on the HR profile, and "Going in". Done when: controller tests cover each section being present or absent per data, a node test covers the zone bar maths, and the browser check covers a run with full data, one without HR and a pre-Garmin run. Depends on W7.
 - [x] **W9: Wellness page (§5.6).** The nav item, the shared window and brush, the day cursor, and the charts the probe allows, with empty states. Done when the performance targets in §12 are met. Depends on W7. Parallel with W10.
-- [ ] **W10: Pace Trends overlay (§5.3, §5.6).** The overlay button group and secondary axis. Depends on W7. Parallel with W9.
+- [x] **W10: Pace Trends overlay (§5.3, §5.6).** The overlay button group and secondary axis. Depends on W7. Parallel with W9.
 - [x] **W11: Strava gear sync (§7.6, §8).** The `profile:read_all` scope, `profiles.strava_scope` and the Reconnect prompt, `gears` and `activities.strava_gear_id`, the Strava client's gear calls, `gear_id` read in the link scans, the weekly gear refresh, the full pass on connect and the hourly recent pass. Done when: WebMock tests cover a missing scope, a gear without a row yet, null gear, an absent `retired` and 401 handling. Owner action after the deploy: click Reconnect Strava. Then check on the live connection, printing counts only. Parallel with W6.
 - [x] **W12: Gear page and gear on runs (§5.7).** The table, the "No gear set" row, the two charts, the Refresh button, the runs list column and `gear` filter with the Suggested column, and the header tag. Done when: per-gear distance matches Strava's gear distance within 1% where a gear was only used for runs, every linked run without gear is listed, and tests and the browser check pass. Depends on W11.
 - [ ] **W13: Phase 3 close-out.** Check the new pages against the design system (§10), update this document and `AGENTS.md`, tick this checklist, rebuild and deploy the container.

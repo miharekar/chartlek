@@ -1,6 +1,6 @@
 module WellnessesHelper
   CHARTS = {
-    rhr: ["Resting heart rate", "One dot per day, with the mean of the values in the 7 days ending on it as the line, from the fourth value on."],
+    rhr: ["Resting heart rate", "One dot per day, with the mean of the values in the 7 days ending on it as the line, when that window holds at least 4 values. A day without a reading has no point on the line."],
     hrv: ["Heart rate variability", "Last night's average per night, over Garmin's baseline band. The dot colour is Garmin's status for that night: balanced, unbalanced, low or poor."],
     bb: ["Body Battery", "Each bar runs from the day's lowest to its highest Body Battery. The mark is the value at wake."],
     stress: ["Stress", "Garmin's average stress level per day."],

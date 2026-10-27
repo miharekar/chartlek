@@ -1,5 +1,5 @@
 <%= tag.div data: (@pace_trend.runs.any? ? {controller: "pace-trends", pace_trends_payload_value: @pace_trend.payload} : {}) do %>
-<%= page_header "Pace Trends", info: overview_info("#{vdot_explanation} Every run is a muted dot, scored by VDOT so all distances share one scale. Bright dots are top runs: the top 3 by score in the 30 days ending on that run. The band is the least-squares line through the top runs in the window, plus or minus one standard deviation of the residuals. Drag the timeline to change the window.") do %>
+<%= page_header "Pace Trends", info: overview_info("#{vdot_explanation} Every run is a muted dot, scored by VDOT so all distances share one scale. Bright dots are top runs: the top 3 by score in the 30 days ending on that run. The band is the least-squares line through the top runs in the window, plus or minus one standard deviation of the residuals. Drag the timeline to change the window. The overlay draws resting heart rate (7-day average) or last night's HRV from your Garmin wellness data on a second axis; it changes nothing about the trend.") do %>
   <div class="flex flex-wrap items-center gap-2">
     <%= pace_trend_filter_chips %>
   </div>
@@ -29,6 +29,12 @@
         <div class="<%= WidgetsHelper::MUTED %>" data-pace-trends-target="message" hidden>Not enough top runs in this window to draw a trend.</div>
       </div>
     </div>
+    <% if @pace_trend.overlays %>
+      <div class="mt-3 flex flex-wrap items-center justify-end gap-2">
+        <span class="<%= WidgetsHelper::HINT %>">Overlay</span>
+        <%= pace_trend_overlays(@pace_trend) %>
+      </div>
+    <% end %>
     <div data-pace-trends-target="chart" class="mt-3 w-full"></div>
     <div data-pace-trends-target="timeline" class="mt-2 w-full"></div>
   </div>

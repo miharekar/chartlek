@@ -1,5 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
-import { axisBottom, axisLeft } from "d3-axis"
+import { axisBottom, axisLeft, axisRight } from "d3-axis"
 import { bisector, extent } from "d3-array"
 import { Delaunay } from "d3-delaunay"
 import { pointer, select } from "d3-selection"
@@ -9,6 +9,7 @@ import { utcDay } from "d3-time"
 import { formatDate, formatDistance, formatDuration, formatPace } from "helpers/formatters"
 import { formatChange, formatFinishDelta } from "helpers/pace_trends_format"
 import { activePreset, PRESETS, presetWindow } from "helpers/pace_trends_presets"
+import { OVERLAYS, overlayAt, overlaySeries, overlayWithin } from "helpers/pace_trends_overlay"
 import { predictTime } from "helpers/predictions"
 import { linearRegression, weeklyChange } from "helpers/regression"
 import { observeSize } from "helpers/resize"
@@ -17,12 +18,13 @@ import { parseTime } from "helpers/time"
 import { hideTooltip, moveTooltip, showTooltip, tooltipHtml } from "helpers/tooltip"
 
 const MARGIN = { top: 12, right: 16, bottom: 28, left: 44 }
+const OVERLAY_MARGIN = 44
 const DAY_MS = 86400000
 const HOVER_RADIUS = 16
 const BY_TIME = bisector(run => run.t)
 
 export default class extends Controller {
-  static targets = ["chart", "timeline", "range", "change", "cut", "verb", "delta", "distance", "message", "link", "preset"]
+  static targets = ["chart", "timeline", "range", "change", "cut", "verb", "delta", "distance", "overlayOption", "message", "link", "preset"]
   static values = { payload: Object }
 
   connect() {
@@ -30,11 +32,15 @@ export default class extends Controller {
     this.tables = Object.fromEntries(tables.map(({ label, table }) => [label, table]))
     this.domain = domain.map(parseTime)
     this.distance = this.payloadValue.distance
+    this.overlayKey = this.payloadValue.overlay || "none"
+    this.overlays = Object.fromEntries(Object.keys(OVERLAYS).map(key => [key, overlaySeries(this.payloadValue.overlays, key)]))
+    this.margin = { ...MARGIN, right: this.payloadValue.overlays ? OVERLAY_MARGIN : MARGIN.right }
     this.runs = runs.map(run => ({ ...run, value: run.vdot }))
     this.muted = this.runs.filter(run => !run.top)
     this.top = this.runs.filter(run => run.top)
     this.x = scaleUtc()
     this.y = scaleLinear()
+    this.y2 = scaleLinear()
     this.#buildChart()
 
     this.timeline = createTimeline(this.timelineTarget, {
@@ -72,6 +78,13 @@ export default class extends Controller {
     this.#syncUrl()
   }
 
+  changeOverlay(event) {
+    this.overlayKey = event.currentTarget.dataset.overlay
+    this.#unhover()
+    this.#render()
+    this.#syncUrl()
+  }
+
   #buildChart() {
     const values = extent(this.runs, run => run.value)
     const pad = (values[1] - values[0]) * 0.04
@@ -82,8 +95,11 @@ export default class extends Controller {
     this.clip = this.svg.append("defs").append("clipPath").attr("id", this.clipId).append("rect")
     this.xAxis = this.svg.append("g")
     this.yAxis = this.svg.append("g")
-    this.axisLabel = this.svg.append("text").attr("fill", "var(--chart-axis)").attr("font-size", 11).attr("x", MARGIN.left).attr("y", 9).text("VDOT")
+    this.y2Axis = this.svg.append("g")
+    this.y2Label = this.svg.append("text").attr("fill", "var(--chart-axis)").attr("font-size", 11).attr("text-anchor", "end").attr("y", 9)
+    this.axisLabel = this.svg.append("text").attr("fill", "var(--chart-axis)").attr("font-size", 11).attr("x", this.margin.left).attr("y", 9).text("VDOT")
     this.plot = this.svg.append("g").attr("clip-path", `url(#${this.clipId})`)
+    this.overlayLine = this.plot.append("path").attr("fill", "none").attr("stroke", "var(--chart-muted)").attr("stroke-width", 1.5).attr("stroke-linejoin", "round")
     this.band = this.plot.append("path").attr("fill", "var(--chart-accent)").attr("fill-opacity", 0.14)
     this.trend = this.plot.append("path").attr("fill", "none").attr("stroke", "var(--chart-accent)").attr("stroke-width", 1.5)
     this.mutedDots = this.plot.append("path").attr("fill", "none").attr("stroke", "var(--chart-muted)").attr("stroke-opacity", 0.9).attr("stroke-width", 5).attr("stroke-linecap", "round")
@@ -97,13 +113,14 @@ export default class extends Controller {
   #resize(width) {
     this.width = width
     this.height = Math.round(Math.min(420, Math.max(260, width * 0.36)))
-    this.x.range([MARGIN.left, width - MARGIN.right])
-    this.y.range([this.height - MARGIN.bottom, MARGIN.top])
-    const plotWidth = width - MARGIN.left - MARGIN.right
-    const plotHeight = this.height - MARGIN.top - MARGIN.bottom
+    this.x.range([this.margin.left, width - this.margin.right])
+    this.y.range([this.height - this.margin.bottom, this.margin.top])
+    this.y2.range([this.height - this.margin.bottom, this.margin.top])
+    const plotWidth = width - this.margin.left - this.margin.right
+    const plotHeight = this.height - this.margin.top - this.margin.bottom
     this.svg.attr("width", width).attr("height", this.height)
-    this.clip.attr("x", MARGIN.left).attr("y", MARGIN.top).attr("width", plotWidth).attr("height", plotHeight)
-    this.overlay.attr("x", MARGIN.left).attr("y", MARGIN.top).attr("width", plotWidth).attr("height", plotHeight)
+    this.clip.attr("x", this.margin.left).attr("y", this.margin.top).attr("width", plotWidth).attr("height", plotHeight)
+    this.overlay.attr("x", this.margin.left).attr("y", this.margin.top).attr("width", plotWidth).attr("height", plotHeight)
     this.#render()
   }
 
@@ -122,6 +139,7 @@ export default class extends Controller {
     const top = this.#within(this.top)
     this.visible = this.#within(this.runs)
     this.#drawAxes()
+    this.#drawOverlay()
     this.#drawDots(this.mutedDots, muted)
     this.#drawDots(this.topDots, top)
     const path = line().x(run => this.x(run.t)).y(run => this.y(run.value)).curve(curveMonotoneX)
@@ -138,14 +156,34 @@ export default class extends Controller {
   }
 
   #drawAxes() {
-    this.xAxis.attr("transform", `translate(0,${this.height - MARGIN.bottom})`).call(axisBottom(this.x).ticks(Math.max(2, Math.floor(this.width / 110))).tickSizeOuter(0))
-    this.yAxis.attr("transform", `translate(${MARGIN.left},0)`).call(axisLeft(this.y).ticks(6).tickSize(-(this.width - MARGIN.left - MARGIN.right)).tickSizeOuter(0))
+    this.xAxis.attr("transform", `translate(0,${this.height - this.margin.bottom})`).call(axisBottom(this.x).ticks(Math.max(2, Math.floor(this.width / 110))).tickSizeOuter(0))
+    this.yAxis.attr("transform", `translate(${this.margin.left},0)`).call(axisLeft(this.y).ticks(6).tickSize(-(this.width - this.margin.left - this.margin.right)).tickSizeOuter(0))
     for (const axis of [this.xAxis, this.yAxis]) {
       axis.select(".domain").attr("stroke", "var(--chart-grid)")
       axis.selectAll(".tick line").attr("stroke", "var(--chart-grid)")
       axis.selectAll("text").attr("fill", "var(--chart-axis)")
     }
     this.yAxis.select(".domain").remove()
+  }
+
+  #drawOverlay() {
+    const [start, end] = this.range
+    const config = OVERLAYS[this.overlayKey]
+    const points = config ? overlayWithin(this.overlays[this.overlayKey], start, end) : []
+    const values = points.map(point => point[1]).filter(value => value != null)
+    this.y2Axis.attr("display", values.length ? null : "none")
+    this.y2Label.attr("display", values.length ? null : "none")
+    if (!values.length) return this.overlayLine.attr("d", null)
+
+    const [low, high] = extent(values)
+    const pad = (high - low) * 0.1 || 1
+    this.y2.domain([low - pad, high + pad]).nice()
+    this.y2Axis.attr("transform", `translate(${this.width - this.margin.right},0)`).call(axisRight(this.y2).ticks(6).tickSizeOuter(0))
+    this.y2Axis.select(".domain").attr("stroke", "var(--chart-grid)")
+    this.y2Axis.selectAll(".tick line").attr("stroke", "var(--chart-grid)")
+    this.y2Axis.selectAll("text").attr("fill", "var(--chart-axis)")
+    this.y2Label.attr("x", this.width - this.margin.right).text(`${config.label} (${config.unit})`)
+    this.overlayLine.attr("d", line().defined(point => point[1] != null).x(point => this.x(point[0])).y(point => this.y2(point[1]))(points))
   }
 
   #drawDots(path, runs) {
@@ -172,6 +210,7 @@ export default class extends Controller {
     const active = activePreset(this.range, this.domain)
     this.presetTargets.forEach(button => button.setAttribute("aria-pressed", button.dataset.preset === active))
     this.distanceTargets.forEach(button => button.setAttribute("aria-pressed", button.dataset.distance === this.distance))
+    this.overlayOptionTargets.forEach(button => button.setAttribute("aria-pressed", button.dataset.overlay === this.overlayKey))
     const [start, end] = this.range
     this.rangeTarget.textContent = `${formatDate(start)} – ${formatDate(utcDay.offset(new Date(end), -1))}`
     this.messageTarget.hidden = Boolean(this.fit)
@@ -218,12 +257,16 @@ export default class extends Controller {
   }
 
   #tooltipHtml(run) {
-    return tooltipHtml(formatDate(run.t), [
+    const rows = [
       ["VDOT", run.vdot.toFixed(1)],
       ["Distance", `${formatDistance(run.km)} km`],
       ["Pace", `${formatPace(run.s / run.km)} /km`],
       ["Time", formatDuration(run.s)]
-    ], { heading: run.name || "Untitled run" })
+    ]
+    const config = OVERLAYS[this.overlayKey]
+    const value = config && overlayAt(this.overlays[this.overlayKey], run.t)
+    if (value != null) rows.push([config.tooltip, `${Math.round(value)} ${config.unit}`])
+    return tooltipHtml(formatDate(run.t), rows, { heading: run.name || "Untitled run" })
   }
 
   #syncUrl() {
@@ -231,15 +274,16 @@ export default class extends Controller {
     const params = {
       from: new Date(start).toISOString().slice(0, 10),
       to: utcDay.offset(new Date(end), -1).toISOString().slice(0, 10),
-      distance: this.distance
+      distance: this.distance,
+      overlay: this.overlayKey === "none" ? null : this.overlayKey
     }
     const url = new URL(location.href)
-    for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value)
+    for (const [key, value] of Object.entries(params)) value == null ? url.searchParams.delete(key) : url.searchParams.set(key, value)
     history.replaceState(history.state, "", url)
 
     for (const link of this.linkTargets) {
       const href = new URL(link.href)
-      for (const [key, value] of Object.entries(params)) href.searchParams.set(key, value)
+      for (const [key, value] of Object.entries(params)) value == null ? href.searchParams.delete(key) : href.searchParams.set(key, value)
       link.href = href.pathname + href.search
     }
   }

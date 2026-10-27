@@ -104,4 +104,54 @@ class PaceTrendsControllerTest < ActionDispatch::IntegrationTest
 
     assert_select "a[href*=evil]", false
   end
+
+  test "no overlay buttons without wellness data" do
+    create(:activity)
+
+    get pace_trend_path(overlay: "rhr")
+
+    assert_select "[role=group][aria-label=Overlay]", false
+    assert_equal({}, payload.slice("overlay", "overlays").compact)
+  end
+
+  test "overlay buttons offer only the series with data and default to none" do
+    create(:activity)
+    WellnessDay.create!(date: Date.new(2024, 3, 5), resting_hr: 52)
+
+    get pace_trend_path
+
+    assert_select "[role=group][aria-label=Overlay] button[data-action='pace-trends#changeOverlay']", count: 2
+    assert_select "button[data-overlay=none][aria-pressed=true]", "None"
+    assert_select "button[data-overlay=rhr][aria-pressed=false]", "Resting HR"
+    assert_select "button[data-overlay=hrv]", false
+    assert_nil payload["overlay"]
+    assert_equal [52], payload["overlays"]["rhr"]
+  end
+
+  test "the overlay param is kept in the payload and chip links" do
+    create(:activity)
+    WellnessDay.create!(date: Date.new(2024, 3, 5), hrv_last_night: 60)
+
+    get pace_trend_path(overlay: "hrv", from: "2024-01-01")
+
+    assert_select "button[data-overlay=hrv][aria-pressed=true]", "HRV"
+    assert_equal "hrv", payload["overlay"]
+    assert_select "a[href=?]", pace_trend_path(overlay: "hrv", from: "2024-01-01", races: "1"), "Races only"
+  end
+
+  test "an overlay without data or an unknown one is ignored" do
+    create(:activity)
+    WellnessDay.create!(date: Date.new(2024, 3, 5), resting_hr: 52)
+
+    get pace_trend_path(overlay: "hrv")
+    assert_nil payload["overlay"]
+
+    get pace_trend_path(overlay: "evil")
+    assert_nil payload["overlay"]
+  end
+
+  private
+  def payload
+    JSON.parse(css_select("[data-controller='pace-trends']").first["data-pace-trends-payload-value"])
+  end
 end

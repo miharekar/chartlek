@@ -42,6 +42,11 @@ class Wellness::Trends
     }.select { |_, present| present }.keys
   end
 
+  def overlay
+    series = dates.any? ? columns.slice(:rhr, :hrv) : {}
+    {start: to_ms(dates.first), **series} if series.any?
+  end
+
   def payload
     {
       start: to_ms(dates.first),

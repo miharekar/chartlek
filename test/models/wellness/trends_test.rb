@@ -68,4 +68,25 @@ class Wellness::TrendsTest < ActiveSupport::TestCase
 
     assert_equal [[Time.utc(2024, 3, 4).to_i * 1000, 150, 0, 200, 0, 10]], Wellness::Trends.new.payload[:zones]
   end
+
+  test "overlay holds only the resting hr and hrv series, dense, from the first day" do
+    WellnessDay.create!(date: Date.new(2024, 3, 1), raw: {"summary" => {}})
+    WellnessDay.create!(date: Date.new(2024, 3, 2), resting_hr: 50, stress_avg: 30)
+    WellnessDay.create!(date: Date.new(2024, 3, 4), resting_hr: 52, hrv_last_night: 60, weight_kg: 70.0)
+
+    overlay = Wellness::Trends.new.overlay
+
+    assert_equal %i[start rhr hrv], overlay.keys
+    assert_equal Time.utc(2024, 3, 2).to_i * 1000, overlay[:start]
+    assert_equal [50, nil, 52], overlay[:rhr]
+    assert_equal [nil, nil, 60], overlay[:hrv]
+  end
+
+  test "no overlay without either series" do
+    assert_nil Wellness::Trends.new.overlay
+
+    WellnessDay.create!(date: Date.new(2024, 3, 2), stress_avg: 30)
+
+    assert_nil Wellness::Trends.new.overlay
+  end
 end

@@ -13,7 +13,7 @@ import { clear, publish, subscribe } from "helpers/run_cursor"
 import { createTimeline } from "helpers/timeline"
 import { parseTime } from "helpers/time"
 import { hideTooltip, showTooltip, showTooltipFor, tooltipHtml } from "helpers/tooltip"
-import { dayIndex, movingMean, pointAtOrBefore, stackZones, weekAt } from "helpers/wellness"
+import { dailyAverage, dayIndex, pointAtOrBefore, stackZones, weekAt, weightTrend } from "helpers/wellness"
 
 const MARGIN = { top: 18, right: 16, bottom: 22, left: 44 }
 const HEIGHT = 170
@@ -127,8 +127,8 @@ export default class extends Controller {
     this.payload = this.payloadValue
     this.start = this.payload.start
     this.columns = this.payload.columns
-    this.average = movingMean(this.columns.rhr || [], 6, 0, 4)
-    this.trend = movingMean(this.columns.weight || [], 15, 15)
+    this.average = dailyAverage(this.columns.rhr || [])
+    this.trend = weightTrend(this.columns.weight || [])
     this.count = Object.values(this.columns)[0].length
     this.statusDots = this.#statusDots()
     this.domain = this.payload.domain.map(parseTime)

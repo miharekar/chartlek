@@ -2,6 +2,7 @@ class PaceTrend
   DISTANCES = [["5K", 5000], ["10K", 10_000], ["Half", 21_097.5], ["Marathon", 42_195]].freeze
   DEFAULT_DISTANCE = "Marathon"
   DEFAULT_WINDOW = 1.year
+  OVERLAYS = %w[rhr hrv].freeze
   COLUMNS = %i[id source external_id local_started_at name distance_m timer_s elapsed_s vdot].freeze
 
   def self.tables
@@ -10,12 +11,23 @@ class PaceTrend
 
   attr_reader :distance
 
-  def initialize(exclude_paused: false, races_only: false, from: nil, to: nil, distance: nil)
+  def initialize(exclude_paused: false, races_only: false, from: nil, to: nil, distance: nil, overlay: nil)
     @exclude_paused = exclude_paused
     @races_only = races_only
     @from = parse_date(from)
     @to = parse_date(to)
     @distance = DISTANCES.map(&:first).include?(distance) ? distance : DEFAULT_DISTANCE
+    @overlay = overlay
+  end
+
+  def overlays
+    return @overlays if defined?(@overlays)
+
+    @overlays = Wellness::Trends.new.overlay
+  end
+
+  def overlay
+    @overlay if OVERLAYS.include?(@overlay) && overlays&.key?(@overlay.to_sym)
   end
 
   def runs
@@ -29,6 +41,8 @@ class PaceTrend
   def payload
     {
       distance:,
+      overlay:,
+      overlays:,
       runs: runs.map { run_payload(it) },
       tables: self.class.tables,
       domain: [to_ms(runs.first.local_started_at.to_date), to_ms(today)],
