@@ -5,7 +5,7 @@ import { scaleLinear } from "d3-scale"
 import { pointer, select } from "d3-selection"
 import { area, line } from "d3-shape"
 import { formatDistance } from "helpers/formatters"
-import { zoneBands } from "helpers/hr_zones"
+import { zoneBands, zoneStops } from "helpers/hr_zones"
 import { observeSize } from "helpers/resize"
 import { clear, publish, subscribe } from "helpers/run_cursor"
 
@@ -19,6 +19,8 @@ const CHARTS = [
   { key: "cad", label: "Cadence", unit: "spm" }
 ]
 
+let instances = 0
+
 const BY_DISTANCE = bisector(distance => distance)
 
 export default class extends Controller {
@@ -26,6 +28,7 @@ export default class extends Controller {
   static values = { series: Object, zones: Array }
 
   connect() {
+    this.gradient = `hr-line-${++instances}`
     this.root = select(this.chartTarget).append("div")
     this.unsubscribe = subscribe(distance => {
       this.cursor = distance
@@ -72,10 +75,18 @@ export default class extends Controller {
     const chart = svg.append("g").attr("transform", `translate(${MARGIN.left},${MARGIN.top})`)
     const defined = (_, index) => values[index] != null
 
+    let stroke = "var(--chart-accent)"
     if (key === "hr") {
       const [bottom, top] = y.domain()
       for (const { zone, from, to } of zoneBands(this.zonesValue, bottom, top)) {
         chart.append("rect").attr("x", 0).attr("width", innerWidth).attr("y", y(to)).attr("height", y(from) - y(to)).attr("fill", `var(--hr-zone-${zone})`).attr("fill-opacity", 0.14).attr("pointer-events", "none")
+      }
+
+      const stops = zoneStops(this.zonesValue, bottom, top)
+      if (stops.length) {
+        const gradient = svg.append("defs").append("linearGradient").attr("id", this.gradient).attr("gradientUnits", "userSpaceOnUse").attr("x1", 0).attr("x2", 0).attr("y1", y(bottom)).attr("y2", y(top))
+        for (const { offset, zone } of stops) gradient.append("stop").attr("offset", offset).style("stop-color", `var(--hr-zone-${zone}-line)`)
+        stroke = `url(#${this.gradient})`
       }
     }
 
@@ -88,7 +99,7 @@ export default class extends Controller {
       chart.append("path").datum(distances).attr("fill", "var(--chart-accent-low)").attr("fill-opacity", 0.5)
         .attr("d", area().defined(defined).x(distance => x(distance)).y0(innerHeight).y1((_, index) => y(values[index])))
     }
-    chart.append("path").datum(distances).attr("fill", "none").attr("stroke", "var(--chart-accent)").attr("stroke-width", 1.5)
+    chart.append("path").datum(distances).attr("fill", "none").attr("stroke", stroke).attr("stroke-width", 1.5)
       .attr("d", line().defined(defined).x(distance => x(distance)).y((_, index) => y(values[index])))
 
     if (last) {

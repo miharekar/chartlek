@@ -30,6 +30,11 @@
   --hr-zone-3: #eab308;
   --hr-zone-4: #f97316;
   --hr-zone-5: #dc2626;
+  --hr-zone-1-line: #1d4ed8;
+  --hr-zone-2-line: #15803d;
+  --hr-zone-3-line: #a16207;
+  --hr-zone-4-line: #c2410c;
+  --hr-zone-5-line: #b91c1c;
   --pace-stop-0: #7f1d1d;
   --pace-stop-1: #ea580c;
   --pace-stop-2: #eab308;
@@ -99,6 +104,11 @@
     --hr-zone-3: #facc15;
     --hr-zone-4: #fb923c;
     --hr-zone-5: #f87171;
+    --hr-zone-1-line: #93c5fd;
+    --hr-zone-2-line: #86efac;
+    --hr-zone-3-line: #fde047;
+    --hr-zone-4-line: #fdba74;
+    --hr-zone-5-line: #fca5a5;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -121,6 +131,11 @@
     --hr-zone-3: #facc15;
     --hr-zone-4: #fb923c;
     --hr-zone-5: #f87171;
+    --hr-zone-1-line: #93c5fd;
+    --hr-zone-2-line: #86efac;
+    --hr-zone-3-line: #fde047;
+    --hr-zone-4-line: #fdba74;
+    --hr-zone-5-line: #fca5a5;
   }
 }
 
