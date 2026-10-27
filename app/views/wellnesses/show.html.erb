@@ -1,5 +1,5 @@
 <%= tag.div data: (@trends.data? ? {controller: "wellness", wellness_payload_value: @trends.payload} : {}) do %>
-<%= page_header "Wellness", info: overview_info("Garmin health data next to your running: resting heart rate, heart rate variability, stress, Body Battery and weight from your watch, plus top-run VDOT and time in heart rate zones from your run summaries. Days Garmin has no value for are gaps, and a chart starts when your device began recording that metric. Drag the timeline to change the window, and hover a chart to mark the same day on all of them.") %>
+<%= page_header "Wellness", info: overview_info("Garmin health data next to your running: resting heart rate, heart rate variability, sleep, stress, Body Battery and weight from your watch, plus top-run VDOT and time in heart rate zones from your run summaries. Days Garmin has no value for are gaps, and a chart starts when your device began recording that metric. Drag the timeline to change the window, and hover a chart to mark the same day on all of them.") %>
 
 <% if @trends.data? %>
   <div class="mt-6">

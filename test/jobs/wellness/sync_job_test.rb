@@ -9,6 +9,7 @@ class Wellness::SyncJobTest < ActiveJob::TestCase
     stub_request(:get, /usersummary/).to_return(status: 200, body: {restingHeartRate: 50}.to_json)
     stub_request(:get, /hrv-service/).to_return(status: 204)
     stub_request(:get, /weight-service/).to_return(status: 200, body: {dailyWeightSummaries: []}.to_json)
+    stub_request(:get, /sleep-service/).to_return(status: 200, body: "[]")
     stub_request(:get, /heartRateZones/).to_return(status: 404)
 
     Wellness::SyncJob.perform_now

@@ -1,5 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
-import { axisBottom, axisLeft } from "d3-axis"
+import { axisBottom, axisLeft, axisRight } from "d3-axis"
 import { extent, max, range } from "d3-array"
 import { pointer, select } from "d3-selection"
 import { scaleLinear, scaleUtc } from "d3-scale"
@@ -15,8 +15,8 @@ import { parseTime } from "helpers/time"
 import { hideTooltip, showTooltip, showTooltipFor, tooltipHtml } from "helpers/tooltip"
 import { dailyAverage, dayIndex, pointAtOrBefore, stackZones, weekAt, weightTrend } from "helpers/wellness"
 
-const MARGIN = { top: 18, right: 16, bottom: 22, left: 44 }
-const HEIGHT = 170
+const MARGIN = { top: 18, right: 44, bottom: 22, left: 44 }
+const HEIGHT = 300
 const DAY_MS = 86400000
 const HALF_DAY = DAY_MS / 2
 const STATUSES = ["BALANCED", "UNBALANCED", "LOW", "POOR"]
@@ -32,6 +32,12 @@ const padded = (...series) => {
   const pad = (high - low) * 0.05 || 1
   return [low - pad, high + pad]
 }
+const hours = seconds => (seconds == null ? null : seconds / 3600)
+const STAGES = [["sleep_deep", "Deep", "var(--chart-accent)"], ["sleep_light", "Light", "var(--chart-accent-low)"], ["sleep_rem", "REM", "var(--chart-accent-highlight)"]]
+const stageHours = (columns, index) => STAGES.map(([key]) => hours(columns[key]?.[index]) ?? 0)
+const hasStages = (columns, index) => stageHours(columns, index).reduce((sum, value) => sum + value, 0) > 0
+const sleepTotal = (columns, index) => (hasStages(columns, index) ? stageHours(columns, index).reduce((sum, value) => sum + value, 0) : hours(columns.sleep[index]))
+const bar = (view, index, from, to, width) => `M${(view.xs(index) - width / 2).toFixed(1)},${view.y(from).toFixed(1)}h${width.toFixed(1)}V${view.y(to).toFixed(1)}h${(-width).toFixed(1)}Z`
 const humanize = status => status.charAt(0) + status.slice(1).toLowerCase()
 
 const CHARTS = {
@@ -69,6 +75,33 @@ const CHARTS = {
     rows: (c, index) => {
       const { bb_high: high, bb_low: low, bb_wake: wake } = c.columns
       return [["High", high[index]], ["Low", low[index]], ["At wake", wake?.[index]]]
+    }
+  },
+  sleep: {
+    unit: "hours",
+    secondary: { label: "Score", domain: [0, 100] },
+    layers: [{ stroke: "none", fill: "var(--chart-accent-low)", "fill-opacity": 0.6 }, ...STAGES.map(([, , fill]) => ({ stroke: "none", fill })), { fill: "none", stroke: "var(--chart-highlight)", "stroke-width": 1.5 }, { ...DOTS, stroke: "var(--chart-highlight)", "stroke-width": 4 }],
+    domain: ({ columns }) => [0, max(columns.sleep, (_, index) => sleepTotal(columns, index) ?? 0) || 1],
+    paths: (c, view) => {
+      const { columns } = c
+      const width = Math.max(1, view.x(view.start + DAY_MS) - view.x(view.start) - 0.5)
+      const days = range(view.i0, view.i1).filter(index => columns.sleep[index] != null)
+      const unstaged = days.filter(index => !hasStages(columns, index)).map(index => bar(view, index, 0, hours(columns.sleep[index]), width)).join("")
+      const staged = STAGES.map((_, stage) => days.filter(index => hasStages(columns, index)).map(index => {
+        const values = stageHours(columns, index)
+        const from = values.slice(0, stage).reduce((sum, value) => sum + value, 0)
+        return values[stage] > 0 ? bar(view, index, from, from + values[stage], width) : ""
+      }).join(""))
+      const score = columns.sleep_score
+      const scoreView = { ...view, y: view.y2 }
+      return [unstaged, ...staged, score ? linePath(score, scoreView) : null, score ? dotPath(score, scoreView) : null]
+    },
+    rows: (c, index) => {
+      const { columns } = c
+      const staged = hasStages(columns, index)
+      const seconds = key => columns[key]?.[index]
+      const duration = key => (seconds(key) == null ? null : formatDuration(seconds(key)))
+      return [["Sleep", duration("sleep")], ...(staged ? [...STAGES.map(([key, label]) => [label, duration(key)]), ["Awake", duration("sleep_awake")]] : []), ["Score", columns.sleep_score?.[index]], ["Average heart rate", columns.sleep_hr?.[index] == null ? null : `${Math.round(columns.sleep_hr[index])} bpm`], ["Average stress", columns.sleep_stress?.[index] == null ? null : Math.round(columns.sleep_stress[index])]]
     }
   },
   stress: {
@@ -186,12 +219,17 @@ export default class extends Controller {
   #build(target) {
     const key = target.dataset.chart
     const spec = CHARTS[key]
-    const chart = { key, spec, target, y: scaleLinear().domain(spec.domain(this)).nice(4) }
+    const chart = { key, spec, target, y: scaleLinear().domain(spec.domain(this)).nice(5) }
+    if (spec.secondary) chart.y2 = scaleLinear().domain(spec.secondary.domain)
     chart.svg = select(target).append("svg").attr("class", "block w-full").attr("height", HEIGHT)
     chart.clipId = `wellness-clip-${key}-${Math.random().toString(36).slice(2)}`
     chart.clip = chart.svg.append("defs").append("clipPath").attr("id", chart.clipId).append("rect")
     chart.yAxis = chart.svg.append("g")
     chart.xAxis = chart.svg.append("g")
+    if (spec.secondary) {
+      chart.y2Axis = chart.svg.append("g")
+      chart.y2Label = chart.svg.append("text").attr("fill", "var(--chart-axis)").attr("font-size", 11).attr("text-anchor", "end").attr("y", 10).text(spec.secondary.label)
+    }
     chart.svg.append("text").attr("fill", "var(--chart-axis)").attr("font-size", 11).attr("x", MARGIN.left).attr("y", 10).text(spec.label?.(this) ?? spec.unit)
     chart.plot = chart.svg.append("g").attr("clip-path", `url(#${chart.clipId})`)
     chart.layerNodes = spec.layers.map(attributes => {
@@ -221,11 +259,18 @@ export default class extends Controller {
       chart.clip.attr("x", MARGIN.left).attr("y", MARGIN.top).attr("width", plotWidth).attr("height", plotHeight)
       chart.overlay.attr("x", MARGIN.left).attr("y", MARGIN.top).attr("width", plotWidth).attr("height", plotHeight)
       chart.cursorLine.attr("y1", MARGIN.top).attr("y2", HEIGHT - MARGIN.bottom)
-      chart.yAxis.attr("transform", `translate(${MARGIN.left},0)`).call(axisLeft(chart.y).ticks(4).tickFormat(chart.spec.tickFormat).tickSize(-plotWidth).tickSizeOuter(0))
+      chart.yAxis.attr("transform", `translate(${MARGIN.left},0)`).call(axisLeft(chart.y).ticks(5).tickFormat(chart.spec.tickFormat).tickSize(-plotWidth).tickSizeOuter(0))
       chart.yAxis.select(".domain").remove()
       chart.yAxis.selectAll(".tick line").attr("stroke", "var(--chart-grid)")
       chart.yAxis.selectAll("text").attr("fill", "var(--chart-axis)")
       chart.xAxis.attr("transform", `translate(0,${HEIGHT - MARGIN.bottom})`)
+      if (chart.y2) {
+        chart.y2.range([HEIGHT - MARGIN.bottom, MARGIN.top])
+        chart.y2Axis.attr("transform", `translate(${width - MARGIN.right},0)`).call(axisRight(chart.y2).ticks(5).tickSize(0).tickSizeOuter(0))
+        chart.y2Axis.select(".domain").remove()
+        chart.y2Axis.selectAll("text").attr("fill", "var(--chart-axis)")
+        chart.y2Label.attr("x", width - MARGIN.right + 28)
+      }
     }
     this.#render()
   }
@@ -243,7 +288,7 @@ export default class extends Controller {
     const i1 = Math.min(this.count, dayIndex(this.start, to) + 1)
     const xs = index => this.x(this.start + index * DAY_MS + HALF_DAY)
     for (const chart of Object.values(this.charts)) {
-      const view = { x: this.x, y: chart.y, xs, i0, i1, start: this.start }
+      const view = { x: this.x, y: chart.y, y2: chart.y2, xs, i0, i1, start: this.start }
       chart.paths = chart.spec.paths(this, view)
       chart.layerNodes.forEach((node, index) => node.attr("d", chart.paths[index]))
       chart.xAxis.call(axisBottom(this.x).ticks(Math.max(2, Math.floor(this.width / 110))).tickSizeOuter(0))

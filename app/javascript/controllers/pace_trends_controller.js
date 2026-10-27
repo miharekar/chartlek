@@ -265,7 +265,7 @@ export default class extends Controller {
     ]
     const config = OVERLAYS[this.overlayKey]
     const value = config && overlayAt(this.overlays[this.overlayKey], run.t)
-    if (value != null) rows.push([config.tooltip, `${Math.round(value)} ${config.unit}`])
+    if (value != null) rows.push([config.tooltip, `${value.toFixed(config.digits ?? 0)} ${config.unit}`])
     return tooltipHtml(formatDate(run.t), rows, { heading: run.name || "Untitled run" })
   }
 

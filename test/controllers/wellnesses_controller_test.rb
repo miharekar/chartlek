@@ -33,4 +33,15 @@ class WellnessesControllerTest < ActionDispatch::IntegrationTest
     assert_select "[role=group][aria-label=Window] button[data-action='wellness#preset'][aria-pressed]", count: 5
     assert_select "nav a[href='/wellness']", "Wellness"
   end
+
+  test "the sleep chart shows only with sleep data" do
+    WellnessDay.create!(date: Date.new(2024, 3, 5), resting_hr: 52)
+
+    get wellness_path
+    assert_select "[data-chart=sleep]", false
+
+    WellnessDay.create!(date: Date.new(2024, 3, 6), sleep_s: 26_000, sleep_score: 80)
+    get wellness_path
+    assert_select "[data-chart=sleep]"
+  end
 end

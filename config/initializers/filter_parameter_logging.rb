@@ -8,5 +8,5 @@ Rails.application.config.filter_parameters += %i[
 ]
 
 Rails.application.config.filter_parameters += [
-  :resting_hr, :hr_zones, :hrv_, :body_battery, :stress_avg, :weight_kg, /\Araw\z/
+  :resting_hr, :hr_zones, :hrv_, :body_battery, :stress_avg, :weight_kg, :sleep_, /\Araw\z/
 ]

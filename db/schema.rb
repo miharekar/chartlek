@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_28_110000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_28_120000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -134,6 +134,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_28_110000) do
     t.json "raw", default: {}, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "sleep_s"
+    t.integer "sleep_deep_s"
+    t.integer "sleep_light_s"
+    t.integer "sleep_rem_s"
+    t.integer "sleep_awake_s"
+    t.integer "sleep_score"
+    t.float "sleep_hr_avg"
+    t.float "sleep_stress_avg"
     t.index ["date"], name: "index_wellness_days_on_date", unique: true
   end
 

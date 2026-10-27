@@ -10,7 +10,15 @@ class Wellness::Trends
     bb_low: :body_battery_low,
     bb_wake: :body_battery_wake,
     stress: :stress_avg,
-    weight: :weight_kg
+    weight: :weight_kg,
+    sleep: :sleep_s,
+    sleep_deep: :sleep_deep_s,
+    sleep_light: :sleep_light_s,
+    sleep_rem: :sleep_rem_s,
+    sleep_awake: :sleep_awake_s,
+    sleep_score: :sleep_score,
+    sleep_hr: :sleep_hr_avg,
+    sleep_stress: :sleep_stress_avg
   }.freeze
   WEEK = Arel.sql("date(local_started_at, 'weekday 0', '-6 days')")
   ZONE_SECONDS = [
@@ -34,6 +42,7 @@ class Wellness::Trends
     {
       rhr: columns[:rhr],
       hrv: columns[:hrv],
+      sleep: columns[:sleep],
       bb: columns[:bb_high] && columns[:bb_low],
       stress: columns[:stress],
       weight: columns[:weight],
@@ -43,7 +52,7 @@ class Wellness::Trends
   end
 
   def overlay
-    series = dates.any? ? columns.slice(:rhr, :hrv) : {}
+    series = dates.any? ? columns.slice(:rhr, :hrv, :sleep) : {}
     {start: to_ms(dates.first), **series} if series.any?
   end
 

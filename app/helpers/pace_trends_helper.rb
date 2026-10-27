@@ -1,7 +1,7 @@
 module PaceTrendsHelper
   FILTERS = [["Exclude pauses", "no_pauses"], ["Races only", "races"]].freeze
   PRESETS = [["3 mo", "3"], ["6 mo", "6"], ["1 yr", "12"], ["2 yr", "24"], ["All time", "all"]].freeze
-  OVERLAYS = [["None", "none"], ["Resting HR", "rhr"], ["HRV", "hrv"]].freeze
+  OVERLAYS = [["None", "none"], ["Resting HR", "rhr"], ["HRV", "hrv"], ["Sleep", "sleep"]].freeze
   CARRIED_PARAMS = %w[no_pauses races from to distance overlay].freeze
 
   def pace_trend_filter_chips

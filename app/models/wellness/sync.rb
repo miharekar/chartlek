@@ -1,5 +1,5 @@
 class Wellness::Sync
-  METRICS = %i[summary hrv weight]
+  METRICS = %i[summary hrv weight sleep]
   REFRESH_DAYS = 3
   CHUNK_DAYS = 30
   STOP_AFTER = 6
@@ -17,10 +17,10 @@ class Wellness::Sync
     Profile.instance.update!(wellness_synced_at: Time.current)
   end
 
-  def backfill(from:, to: Date.current)
-    active = METRICS.dup
+  def backfill(from:, to: Date.current, metrics: METRICS)
+    active = metrics.dup
     empty = Hash.new(0)
-    report = METRICS.index_with { 0 }
+    report = metrics.index_with { 0 }
     cursor = to
 
     while cursor >= from && active.any?
@@ -47,6 +47,7 @@ class Wellness::Sync
     when :summary then collect_summaries(from, to, resume:)
     when :hrv then collect_hrv(from, to)
     when :weight then collect_weight(from, to)
+    when :sleep then collect_sleep(from, to)
     end
   end
 
@@ -94,6 +95,31 @@ class Wellness::Sync
 
       store(Date.parse(payload["summaryDate"]), "weight", payload, weight_kg: grams && grams / 1000.0) if grams
     end
+  end
+
+  def collect_sleep(from, to)
+    nights = @client.sleep_range(from, to).to_a
+
+    nights.count do |payload|
+      attributes = sleep_attributes(payload)
+
+      store(Date.parse(payload["calendarDate"]), "sleep", payload, attributes) if payload["calendarDate"] && attributes.values.any?
+    end
+  end
+
+  def sleep_attributes(payload)
+    staged = payload.values_at("deepSleepSeconds", "lightSleepSeconds", "remSleepSeconds").any? { it.to_i.positive? }
+
+    {
+      sleep_s: (payload["sleepTimeSeconds"] if payload["sleepTimeSeconds"].to_i.positive?),
+      sleep_deep_s: (payload["deepSleepSeconds"] if staged),
+      sleep_light_s: (payload["lightSleepSeconds"] if staged),
+      sleep_rem_s: (payload["remSleepSeconds"] if staged),
+      sleep_awake_s: (payload["awakeSleepSeconds"] if staged),
+      sleep_score: payload.dig("sleepScores", "overall", "value"),
+      sleep_hr_avg: payload["avgHeartRate"],
+      sleep_stress_avg: payload["avgSleepStress"]
+    }
   end
 
   def summary_attributes(payload)

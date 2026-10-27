@@ -139,6 +139,17 @@ class PaceTrendsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?]", pace_trend_path(overlay: "hrv", from: "2024-01-01", races: "1"), "Races only"
   end
 
+  test "a sleep overlay is offered with sleep data and carries the nightly seconds" do
+    create(:activity)
+    WellnessDay.create!(date: Date.new(2024, 3, 5), sleep_s: 27_000)
+
+    get pace_trend_path(overlay: "sleep")
+
+    assert_select "button[data-overlay=sleep][aria-pressed=true]", "Sleep"
+    assert_equal "sleep", payload["overlay"]
+    assert_equal [27_000], payload["overlays"]["sleep"]
+  end
+
   test "an overlay without data or an unknown one is ignored" do
     create(:activity)
     WellnessDay.create!(date: Date.new(2024, 3, 5), resting_hr: 52)

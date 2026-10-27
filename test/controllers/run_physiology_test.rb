@@ -97,6 +97,18 @@ class RunPhysiologyTest < ActionDispatch::IntegrationTest
     assert_select "section.lg\\:col-span-3 h2", text: "Going in"
   end
 
+  test "going in shows last night's sleep with its score" do
+    run = create(:activity)
+    WellnessDay.create!(date: run.local_started_at.to_date, sleep_s: 27_900, sleep_score: 83)
+
+    get run_path(run)
+
+    assert_select "h2", text: "Going in"
+    assert_select "h3", text: "Sleep last night"
+    assert_select "p", text: /7:45/
+    assert_select "p", text: "score 83"
+  end
+
   test "going in is omitted for an empty day and shares the row with the zones card" do
     run = create(:activity, avg_hr: 140, summary:)
     WellnessDay.create!(date: run.local_started_at.to_date)

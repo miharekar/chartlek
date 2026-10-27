@@ -6,13 +6,14 @@ const BY_TIME = bisector(point => point[0])
 
 export const OVERLAYS = {
   rhr: { label: "Resting HR", unit: "bpm", tooltip: "Resting HR (7-day avg)" },
-  hrv: { label: "HRV", unit: "ms", tooltip: "HRV (last night)" }
+  hrv: { label: "HRV", unit: "ms", tooltip: "HRV (last night)" },
+  sleep: { label: "Sleep", unit: "h", tooltip: "Sleep (night before)", digits: 1 }
 }
 
 export function overlaySeries(overlays, key) {
   const values = overlays?.[key]
   if (!values) return []
-  const smoothed = key === "rhr" ? dailyAverage(values) : values
+  const smoothed = key === "rhr" ? dailyAverage(values) : key === "sleep" ? values.map(seconds => (seconds == null ? null : seconds / 3600)) : values
   return smoothed.map((value, index) => [overlays.start + index * DAY_MS, value])
 }
 

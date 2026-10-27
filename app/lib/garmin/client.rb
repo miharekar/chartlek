@@ -13,6 +13,7 @@ class Garmin::Client
   DAILY_SUMMARY_PATH = "/usersummary-service/usersummary/daily"
   HRV_RANGE_PATH = "/hrv-service/hrv/daily"
   WEIGHT_RANGE_PATH = "/weight-service/weight/range"
+  SLEEP_RANGE_PATH = "/sleep-service/sleep/dailySleepSummariesByDate"
   MIN_INTERVAL = 1.0
   MAX_ATTEMPTS = 5
   TOKEN_MARGIN = 1.hour
@@ -49,6 +50,10 @@ class Garmin::Client
 
   def weight_range(from, to)
     get("#{WEIGHT_RANGE_PATH}/#{from}/#{to}", includeAll: true)
+  end
+
+  def sleep_range(from, to)
+    get(SLEEP_RANGE_PATH, startDate: from, endDate: to)
   end
 
   def download(activity_id)

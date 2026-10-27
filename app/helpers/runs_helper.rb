@@ -141,6 +141,7 @@ module RunsHelper
     [
       (tile("Resting HR", going_in[:resting_hr], "bpm", ("7-day average #{going_in[:resting_hr_avg_7d]} bpm" if going_in[:resting_hr_avg_7d])) if going_in[:resting_hr]),
       (tile("HRV last night", going_in[:hrv_last_night], "ms", [going_in[:hrv_status]&.humanize, baseline].compact.join(" · ")) if going_in[:hrv_last_night]),
+      (tile("Sleep last night", format("%d:%02d", going_in[:sleep_s] / 3600, going_in[:sleep_s] % 3600 / 60), "h", ("score #{going_in[:sleep_score]}" if going_in[:sleep_score])) if going_in[:sleep_s]),
       (tile("Body Battery at wake", going_in[:body_battery_wake], "/ 100") if going_in[:body_battery_wake])
     ].compact
   end

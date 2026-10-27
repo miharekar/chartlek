@@ -25,6 +25,21 @@ class Wellness::TrendsTest < ActiveSupport::TestCase
     assert_equal %i[rhr hrv stress], trends.charts
   end
 
+  test "sleep columns are dense, all-null ones are left out, and the overlay carries sleep" do
+    WellnessDay.create!(date: Date.new(2024, 3, 1), sleep_s: 27_000, sleep_deep_s: 5400, sleep_score: 80)
+    WellnessDay.create!(date: Date.new(2024, 3, 3), sleep_s: 25_000)
+
+    trends = Wellness::Trends.new
+    columns = trends.payload[:columns]
+
+    assert_equal [27_000, nil, 25_000], columns[:sleep]
+    assert_equal [5400, nil, nil], columns[:sleep_deep]
+    assert_equal [80, nil, nil], columns[:sleep_score]
+    assert_not columns.key?(:sleep_rem)
+    assert_equal %i[sleep], trends.charts
+    assert_equal [27_000, nil, 25_000], trends.overlay[:sleep]
+  end
+
   test "the window defaults to the last year and follows from and to" do
     WellnessDay.create!(date: Date.new(2020, 1, 1), resting_hr: 50)
     WellnessDay.create!(date: Date.new(2024, 3, 5), resting_hr: 52)

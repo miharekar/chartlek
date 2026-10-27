@@ -2,7 +2,7 @@ class PaceTrend
   DISTANCES = [["5K", 5000], ["10K", 10_000], ["Half", 21_097.5], ["Marathon", 42_195]].freeze
   DEFAULT_DISTANCE = "Marathon"
   DEFAULT_WINDOW = 1.year
-  OVERLAYS = %w[rhr hrv].freeze
+  OVERLAYS = %w[rhr hrv sleep].freeze
   COLUMNS = %i[id source external_id local_started_at name distance_m timer_s elapsed_s vdot].freeze
 
   def self.tables

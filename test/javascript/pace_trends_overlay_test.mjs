@@ -48,3 +48,8 @@ test("at finds the value of the day, and nothing in a gap or outside", () => {
   assert.equal(overlayAt(series, 3 * DAY), undefined)
   assert.equal(overlayAt(series, -1), undefined)
 })
+
+test("sleep is nightly hours on a dense day grid", () => {
+  const series = overlaySeries({ start: 0, sleep: [27000, null, 21600] }, "sleep")
+  assert.deepEqual(series, [[0, 7.5], [DAY, null], [2 * DAY, 6]])
+})

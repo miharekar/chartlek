@@ -7,12 +7,14 @@ class Wellness::SyncTest < ActiveSupport::TestCase
   SUMMARY_URL = "#{BASE_URL}/usersummary-service/usersummary/daily"
   HRV_URL = %r{#{BASE_URL}/hrv-service/hrv/daily/}
   WEIGHT_URL = %r{#{BASE_URL}/weight-service/weight/range/}
+  SLEEP_URL = %r{#{BASE_URL}/sleep-service/sleep/dailySleepSummariesByDate}
   ZONES_URL = "#{BASE_URL}/biometric-service/heartRateZones/v2"
 
   setup do
     stub_token
     @today = Date.new(2026, 10, 27)
     @sync = Wellness::Sync.new(client: Garmin::Client.new(key: "test-key"))
+    stub_sleep([])
   end
 
   def summary(**overrides)
@@ -33,6 +35,14 @@ class Wellness::SyncTest < ActiveSupport::TestCase
 
   def stub_weight(summaries)
     stub_request(:get, WEIGHT_URL).with(query: {includeAll: "true"}).to_return(status: 200, body: {dailyWeightSummaries: summaries}.to_json)
+  end
+
+  def stub_sleep(nights)
+    stub_request(:get, SLEEP_URL).to_return(status: 200, body: nights.to_json)
+  end
+
+  def night(date, **overrides)
+    {calendarDate: date.to_s, sleepTimeSeconds: 27_000, deepSleepSeconds: 5400, lightSleepSeconds: 16_200, remSleepSeconds: 5400, awakeSleepSeconds: 1200, avgHeartRate: 49.0, avgSleepStress: 17.0, sleepScores: {overall: {value: 83, qualifierKey: "GOOD"}}}.merge(overrides)
   end
 
   def stub_zones(body = [], status: 200)
@@ -61,6 +71,73 @@ class Wellness::SyncTest < ActiveSupport::TestCase
     assert_equal 52, WellnessDay.find_by!(date: @today - 3).resting_hr
     assert_equal %w[hrv summary weight], day.raw.keys.sort
     assert Profile.instance.wellness_synced_at
+  end
+
+  test "refresh stores each night under the date Garmin gives it" do
+    stub_summaries
+    stub_hrv([])
+    stub_weight([])
+    stub_zones
+    stub_sleep([night(@today), night(@today - 1, sleepTimeSeconds: nil, deepSleepSeconds: nil, lightSleepSeconds: nil, remSleepSeconds: nil, awakeSleepSeconds: nil, avgHeartRate: nil, avgSleepStress: nil, sleepScores: nil), {calendarDate: nil, sleepTimeSeconds: nil}])
+
+    @sync.refresh(today: @today)
+
+    day = WellnessDay.find_by!(date: @today)
+    assert_equal [27_000, 5400, 16_200, 5400, 1200, 83], [day.sleep_s, day.sleep_deep_s, day.sleep_light_s, day.sleep_rem_s, day.sleep_awake_s, day.sleep_score]
+    assert_equal [49.0, 17.0], [day.sleep_hr_avg, day.sleep_stress_avg]
+    assert_equal "GOOD", day.raw.dig("sleep", "sleepScores", "overall", "qualifierKey")
+    assert_nil WellnessDay.find_by!(date: @today - 1).sleep_s
+    assert_requested :get, "#{BASE_URL}/sleep-service/sleep/dailySleepSummariesByDate?startDate=2026-10-24&endDate=2026-10-27"
+  end
+
+  test "zero sleep and an all-zero staging are missing values, a single zero stage is kept" do
+    stub_summaries
+    stub_hrv([])
+    stub_weight([])
+    stub_zones
+    zero_stages = {deepSleepSeconds: 0, lightSleepSeconds: 0, remSleepSeconds: 0, awakeSleepSeconds: 0}
+    stub_sleep([night(@today, **zero_stages), night(@today - 1, sleepTimeSeconds: 0, **zero_stages, sleepScores: nil, avgHeartRate: nil, avgSleepStress: nil), night(@today - 2, remSleepSeconds: 0), night(@today - 3, sleepTimeSeconds: 0)])
+
+    report = @sync.backfill(from: @today - 3, to: @today, metrics: %i[sleep])
+
+    assert_equal 3, report[:sleep]
+    day = WellnessDay.find_by!(date: @today)
+    assert_equal [27_000, nil, nil, nil, nil], [day.sleep_s, day.sleep_deep_s, day.sleep_light_s, day.sleep_rem_s, day.sleep_awake_s]
+    assert_nil WellnessDay.find_by(date: @today - 1)
+    assert_equal [5400, 0], WellnessDay.find_by!(date: @today - 2).then { [it.sleep_deep_s, it.sleep_rem_s] }
+    assert_nil WellnessDay.find_by!(date: @today - 3).sleep_s
+    assert_equal 83, WellnessDay.find_by!(date: @today - 3).sleep_score
+  end
+
+  test "a sleep refresh with null fields keeps the stored night" do
+    stub_summaries
+    stub_hrv([])
+    stub_weight([])
+    stub_zones
+    stub_sleep([night(@today)])
+    @sync.refresh(today: @today)
+
+    stub_sleep([night(@today, sleepTimeSeconds: nil, avgHeartRate: nil, avgSleepStress: 20.0, sleepScores: nil)])
+    @sync.refresh(today: @today)
+
+    day = WellnessDay.find_by!(date: @today)
+    assert_equal [27_000, 83, 49.0, 20.0], [day.sleep_s, day.sleep_score, day.sleep_hr_avg, day.sleep_stress_avg]
+  end
+
+  test "the sleep backfill goes in 30-day chunks newest first and stops after empty ones" do
+    stub_summaries
+    stub_hrv([])
+    stub_weight([])
+    stub_zones
+    sleep = stub_request(:get, SLEEP_URL).with(query: hash_including("endDate" => @today.to_s)).to_return(status: 200, body: [night(@today)].to_json)
+    empty = stub_request(:get, SLEEP_URL).with(query: hash_excluding("endDate" => @today.to_s)).to_return(status: 200, body: "[]")
+
+    report = @sync.backfill(from: @today - 365 * 3, to: @today)
+
+    assert_equal 1, report[:sleep]
+    assert_requested sleep, times: 1
+    assert_requested empty, times: Wellness::Sync::STOP_AFTER
+    assert_requested :get, "#{BASE_URL}/sleep-service/sleep/dailySleepSummariesByDate?startDate=2026-09-28&endDate=2026-10-27"
   end
 
   test "refresh is idempotent and updates late data in place" do
@@ -296,7 +373,7 @@ class Wellness::SyncTest < ActiveSupport::TestCase
 
     report = @sync.backfill(from: @today - 44, to: @today)
 
-    assert_equal({summary: 45, hrv: 2, weight: 0}, report)
+    assert_equal({summary: 45, hrv: 2, weight: 0, sleep: 0}, report)
     assert_requested :get, "#{BASE_URL}/hrv-service/hrv/daily/2026-09-28/2026-10-27"
     assert_requested :get, "#{BASE_URL}/hrv-service/hrv/daily/2026-09-13/2026-09-27"
     assert_equal 45, WellnessDay.count
@@ -305,6 +382,17 @@ class Wellness::SyncTest < ActiveSupport::TestCase
     @sync.backfill(from: @today - 44, to: @today)
 
     assert_not_requested :get, /usersummary/
+  end
+
+  test "backfill can be limited to some metrics" do
+    stub_zones
+    stub_sleep([night(@today)])
+
+    report = @sync.backfill(from: @today - 9, to: @today, metrics: %i[sleep])
+
+    assert_equal({sleep: 1}, report)
+    assert_not_requested :get, /usersummary|hrv-service|weight-service/
+    assert_equal 1, WellnessDay.where.not(sleep_s: nil).count
   end
 
   test "backfill stops a metric after consecutive empty chunks" do

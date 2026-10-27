@@ -40,6 +40,6 @@ module Activity::Physiology
   def going_in
     day = WellnessDay.find_by(date: local_started_at.to_date)
 
-    day.slice(:resting_hr, :resting_hr_avg_7d, :hrv_last_night, :hrv_status, :hrv_baseline_low, :hrv_baseline_high, :body_battery_wake).symbolize_keys.compact if day
+    day.slice(:resting_hr, :resting_hr_avg_7d, :hrv_last_night, :hrv_status, :hrv_baseline_low, :hrv_baseline_high, :body_battery_wake, :sleep_s, :sleep_score).symbolize_keys.compact if day
   end
 end
