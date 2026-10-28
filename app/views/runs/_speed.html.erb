@@ -1,4 +1,4 @@
-<section class="mt-4 <%= WidgetsHelper::CARD %>" data-controller="run-speed" data-run-speed-bars-value="<%= track.bars.to_json %>" data-run-speed-splits-value="<%= (run.splits || []).to_json %>">
+<section class="mt-4 <%= WidgetsHelper::CARD %>" data-controller="run-speed" data-run-speed-bars-value="<%= track.bars.to_json %>" data-run-speed-splits-value="<%= (run.splits || []).to_json %>" data-run-speed-steps-value="<%= (track.steps || []).to_json %>">
   <div class="<%= WidgetsHelper::CARD_HEADER %>">
     <h2 class="<%= WidgetsHelper::CARD_TITLE %>">
       Change in speed over route

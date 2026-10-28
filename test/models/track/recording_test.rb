@@ -18,6 +18,15 @@ class Track::RecordingTest < ActiveSupport::TestCase
     assert_equal 6, Track::Recording.new(paused).clip(1000, 50).size
   end
 
+  test "laps survive clipping, a rebuilt distance and stop removal" do
+    laps = [{at: 1000.0, intensity: "warmup"}]
+    recording = Track::Recording.new(rows(11), laps:)
+
+    assert_equal laps, recording.clip(1002, 6).laps
+    assert_equal laps, recording.with_distance(200.0).laps
+    assert_equal laps, recording.without_stops(10).laps
+  end
+
   test "clip leaves a recording without absolute times alone" do
     recording = Track::Recording.new(rows(5).map { it.except(:at) })
 

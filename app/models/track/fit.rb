@@ -15,10 +15,14 @@ class Track::Fit
     first = @activity.records.first.timestamp
     pauses = self.pauses
 
-    Track::Recording.new(@activity.records.map { row(it, first, pauses) })
+    Track::Recording.new(@activity.records.map { row(it, first, pauses) }, laps:)
   end
 
   private
+  def laps
+    @activity.laps.map { {at: it.start_time.to_f, intensity: it.intensity} }
+  end
+
   def row(record, first, pauses)
     paused = pauses.sum { |from, to| (to <= record.timestamp) ? to - from : 0 }
 

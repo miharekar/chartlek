@@ -18,6 +18,10 @@ class Track < ApplicationRecord
     end
   end
 
+  def steps
+    chart_metrics&.dig("steps")
+  end
+
   def efforts
     Efforts.new(data).all
   end

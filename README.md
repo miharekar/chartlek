@@ -79,7 +79,7 @@ Everything about one run.
 - longest run, fastest run for a similar distance (within 10%), most elevation gain, hottest and coldest run, earliest and latest start. These name the longest window they hold for: the last 1, 3, 6 or 12 months, or ever;
 - run during sunrise or sunset, run on a given moon phase, first run at a new place, first run of the year, extends your longest streak, passed N thousand km lifetime. These have no window.
 
-**Workout.** Runs Garmin recorded as a structured workout get a card with the warm-up, active, recovery, rest and cool-down totals (distance, time, pace). Garmin gives totals per step type, not per rep.
+**Workout.** Runs Garmin recorded as a structured workout get a card with the warm-up, active, recovery, rest and cool-down totals (distance, time, pace). Garmin gives totals per step type, not per rep, but the charts above show each step: a coloured strip along the top of the speed, elevation, heart rate and cadence charts (hover or drag it for the step's distance, time and pace) and a faint tint behind the active steps. Workouts from before the watch recorded step types show the card only.
 
 **Shape of the run.**
 - **Pace variability wheel:** one wedge per 100 m clockwise from the start; the longer the wedge, the further that stretch was from your average speed, faster or slower. The number is the average gap as a percentage of average speed. Hover a wedge to see which stretch it is.

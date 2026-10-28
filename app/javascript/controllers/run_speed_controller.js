@@ -11,14 +11,16 @@ import { clear, publish, subscribe } from "helpers/run_cursor"
 import { rangeStats } from "helpers/run_stats"
 import { scrub } from "helpers/scrub"
 import { hideTooltip, moveTooltip, showTooltip, tooltipHtml } from "helpers/tooltip"
+import { drawSteps, labelled, STRIP_SPACE, stepAt } from "helpers/workout_steps"
 
 const MARGIN = { top: 8, right: 24, bottom: 24, left: 44 }
 
 export default class extends Controller {
   static targets = ["chart", "stats", "unit"]
-  static values = { bars: Array, splits: Array, unit: { type: String, default: "bars" } }
+  static values = { bars: Array, splits: Array, steps: Array, unit: { type: String, default: "bars" } }
 
   connect() {
+    this.steps = labelled(this.stepsValue)
     this.svg = select(this.chartTarget).append("svg").attr("class", "block")
     this.unsubscribe = subscribe(distance => {
       this.cursor = distance
@@ -59,7 +61,8 @@ export default class extends Controller {
       return start
     })
     const innerWidth = width - MARGIN.left - MARGIN.right
-    const innerHeight = height - MARGIN.top - MARGIN.bottom
+    const reserve = this.steps.length ? STRIP_SPACE : 0
+    const innerHeight = height - MARGIN.top - reserve - MARGIN.bottom
     const paces = bars.map(bar => bar.pace).sort((a, b) => a - b)
     const fastest = quantile(paces, 0.01) * 0.95
     const slowest = quantile(paces, 0.99) * 1.05
@@ -68,7 +71,7 @@ export default class extends Controller {
     const top = pace => Math.min(innerHeight, Math.max(0, y(pace)))
 
     this.svg.attr("width", width).attr("height", height).selectAll("*").remove()
-    const chart = this.svg.append("g").attr("transform", `translate(${MARGIN.left},${MARGIN.top})`)
+    const chart = this.svg.append("g").attr("transform", `translate(${MARGIN.left},${MARGIN.top + reserve})`)
 
     const yAxis = chart.append("g").call(axisLeft(y).ticks(5).tickSize(-innerWidth))
     const xAxis = chart.append("g").attr("transform", `translate(0,${innerHeight})`).call(axisBottom(x).ticks(Math.max(2, Math.floor(innerWidth / 80))).tickFormat(value => `${value} km`).tickSize(4))
@@ -100,6 +103,8 @@ export default class extends Controller {
     })
     const layer = chart.append("g").call(brush)
     layer.select(".selection").attr("fill", "var(--chart-accent-low)").attr("fill-opacity", 0.3).attr("stroke", "var(--chart-accent-highlight)")
+
+    if (this.steps.length) drawSteps(chart, this.steps, x, { innerHeight })
 
     this.cursorX = x
     this.cursorLine = chart.append("line").attr("y1", 0).attr("y2", innerHeight).attr("stroke", "var(--chart-highlight)").attr("stroke-width", 1.5).attr("pointer-events", "none").attr("display", "none")
@@ -142,7 +147,10 @@ export default class extends Controller {
   }
 
   #tooltipHtml(bar, start) {
+    const step = stepAt(this.steps, start + bar.distance / 2)
+
     return tooltipHtml(formatDistanceRange(start / 1000, (start + bar.distance) / 1000), [
+      step && ["Step", step.label],
       ["Pace", `${formatPace(bar.pace)} /km`],
       bar.hr != null && ["HR", `${bar.hr} bpm`],
       bar.cad != null && ["Cadence", `${bar.cad} spm`]

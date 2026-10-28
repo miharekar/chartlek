@@ -5,11 +5,12 @@ class Track::Recording
   DISTANCE_TOLERANCE = 0.1
   STILL_MPS = 0.5
 
-  attr_reader :rows
+  attr_reader :rows, :laps
 
-  def initialize(rows, rebuilt: false)
+  def initialize(rows, rebuilt: false, laps: [])
     @rows = normalize(rows)
     @rebuilt = rebuilt
+    @laps = laps
   end
 
   def rebuilt?
@@ -20,8 +21,8 @@ class Track::Recording
 
   def clip(from, timer)
     if rows.first[:at]
-      started = self.class.new(rows.select { it[:at] >= from })
-      self.class.new(started.rows.select { it[:t] <= timer })
+      started = self.class.new(rows.select { it[:at] >= from }, laps:)
+      self.class.new(started.rows.select { it[:t] <= timer }, laps:)
     else
       self
     end
@@ -33,7 +34,7 @@ class Track::Recording
 
     if (rows.last[:d] - distance_m).abs > distance_m * DISTANCE_TOLERANCE
       total = rows.last[:t]
-      self.class.new(rows.map { it.merge(d: it[:t] / total * distance_m) }, rebuilt: true)
+      self.class.new(rows.map { it.merge(d: it[:t] / total * distance_m) }, rebuilt: true, laps:)
     else
       self
     end
@@ -51,7 +52,7 @@ class Track::Recording
       end
       shift = 0.0
 
-      self.class.new(rows.each_with_index.map { |row, index| row.merge(t: row[:t] - (shift += removed.fetch(index, 0.0))) })
+      self.class.new(rows.each_with_index.map { |row, index| row.merge(t: row[:t] - (shift += removed.fetch(index, 0.0))) }, laps:)
     end
   end
 

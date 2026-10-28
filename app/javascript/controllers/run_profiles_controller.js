@@ -8,6 +8,7 @@ import { formatDistance } from "helpers/formatters"
 import { zoneBands, zoneStops } from "helpers/hr_zones"
 import { observeSize } from "helpers/resize"
 import { clear, publish, subscribe } from "helpers/run_cursor"
+import { drawSteps, labelled, STRIP_SPACE, stepAt } from "helpers/workout_steps"
 import { scrub } from "helpers/scrub"
 
 const MARGIN = { top: 20, right: 24, bottom: 4, left: 44 }
@@ -26,10 +27,11 @@ const BY_DISTANCE = bisector(distance => distance)
 
 export default class extends Controller {
   static targets = ["chart"]
-  static values = { series: Object, zones: Array }
+  static values = { series: Object, zones: Array, steps: Array }
 
   connect() {
     this.gradient = `hr-line-${++instances}`
+    this.steps = labelled(this.stepsValue)
     this.root = select(this.chartTarget).append("div")
     this.unsubscribe = subscribe(distance => {
       this.cursor = distance
@@ -66,14 +68,15 @@ export default class extends Controller {
   }
 
   #drawChart({ key, label, unit, fill }, values, distances, x, innerWidth, last) {
-    const innerHeight = CHART_HEIGHT - MARGIN.top - MARGIN.bottom
+    const reserve = this.steps.length ? STRIP_SPACE : 0
+    const innerHeight = CHART_HEIGHT - MARGIN.top - reserve - MARGIN.bottom
     const height = CHART_HEIGHT + (last ? AXIS_HEIGHT : 0)
     const [low, high] = extent(values)
     const pad = Math.max((high - low) * 0.1, 1)
     const y = scaleLinear().domain([low - pad, high + pad]).range([innerHeight, 0]).nice(3)
 
     const svg = this.root.append("svg").attr("class", "block").attr("width", this.width).attr("height", height)
-    const chart = svg.append("g").attr("transform", `translate(${MARGIN.left},${MARGIN.top})`)
+    const chart = svg.append("g").attr("transform", `translate(${MARGIN.left},${MARGIN.top + reserve})`)
     const defined = (_, index) => values[index] != null
 
     let stroke = "var(--chart-accent)"
@@ -110,6 +113,7 @@ export default class extends Controller {
       xAxis.selectAll("line").attr("stroke", "var(--chart-axis)")
     }
 
+    if (this.steps.length) drawSteps(chart, this.steps, x, { innerHeight, tint: key !== "hr", dividers: key === "hr" })
     svg.append("text").attr("x", MARGIN.left).attr("y", 12).attr("font-size", 11).attr("fill", "var(--chart-axis)").text(label)
     const readout = svg.append("text").attr("x", this.width - MARGIN.right).attr("y", 12).attr("text-anchor", "end").attr("font-size", 11).attr("fill", "var(--chart-axis)")
     const cursor = chart.append("line").attr("y1", 0).attr("y2", innerHeight).attr("stroke", "var(--chart-highlight)").attr("stroke-width", 1.5).attr("pointer-events", "none").attr("display", "none")
@@ -125,10 +129,11 @@ export default class extends Controller {
 
     const distances = this.distances
     const index = Math.min(distances.length - 1, Math.max(0, BY_DISTANCE.center(distances, this.cursor / 1000)))
+    const step = stepAt(this.steps, distances[index] * 1000)
     for (const { cursor, readout, unit, x, values } of this.hovers) {
       const value = values[index]
       cursor.attr("display", null).attr("x1", x(distances[index])).attr("x2", x(distances[index]))
-      readout.text(`${value == null ? "–" : Math.round(value)} ${unit} · ${formatDistance(distances[index])} km`)
+      readout.text(`${value == null ? "–" : Math.round(value)} ${unit} · ${formatDistance(distances[index])} km${step ? ` · ${step.label}` : ""}`)
     }
   }
 

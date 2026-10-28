@@ -36,6 +36,10 @@ module RunsHelper
     end
   end
 
+  def workout_step_swatch(step)
+    tag.span class: "mr-2 inline-block size-2.5 rounded-sm", style: "background: var(--step-#{step[:type].delete_prefix("INTERVAL_").downcase})", aria: {hidden: true}
+  end
+
   def workout_step_label(step)
     [WORKOUT_LABELS.fetch(step[:type]), ("×#{step[:count]}" if step[:count])].compact.join(" ")
   end

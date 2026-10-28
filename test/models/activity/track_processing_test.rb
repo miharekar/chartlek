@@ -34,6 +34,35 @@ class Activity::TrackProcessingTest < ActiveSupport::TestCase
     assert_equal 3, activity.bands.keys.size
   end
 
+  def interval_fit
+    activity = Fit4Ruby::Activity.new
+    start = Time.utc(2024, 3, 5, 6, 30)
+    7.times { activity.new_record(timestamp: start + it * 10, distance: it * 40.0, speed: 4.0, activity_type: "running") }
+    [[0, "warmup"], [20, "active"], [40, "rest"]].each_with_index do |(offset, intensity), index|
+      activity.new_lap(timestamp: start + offset + 20, start_time: start + offset, sport: "running", intensity:, message_index: index)
+    end
+    activity.new_session(timestamp: start + 60, sport: "running")
+
+    Tempfile.create("steps.fit") do |file|
+      Fit4Ruby.write(file.path, activity)
+      File.binread(file.path)
+    end
+  end
+
+  test "stores workout steps on a workout run and none on a plain run" do
+    summary = {"splitSummaries" => [{"splitType" => "INTERVAL_WARMUP"}]}
+    workout = garmin_run(distance_m: 240.0, timer_s: 60.0, summary:)
+    plain = garmin_run(distance_m: 240.0, timer_s: 60.0)
+    [workout, plain].each { attach(it, "#{it.external_id}.zip", zip("1_ACTIVITY.fit", interval_fit), "application/zip") }
+
+    workout.process_original
+    plain.process_original
+
+    assert_equal [%w[warmup active rest], [0.0, 80.0, 160.0]], [workout.track.steps.pluck("type"), workout.track.steps.pluck("from")]
+    assert_equal 240.0, workout.track.steps.last["to"]
+    assert_nil plain.track.steps
+  end
+
   test "clips a Garmin recording to the summary timer" do
     activity = garmin_run(distance_m: 760.0, timer_s: 190.0)
     attach(activity, "#{activity.external_id}.zip", zip("1_ACTIVITY.fit", file_fixture("tracks/run.fit").binread), "application/zip")

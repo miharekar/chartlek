@@ -37,6 +37,21 @@ class Track::FitTest < ActiveSupport::TestCase
     end
   end
 
+  test "reads lap starts and intensities" do
+    activity = Fit4Ruby::Activity.new
+    start = Time.utc(2024, 3, 5, 6, 30)
+    6.times { activity.new_record(timestamp: start + it * 10, distance: it * 40.0, speed: 4.0, activity_type: "running") }
+    activity.new_lap(timestamp: start + 20, start_time: start, sport: "running", intensity: "warmup", message_index: 0)
+    activity.new_lap(timestamp: start + 50, start_time: start + 20, sport: "running", intensity: "cooldown", message_index: 1)
+    activity.new_session(timestamp: start + 50, sport: "running")
+
+    Tempfile.create("laps.fit") do |file|
+      Fit4Ruby.write(file.path, activity)
+
+      assert_equal [[start.to_f, "warmup"], [start.to_f + 20, "cooldown"]], Track::Fit.parse(file.path).laps.map { [it[:at], it[:intensity]] }
+    end
+  end
+
   test "rejects a file that is not FIT" do
     Tempfile.create("bad.fit") do |file|
       file.write("not a fit file")

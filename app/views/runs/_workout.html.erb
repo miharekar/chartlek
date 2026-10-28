@@ -1,3 +1,4 @@
+<% legend = run.track&.steps.present? %>
 <section class="mt-4 <%= WidgetsHelper::CARD %>">
   <h2 class="<%= WidgetsHelper::CARD_TITLE %>">
     Workout
@@ -15,7 +16,7 @@
     <tbody class="<%= WidgetsHelper::TABLE_BODY %>">
       <% run.workout_splits.each do |step| %>
         <tr>
-          <td class="<%= WidgetsHelper::CELL %>"><%= workout_step_label(step) %></td>
+          <td class="<%= WidgetsHelper::CELL %>"><%= workout_step_swatch(step) if legend %><%= workout_step_label(step) %></td>
           <td class="<%= WidgetsHelper::CELL %> text-right"><%= step[:distance_m].positive? ? overview_distance(step[:distance_m] / 1000) : "–" %></td>
           <td class="<%= WidgetsHelper::CELL %> text-right"><%= overview_duration(step[:duration_s]) %></td>
           <td class="<%= WidgetsHelper::CELL %> whitespace-nowrap text-right"><%= step[:pace] ? "#{overview_pace(step[:pace])} /km" : "–" %></td>

@@ -27,6 +27,11 @@
   --chart-grid: #e4e4e7;
   --chart-axis: #71717a;
   --chart-behind: #dc2626;
+  --step-warmup: #0ea5e9;
+  --step-active: #a855f7;
+  --step-recovery: #14b8a6;
+  --step-rest: #a1a1aa;
+  --step-cooldown: #f43f5e;
   --hr-zone-1: #64748b;
   --hr-zone-2: #3b82f6;
   --hr-zone-3: #22c55e;
@@ -103,6 +108,11 @@
     --chart-grid: #27272a;
     --chart-axis: #a1a1aa;
     --chart-behind: #f87171;
+    --step-warmup: #38bdf8;
+    --step-active: #c084fc;
+    --step-recovery: #2dd4bf;
+    --step-rest: #71717a;
+    --step-cooldown: #fb7185;
     --pace-stop-0: #b91c1c;
     --pace-stop-1: #f97316;
     --pace-stop-2: #facc15;
@@ -131,6 +141,11 @@
     --chart-grid: #27272a;
     --chart-axis: #a1a1aa;
     --chart-behind: #f87171;
+    --step-warmup: #38bdf8;
+    --step-active: #c084fc;
+    --step-recovery: #2dd4bf;
+    --step-rest: #71717a;
+    --step-cooldown: #fb7185;
     --pace-stop-0: #b91c1c;
     --pace-stop-1: #f97316;
     --pace-stop-2: #facc15;

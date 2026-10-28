@@ -19,9 +19,12 @@ module Activity::TrackProcessing
     metrics = Track::Metrics.new(recording) unless recording.rebuilt?
     self.hr_zones = derive_hr_zones(recording.data)
     bands = Track::Bands.new(recording.data, HrZones.for(self)).to_h unless recording.rebuilt?
+    chart_metrics = metrics&.chart_metrics
+    steps = Track::Steps.new(recording).to_a if chart_metrics && workout?
+    chart_metrics = chart_metrics.merge(steps:) if steps
 
     transaction do
-      (track || build_track).update!(data: recording.data, chart_metrics: metrics&.chart_metrics)
+      (track || build_track).update!(data: recording.data, chart_metrics:)
       update!(splits: metrics&.splits, pace_variability: metrics&.pace_variability, bands:)
     end
   end

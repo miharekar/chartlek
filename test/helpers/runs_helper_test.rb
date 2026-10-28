@@ -21,6 +21,10 @@ class RunsHelperTest < ActionView::TestCase
     assert_match(/race.*PR.*treadmill/m, tags)
   end
 
+  test "workout step swatch uses the step colour variable" do
+    assert_match(/--step-recovery/, workout_step_swatch(type: "INTERVAL_RECOVERY"))
+  end
+
   test "tags show a workout chip" do
     workout = build(:activity, summary: {"splitSummaries" => [{"splitType" => "INTERVAL_WARMUP"}]})
 

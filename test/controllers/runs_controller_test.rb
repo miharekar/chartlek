@@ -96,6 +96,27 @@ class RunsControllerTest < ActionDispatch::IntegrationTest
     assert_select "span", text: "workout", count: 1
   end
 
+  test "show hands workout steps to the charts and colours the workout card only when the track has them" do
+    summary = {"splitSummaries" => [{"splitType" => "INTERVAL_WARMUP", "distance" => 1000, "duration" => 300}, {"splitType" => "INTERVAL_COOLDOWN", "distance" => 1000, "duration" => 330}]}
+    steps = [{"type" => "warmup", "from" => 0.0, "to" => 1000.0, "time" => 300.0}, {"type" => "cooldown", "from" => 1000.0, "to" => 2000.0, "time" => 330.0}]
+    data = {"t" => [0, 300, 630], "d" => [0, 1000, 2000], "hr" => [120, 150, 180]}
+    with_steps = run_at(Time.utc(2023, 5, 6, 7), summary:)
+    Track.create!(activity: with_steps, data:, chart_metrics: {"elevation" => nil, "steps" => steps})
+    without = run_at(Time.utc(2023, 5, 7, 7), summary:)
+    Track.create!(activity: without, data:, chart_metrics: {"elevation" => nil})
+
+    get run_path(with_steps)
+
+    assert_select "[data-controller=run-profiles][data-run-profiles-steps-value*=cooldown]"
+    assert_select "td span[style*='--step-warmup']"
+
+    get run_path(without)
+
+    assert_select "[data-controller=run-profiles][data-run-profiles-steps-value='[]']"
+    assert_select "td span[style*='--step-']", count: 0
+    assert_select "td", text: "Warm-up"
+  end
+
   test "show renders weather, calories, track extents and navigation" do
     earlier = run_at(Time.utc(2023, 5, 5, 7))
     run = run_at(Time.utc(2023, 5, 6, 7), name: "Full", calories: 650, avg_hr: 150, max_hr: 190, avg_cadence: 170, max_cadence: 185, location_name: "Ljubljana", elapsed_s: 3100, moving_s: 3000, pace_variability: 6.5, elevation_gain_m: 40, elevation_loss_m: 38, weather: {"temperature" => 14.2, "humidity" => 60, "wind" => 8, "precipitation" => 0})
