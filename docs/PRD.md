@@ -553,3 +553,12 @@ One design system, defined once in helpers (`WidgetsHelper` for cards and type, 
 - The Open-Meteo archive lags about 5 days (§6.4).
 - Pro Map efforts are approximate on long runs because tracks keep at most 2,000 points (§4.8).
 - Smashrun's estimated-finish widget has no documented stepping; ours steps 5K, 10K, Half, Marathon and wraps.
+
+## 13. Landing site
+
+- **Location:** `site/` in this repo, served at chartlek.com by Cloudflare Pages with no build command and output directory `site`. Pages serves only that directory, so the app is never exposed.
+- **Files:** `site/index.html`, `site/styles.css` and `site/screenshots/*.png` (copies of `docs/screenshots/`).
+- **Constraints:** no JS, no framework, no build step, no analytics (§10), no external fonts or CDNs. Zinc neutrals with a lime accent, light and dark through `prefers-color-scheme`, system fonts, a single column on mobile.
+- **Sections:** hero with the Overview screenshot and a GitHub button; interactive by design; a feature grid (Overview, Run page, Pro Map, Pace Trends, PR Progress, Wellness, Training Bands, Gear, Goals); your data stays yours; get started (requirements, `bin/setup`, a link to the README's "Run it yourself"); footer (GitHub, MIT licence, "Self-hosted only: there is no hosted version.", "Inspired by Smashrun's charts.").
+- **Copy** is condensed from the README and adds no features.
+- **Licence and hosting:** MIT (`LICENSE`). There is no hosted version; the README's "Run it yourself" says everyone runs it on their own machine at their own risk and that it has no authentication.

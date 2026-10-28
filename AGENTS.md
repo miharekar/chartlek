@@ -225,6 +225,13 @@ Smashrun supplies only the years before Garmin; Garmin-era runs are ignored.
 - The run header shows weather through `WeatherHelper#run_weather(run)`: the WMO `code` becomes one condition icon and label (`weather_condition`, a night variant for clear and partly cloudy when `Activity#local_midpoint` is outside sunrise and sunset), then temperature, humidity, wind and rain items, each an inline decorative SVG icon plus the bare value, the words being `sr-only` (`WeatherHelper::ICONS`, layout `WidgetsHelper::META` and `META_ITEM`).
 - Hourly values at the run's local midpoint plus daily sunrise and sunset, `timezone=auto`, coordinates rounded to 0.01°. Runs whose midpoint is within `Activity::Weather::ARCHIVE_LAG` (5 days) come from the forecast API (`OpenMeteo::Client#weather(recent: true)`, `start_date`/`end_date` serve the recent past), older runs from the archive; a stored value is never refetched. Nulls from either leave `weather` nil so a later sync retries.
 
+## Landing site
+
+- `site/` is the static landing page for chartlek.com: `index.html`, `styles.css` and `screenshots/`. Cloudflare Pages serves it with no build command and output directory `site`, so the app is never exposed.
+- No JS, no framework, no build step, no analytics, no external fonts or CDNs. Light and dark follow `prefers-color-scheme`.
+- `site/screenshots/` is a copy of `docs/screenshots/` (Pages can't reach `docs/`): retake the shots in `docs/screenshots/` and copy them over when the UI changes.
+- Copy is condensed from the README; update the page when the README's features change.
+
 ## Coding style guidelines
 
 See `STYLE.md` for the canonical style rules. Key points for agents:

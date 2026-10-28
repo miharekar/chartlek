@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Chartlek: every run you've ever done, charted</title>
+  <meta name="description" content="Self-hosted running dashboard: your whole Garmin history, charted. Rails, SQLite, D3.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap">
+      <h1>Chartlek</h1>
+      <p class="tagline">Every run you've ever done, charted.</p>
+      <p class="lead">A self-hosted running dashboard for your Garmin history. It caches your runs in SQLite and draws them with D3: per-run heart rate zones, wellness data, Strava gear, weather and terrain maps.</p>
+      <p><a class="button" href="https://github.com/miharekar/chartlek">View on GitHub</a></p>
+      <picture>
+        <source srcset="screenshots/overview-dark.png" media="(prefers-color-scheme: dark)">
+        <img class="shot shot-hero" src="screenshots/overview.png" width="1300" height="2386" alt="The Overview page: kilometers run, goals, distance per month, trailing 365 day kilometers, pace against distance, streaks, a weekly heatmap and personal records.">
+      </picture>
+    </div>
+  </header>
+
+  <main>
+    <section class="wrap">
+      <h2>Interactive by design</h2>
+      <p class="lead">The charts are not pictures. Most of the value is in moving the pointer over them.</p>
+      <ul class="points">
+        <li><strong>Linked hover.</strong> On the Overview, pointing at a chart selects a set of runs and highlights the same runs in the other charts.</li>
+        <li><strong>One cursor.</strong> On a run, hovering one chart moves a cursor on all of them and a marker along the route map.</li>
+        <li><strong>Brushes.</strong> Drag a timeline to change the window, or drag across a chart to summarise a stretch.</li>
+        <li><strong>Touch and keyboard.</strong> Charts scrub with a finger, and the ones with a cursor are a Tab stop with arrow keys.</li>
+      </ul>
+      <img class="shot" src="screenshots/overview-hover.png" width="1286" height="1000" loading="lazy" alt="Hovering the trailing 365 day line on the Overview: the runs of the year before that day are highlighted in the distance bars and as amber dots in the pace scatter.">
+    </section>
+
+    <section class="wrap">
+      <h2>Features</h2>
+      <div class="grid">
+        <article class="card">
+          <img class="shot" src="screenshots/overview-dark.png" width="1300" height="2386" loading="lazy" alt="The Overview page in the dark theme.">
+          <h3>Overview</h3>
+          <p>Pick All time, a year or a month and every widget follows: distance per period, trailing kilometers, pace against distance, streaks, a weekly heatmap and personal records. Light, dark or System theme.</p>
+        </article>
+        <article class="card">
+          <img class="shot" src="screenshots/run.png" width="1300" height="1080" loading="lazy" alt="A run page with weather, gear, distance, time, pace, heart rate, a performance index, pace variability wheel and elevation profile.">
+          <h3>Run page</h3>
+          <p>Everything about one run: weather, gear, a VDOT performance index with an estimated finish time, notables, workout steps, a pace variability wheel, heart rate zones and one shared cursor across the route map and charts.</p>
+        </article>
+        <article class="card">
+          <img class="shot" src="screenshots/pro-map.png" width="1300" height="1400" loading="lazy" alt="The Pro Map: a route coloured by pace, with a distribution of time per pace bucket and a change in pace graph underneath.">
+          <h3>Pro Map</h3>
+          <p>A full-page map of one run, coloured by pace, heart rate, grade or cadence. Click a bar to isolate a bucket, or pick the fastest segments and splits.</p>
+        </article>
+        <article class="card">
+          <img class="shot" src="screenshots/pace-trends.png" width="1300" height="820" loading="lazy" alt="Pace Trends: runs as dots at their VDOT with a fitted trend, a resting heart rate overlay and a timeline to brush.">
+          <h3>Pace Trends</h3>
+          <p>Is your fitness going up? A fitted trend through your best runs, the change in VDOT per week, and an optional overlay of resting HR, HRV or sleep.</p>
+        </article>
+        <article class="card">
+          <img class="shot" src="screenshots/pr-progress.png" width="1300" height="1303" loading="lazy" alt="PR Progress: every run by distance and pace, with the all-time PR line and a table of PRs per distance.">
+          <h3>PR Progress</h3>
+          <p>Every run by distance and pace, your all-time best at each benchmark distance, the PRs you can beat next, and the next round time below each PR.</p>
+        </article>
+        <article class="card">
+          <img class="shot" src="screenshots/wellness.png" width="1300" height="2000" loading="lazy" alt="Wellness: resting heart rate, heart rate variability, sleep and Body Battery charts on one shared timeline.">
+          <h3>Wellness</h3>
+          <p>Garmin health data for your whole history on one timeline and one hover cursor: resting HR, HRV, sleep, Body Battery, stress and weight.</p>
+        </article>
+        <article class="card">
+          <img class="shot" src="screenshots/training-bands.png" width="1300" height="870" loading="lazy" alt="Training Bands: weekly training time stacked by pace zone, over all time.">
+          <h3>Training Bands</h3>
+          <p>Your weekly training time stacked by pace, heart rate or grade. It answers how much of your running was actually easy.</p>
+        </article>
+        <article class="card">
+          <img class="shot" src="screenshots/gear.png" width="1300" height="1635" loading="lazy" alt="Gear: a table of shoes with runs, distance and time, plus distance per month and distance over time charts.">
+          <h3>Gear</h3>
+          <p>Your Strava shoes, read-only: runs, distance and last used per pair, with distance per month and over time.</p>
+        </article>
+        <article class="card">
+          <img class="shot" src="screenshots/goals.png" width="1300" height="740" loading="lazy" alt="A yearly goal: distance done, how far ahead or behind the direct path, needed per day, and a progress chart with a catch-up line.">
+          <h3>Goals</h3>
+          <p>Monthly and yearly distance goals with a direct path, the distance needed per day and a catch-up line when you fall behind.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="wrap">
+      <h2>Your data stays yours</h2>
+      <p class="lead">Chartlek runs on your own machine. Everything lives in SQLite on your disk. It only reads from Garmin and Strava and never writes back, and there is no analytics.</p>
+    </section>
+
+    <section class="wrap">
+      <h2>Get started</h2>
+      <p class="lead">You need Ruby 4.0.9 and SQLite, plus your own Garmin Personal API key. Then:</p>
+      <pre><code>bin/setup</code></pre>
+      <p>The <a href="https://github.com/miharekar/chartlek#running-it">README</a> has the environment variables and the first run.</p>
+      <p>Chartlek is a personal project. There is no hosted version and there won't be one: you run it yourself, at your own risk, and keep your keys and health data safe. It has no authentication, so keep it on a private network. <a href="https://github.com/miharekar/chartlek#run-it-yourself">Read more</a>.</p>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <p><a href="https://github.com/miharekar/chartlek">GitHub</a> · <a href="https://github.com/miharekar/chartlek/blob/master/LICENSE">MIT licensed</a></p>
+      <p>Self-hosted only: there is no hosted version.</p>
+      <p>Inspired by Smashrun's charts.</p>
+    </div>
+  </footer>
+</body>
+</html>
