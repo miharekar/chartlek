@@ -1,3 +1,1 @@
-<svg width="512" height="512" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="256" cy="256" r="256" fill="red"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="#111216"/><rect width="62" height="123" x="100" y="275" fill="#597c3f" rx="23"/><rect width="62" height="193" x="184" y="205" fill="#95ca3e" rx="23"/><rect width="62" height="157" x="268" y="241" fill="#b2f332" rx="23"/><rect width="62" height="277" x="352" y="121" fill="#dfffad" rx="23"/><circle cx="383" cy="91" r="23" fill="#ffc533"/></svg>
