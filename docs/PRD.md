@@ -2,7 +2,7 @@
 
 - **Status:** all planned work is built and deployed.
 - **Owner:** Miha Rekar
-- **Repo:** `~/Projects/Personal/smashback`
+- **Repo:** `~/Projects/Personal/chartlek`
 - **Production:** https://run.rekar.eu (a Docker container, §8)
 
 This document specifies the product as built. Coding conventions are in `AGENTS.md` and `STYLE.md`; `README.md` describes the features for humans.
