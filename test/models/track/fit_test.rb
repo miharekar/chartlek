@@ -1,7 +1,7 @@
 require "test_helper"
 
 class Track::FitTest < ActiveSupport::TestCase
-  setup { @rows = Track::Fit.parse(file_fixture("tracks/run.fit").to_s).rows }
+  setup { @rows = Track::Fit.parse(file_fixture("tracks/run.fit").binread).rows }
 
   test "reads every record in the shared shape" do
     assert_equal 40, @rows.size
@@ -23,41 +23,50 @@ class Track::FitTest < ActiveSupport::TestCase
     assert_equal 490.0, @rows.last[:at] - @rows.first[:at]
   end
 
-  test "reads a file whose lap message index is out of sequence" do
-    activity = Fit4Ruby::Activity.new
-    start = Time.utc(2024, 3, 5, 6, 30)
-    3.times { activity.new_record(timestamp: start + it * 10, distance: it * 40.0, speed: 4.0, activity_type: "running") }
-    activity.new_lap(timestamp: start + 20, sport: "running", message_index: 3)
-    activity.new_session(timestamp: start + 20, sport: "running")
+  def fit_time(offset = 0)
+    Time.utc(2024, 3, 5, 6, 30).to_i - Track::Fit::EPOCH + offset
+  end
 
-    Tempfile.create("odd.fit") do |file|
-      Fit4Ruby.write(file.path, activity)
+  def record(offset, **fields)
+    [20, {253 => [FitBuilder::UINT32, fit_time(offset)], 5 => [FitBuilder::UINT32, offset * 400]}.merge(fields)]
+  end
 
-      assert_equal 3, Track::Fit.parse(file.path).size
-    end
+  def lap(offset, intensity)
+    [19, {2 => [FitBuilder::UINT32, fit_time(offset)], 23 => [FitBuilder::ENUM, intensity]}]
   end
 
   test "reads lap starts and intensities" do
-    activity = Fit4Ruby::Activity.new
-    start = Time.utc(2024, 3, 5, 6, 30)
-    6.times { activity.new_record(timestamp: start + it * 10, distance: it * 40.0, speed: 4.0, activity_type: "running") }
-    activity.new_lap(timestamp: start + 20, start_time: start, sport: "running", intensity: "warmup", message_index: 0)
-    activity.new_lap(timestamp: start + 50, start_time: start + 20, sport: "running", intensity: "cooldown", message_index: 1)
-    activity.new_session(timestamp: start + 50, sport: "running")
+    bytes = FitBuilder.bytes([*Array.new(6) { record(it * 10) }, lap(0, 2), lap(20, 3)])
+    start = Time.utc(2024, 3, 5, 6, 30).to_f
 
-    Tempfile.create("laps.fit") do |file|
-      Fit4Ruby.write(file.path, activity)
+    assert_equal [[start, 2], [start + 20, 3]], Track::Fit.parse(bytes).laps.map { [it[:at], it[:intensity]] }
+  end
 
-      assert_equal [[start.to_f, "warmup"], [start.to_f + 20, "cooldown"]], Track::Fit.parse(file.path).laps.map { [it[:at], it[:intensity]] }
-    end
+  test "scales the raw fields" do
+    row = Track::Fit.parse(FitBuilder.bytes([record(0, 78 => [FitBuilder::UINT32, 2750], 4 => [FitBuilder::UINT8, 80], 53 => [FitBuilder::UINT8, 64]), record(10)])).rows.first
+
+    assert_equal 50.0, row[:alt]
+    assert_equal 161.0, row[:cad]
+    assert_equal 0.0, row[:d]
+  end
+
+  test "rejects a record without a timestamp" do
+    bytes = FitBuilder.bytes([[20, {5 => [FitBuilder::UINT32, 100]}]])
+
+    assert_raises(Track::Error) { Track::Fit.parse(bytes) }
+  end
+
+  test "rejects a record whose timestamp is an array" do
+    bytes = FitBuilder.bytes([[20, {253 => [FitBuilder::UINT32, [fit_time, fit_time + 1]]}]])
+
+    assert_raises(Track::Error) { Track::Fit.parse(bytes) }
+  end
+
+  test "rejects a file without records" do
+    assert_raises(Track::Error) { Track::Fit.parse(FitBuilder.bytes([lap(0, 2)])) }
   end
 
   test "rejects a file that is not FIT" do
-    Tempfile.create("bad.fit") do |file|
-      file.write("not a fit file")
-      file.flush
-
-      assert_raises(Track::Error) { Track::Fit.parse(file.path) }
-    end
+    assert_raises(Track::Error) { Track::Fit.parse("not a fit file") }
   end
 end

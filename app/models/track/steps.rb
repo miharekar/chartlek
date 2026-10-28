@@ -1,12 +1,5 @@
 class Track::Steps
-  TYPES = {
-    "warmup" => "warmup",
-    "active" => "active",
-    "Undocumented value 5" => "active",
-    "Undocumented value 4" => "recovery",
-    "rest" => "rest",
-    "cooldown" => "cooldown"
-  }.freeze
+  TYPES = {0 => "active", 1 => "rest", 2 => "warmup", 3 => "cooldown", 4 => "recovery", 5 => "active"}.freeze
   MERGED = %w[warmup cooldown].freeze
 
   def initialize(recording)

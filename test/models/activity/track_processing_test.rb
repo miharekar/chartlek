@@ -35,18 +35,11 @@ class Activity::TrackProcessingTest < ActiveSupport::TestCase
   end
 
   def interval_fit
-    activity = Fit4Ruby::Activity.new
-    start = Time.utc(2024, 3, 5, 6, 30)
-    7.times { activity.new_record(timestamp: start + it * 10, distance: it * 40.0, speed: 4.0, activity_type: "running") }
-    [[0, "warmup"], [20, "active"], [40, "rest"]].each_with_index do |(offset, intensity), index|
-      activity.new_lap(timestamp: start + offset + 20, start_time: start + offset, sport: "running", intensity:, message_index: index)
-    end
-    activity.new_session(timestamp: start + 60, sport: "running")
+    start = Time.utc(2024, 3, 5, 6, 30).to_i - Track::Fit::EPOCH
+    records = Array.new(7) { [20, {253 => [FitBuilder::UINT32, start + it * 10], 5 => [FitBuilder::UINT32, it * 4000]}] }
+    laps = [[0, 2], [20, 5], [40, 1]].map { |offset, intensity| [19, {2 => [FitBuilder::UINT32, start + offset], 23 => [FitBuilder::ENUM, intensity]}] }
 
-    Tempfile.create("steps.fit") do |file|
-      Fit4Ruby.write(file.path, activity)
-      File.binread(file.path)
-    end
+    FitBuilder.bytes(records + laps)
   end
 
   test "stores workout steps on a workout run and none on a plain run" do

@@ -212,7 +212,7 @@ Strava is optional. Create an API app at strava.com/settings/api, set `STRAVA_CL
 **First run.** The hourly sync and Sync now already run inside the container. For the backfills use `docker compose exec chartlek bin/rails …`, in order:
 
 1. Sync Garmin: press Sync now in the nav, or `docker compose exec chartlek bin/rails activities:sync`. It imports your runs, downloads each run's original and builds the tracks.
-2. `activities:download` only if some runs still lack an original (a failed download is also retried by the next sync). It is slow, so split it across processes if you have thousands of runs.
+2. `activities:download` only if some runs still lack an original (a failed download is also retried by the next sync). It is bounded by Garmin's 1 request/s, about 45 minutes for 2,500 runs.
 3. Optional, for the years before Garmin: click Connect Strava in the nav, then `strava:fetch`, then `smashrun:fetch` (they need the Garmin sync first and `SMASHRUN_USERNAME`/`SMASHRUN_PASSWORD` in `.env`).
 4. `activities:hr_zones`, then `activities:bands`: per-run HR zones and the Training Bands data for runs that are already stored. Run bands after hr_zones.
 5. `wellness:backfill`: Garmin wellness history, newest first, resumable.

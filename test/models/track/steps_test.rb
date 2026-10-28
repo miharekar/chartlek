@@ -11,7 +11,7 @@ class Track::StepsTest < ActiveSupport::TestCase
   end
 
   test "maps lap intensities to steps with distances and times from the track" do
-    laps = [lap(0, "warmup"), lap(20, "Undocumented value 5"), lap(40, "Undocumented value 4"), lap(60, "Undocumented value 5"), lap(80, "rest")]
+    laps = [lap(0, 2), lap(20, 5), lap(40, 4), lap(60, 5), lap(80, 1)]
 
     steps = Track::Steps.new(recording(laps)).to_a
 
@@ -21,7 +21,7 @@ class Track::StepsTest < ActiveSupport::TestCase
   end
 
   test "merges a trailing cool-down lap into the cool-down but keeps repeated reps apart" do
-    laps = [lap(0, "Undocumented value 5"), lap(30, "Undocumented value 5"), lap(60, "cooldown"), lap(90, "cooldown")]
+    laps = [lap(0, 5), lap(30, 5), lap(60, 3), lap(90, 3)]
 
     steps = Track::Steps.new(recording(laps)).to_a
 
@@ -30,31 +30,31 @@ class Track::StepsTest < ActiveSupport::TestCase
   end
 
   test "steps start at zero when the first lap begins before the clipped recording" do
-    steps = Track::Steps.new(recording([lap(-30, "warmup"), lap(50, "cooldown")])).to_a
+    steps = Track::Steps.new(recording([lap(-30, 2), lap(50, 3)])).to_a
 
     assert_equal [0.0, 200.0], [steps.first[:from], steps.first[:to]]
   end
 
   test "drops a lap that starts after the recording ends" do
-    steps = Track::Steps.new(recording([lap(0, "warmup"), lap(500, "cooldown")])).to_a
+    steps = Track::Steps.new(recording([lap(0, 2), lap(500, 3)])).to_a
 
     assert_equal %w[warmup], steps.pluck(:type)
     assert_equal 400.0, steps.first[:to]
   end
 
   test "has no steps when every lap has the same intensity, as with auto-laps" do
-    assert_nil Track::Steps.new(recording([lap(0, "Undocumented value 5"), lap(50, "Undocumented value 5")])).to_a
+    assert_nil Track::Steps.new(recording([lap(0, 5), lap(50, 5)])).to_a
   end
 
   test "has no steps without laps, without intensities or with an unknown one" do
     assert_nil Track::Steps.new(recording([])).to_a
     assert_nil Track::Steps.new(recording([lap(0, nil), lap(50, nil)])).to_a
-    assert_nil Track::Steps.new(recording([lap(0, "warmup"), lap(50, "Undocumented value 9")])).to_a
+    assert_nil Track::Steps.new(recording([lap(0, 2), lap(50, 9)])).to_a
   end
 
   test "has no steps for a recording without absolute times" do
     rows = Array.new(11) { {t: it * 1.0, d: it * 4.0} }
 
-    assert_nil Track::Steps.new(Track::Recording.new(rows, laps: [lap(0, "warmup")])).to_a
+    assert_nil Track::Steps.new(Track::Recording.new(rows, laps: [lap(0, 2)])).to_a
   end
 end

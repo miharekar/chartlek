@@ -41,11 +41,7 @@ class Track::Reader
 
     case File.extname(entry.name.to_s).downcase
     when ".fit"
-      Tempfile.create(["track", ".fit"], binmode: true) do |file|
-        file.write(entry.get_input_stream.read)
-        file.flush
-        Track::Fit.parse(file.path)
-      end
+      Track::Fit.parse(entry.get_input_stream.read)
     when ".tcx"
       Track::Tcx.parse(entry.get_input_stream.read)
     else

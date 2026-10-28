@@ -35,6 +35,13 @@ class Track::FitZonesTest < ActiveSupport::TestCase
     assert_nil Track::FitZones.read(fit(zone_message(seconds: SECONDS.take(6) + [0xFFFFFFFF])))
   end
 
+  test "reads a sixth floor of 255 as the top" do
+    zones = Track::FitZones.read(fit(zone_message(floors: [100, 120, 140, 160, 180, 255])))
+
+    assert_equal [100, 120, 140, 160, 180], zones["floors"]
+    assert_equal 255, zones["max_hr"]
+  end
+
   test "keeps the floors of a zone set with no time in any zone" do
     zones = Track::FitZones.read(fit(zone_message(seconds: [5000, 0, 0, 0, 0, 0, 0])))
 
@@ -46,6 +53,9 @@ class Track::FitZonesTest < ActiveSupport::TestCase
     assert_nil Track::FitZones.read(File.binread(file_fixture("tracks/run.fit")))
     whole = fit(zone_message)
     (0...whole.bytesize - 2).each { assert_nil Track::FitZones.read(whole.byteslice(0, it)), "cut at #{it}" }
+    body = whole.byteslice(12...-2)
+    (0..body.bytesize).each { |cut| Track::FitZones.read(FitBuilder.wrap(body.byteslice(0, cut), header: 12)) }
+    assert_nil Track::FitZones.read(FitBuilder.wrap(body.byteslice(0, body.bytesize - 1), header: 12))
     assert_nil Track::FitZones.read("")
     assert_nil Track::FitZones.read("not a fit file")
   end
