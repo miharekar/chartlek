@@ -4,7 +4,13 @@ Chartlek is a local, single-user Rails app for runners. It caches your Garmin Co
 
 ![Overview](docs/screenshots/overview.png)
 
-**Contents:** [Why it exists](#why-it-exists) · [Interactive by design](#interactive-by-design) · [Features](#features) (Overview, Runs, Run page, Pro Map, Pace Trends, PR Progress, Wellness, Training Bands, Gear, Goals) · [Data sources](#data-sources) · [Running it](#running-it) · [Stack](#stack)
+**Contents:** [Run it yourself](#run-it-yourself) · [Why it exists](#why-it-exists) · [Interactive by design](#interactive-by-design) · [Features](#features) (Overview, Runs, Run page, Pro Map, Pace Trends, PR Progress, Wellness, Training Bands, Gear, Goals) · [Data sources](#data-sources) · [Running it](#running-it) · [Stack](#stack)
+
+## Run it yourself
+
+Chartlek is a personal project that I love building and use every day. There is no hosted version and there won't be one. Everyone runs it on their own machine, at their own risk and responsibility, and that includes keeping their API keys and health data safe.
+
+It has no authentication, so keep it on a private network. It's provided as is, without warranty, as the [MIT license](LICENSE) says. [Running it](#running-it) below has the setup.
 
 ## Why it exists
 
@@ -259,3 +265,7 @@ Solid Queue runs inside Puma, including the hourly Garmin and wellness syncs. Pu
 - Minitest for Ruby, `node --test` for the JavaScript helpers
 
 Product requirements, formulas and the data model are in [`docs/PRD.md`](docs/PRD.md); coding conventions are in [`STYLE.md`](STYLE.md).
+
+## License
+
+[MIT](LICENSE), Copyright (c) 2026 Miha Rekar.
