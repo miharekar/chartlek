@@ -6,7 +6,7 @@
   <% else %>
     <span>Never synced</span>
   <% end %>
-  <% if profile.sync_error.present? && !profile.invalid_key? %>
+  <% if profile.sync_error.present? && !profile.invalid_key? && !local_assigns[:queued] %>
     <span class="text-red-600 dark:text-red-400" title="<%= profile.sync_error %>">Sync failed</span>
   <% end %>
 </span>

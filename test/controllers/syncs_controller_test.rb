@@ -21,6 +21,17 @@ class SyncsControllerTest < ActionDispatch::IntegrationTest
     assert_nil Profile.instance.sync_started_at
   end
 
+  test "a queued status hides an older sync failure until the job reports" do
+    Profile.instance.update!(sync_error: "Sync failed: boom")
+
+    post sync_path, as: :turbo_stream
+
+    assert_turbo_stream action: "replace", target: "sync_status" do
+      assert_select "span", "Syncing…"
+      assert_select "span", text: "Sync failed", count: 0
+    end
+  end
+
   test "opening a page never starts a sync" do
     Profile.instance.update!(synced_at: 2.days.ago)
 
