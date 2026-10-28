@@ -62,6 +62,7 @@ Development URL: <http://localhost:3000>
   - refreshes `Profile#sync_started_at` after each run (`Profile#sync_progress`), so a long sync keeps counting as running past `SYNC_STALE_AFTER` and a second sync doesn't start in parallel;
   - fetches weather for every run up to 60 days old that lacks it (forecast API for the last 5 days, archive for older runs);
   - a failure for one run is logged and skipped.
+  - the live status: `SyncsController#create` answers Turbo with a `turbo_stream` replace of `#sync_status` (queued "Syncing…", never touching `Profile`); `sync_now` and `Activity::StravaLinkJob` broadcast `broadcast_refresh_to(:garmin_sync)` when runs, links or gear changed; the `relative-time` controller ticks the `<time>` and `live-refresh` on `<body>` refreshes the page when the `garmin_sync` stream reconnects after a drop, unless a form field is on the page (rules in `helpers/live_refresh.js`).
 - `Profile` is a singleton (`Profile.instance`): Garmin profile settings and sync state (`synced_at`, `sync_started_at`, `sync_error`), the Strava connection, `hr_zones`.
 - `started_at` is true UTC. `local_started_at` is the run's local wall-clock time stored as-is. `config.time_zone` stays UTC so `local_started_at` is never shifted; use it for all day bucketing (streaks, weekdays, AM/PM, calendars).
 - Integration wrappers live in `app/lib` (autoloaded): `Garmin::Client`, `Strava::Client`, `Smashrun::Client`, `OpenMeteo::Client`.

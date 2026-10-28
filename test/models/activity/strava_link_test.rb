@@ -1,6 +1,8 @@
 require "test_helper"
 
 class Activity::StravaLinkTest < ActiveSupport::TestCase
+  include ActionCable::TestHelper
+
   RUN_AT = Time.utc(2026, 10, 20, 7, 0, 0)
 
   def garmin_run(at: RUN_AT)
@@ -117,5 +119,35 @@ class Activity::StravaLinkTest < ActiveSupport::TestCase
     garmin_run
 
     assert_nothing_raised { Activity::StravaLinkJob.perform_now(full: true) }
+  end
+
+  test "the job broadcasts a page refresh when it links a run and none otherwise" do
+    Profile.instance.store_strava_tokens(access_token: "a", refresh_token: "r", expires_at: 6.hours.from_now.to_i)
+    garmin_run
+    stub_request(:get, /strava\.com\/api\/v3\/athlete\/activities/).to_return(
+      {body: [summary(555, RUN_AT)].to_json},
+      {body: "[]"},
+      {body: [summary(555, RUN_AT)].to_json},
+      {body: "[]"}
+    )
+
+    streams = capture_broadcasts("garmin_sync") { Activity::StravaLinkJob.perform_now(full: true) }
+    assert(streams.any? { it.include?(%(action="refresh")) })
+
+    streams = capture_broadcasts("garmin_sync") { Activity::StravaLinkJob.perform_now(full: true) }
+    assert_empty streams
+  end
+
+  test "the job also broadcasts a refresh when gear rows or the first gear scan change" do
+    Profile.instance.store_strava_tokens(access_token: "a", refresh_token: "r", expires_at: 6.hours.from_now.to_i)
+    changes = [-> { Gear.create!(strava_id: "g1", name: "Synthetic Shoe") }, -> { Gear.first.update!(name: "Renamed") }, -> { Profile.instance.update!(strava_gear_synced_at: Time.current) }]
+
+    changes.each do |change|
+      stub_request(:get, /strava\.com\/api\/v3\/athlete\/activities/).to_return { change.call && {body: "[]"} }
+
+      streams = capture_broadcasts("garmin_sync") { Activity::StravaLinkJob.perform_now(full: true) }
+
+      assert(streams.any? { it.include?(%(action="refresh")) })
+    end
   end
 end

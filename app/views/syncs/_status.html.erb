@@ -1,8 +1,8 @@
 <span id="sync_status" class="flex items-center gap-3">
-  <% if profile.syncing? %>
+  <% if local_assigns[:queued] || profile.syncing? %>
     <span>Syncing…</span>
   <% elsif profile.synced_at %>
-    <span title="<%= profile.synced_at.to_fs(:db) %> UTC">Synced <%= time_ago_in_words(profile.synced_at) %> ago</span>
+    <span title="<%= profile.synced_at.to_fs(:db) %> UTC">Synced <%= tag.time time_ago_in_words(profile.synced_at), datetime: profile.synced_at.iso8601, data: {controller: "relative-time"} %> ago</span>
   <% else %>
     <span>Never synced</span>
   <% end %>

@@ -9,6 +9,18 @@ class SyncsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to "/pace_trend"
   end
 
+  test "a Turbo request gets the status replaced with Syncing and no redirect" do
+    assert_enqueued_with(job: Activity::SyncJob) do
+      post sync_path, as: :turbo_stream
+    end
+
+    assert_response :success
+    assert_turbo_stream action: "replace", target: "sync_status" do
+      assert_select "span", "Syncing…"
+    end
+    assert_nil Profile.instance.sync_started_at
+  end
+
   test "opening a page never starts a sync" do
     Profile.instance.update!(synced_at: 2.days.ago)
 
@@ -31,6 +43,8 @@ class SyncsControllerTest < ActionDispatch::IntegrationTest
     get "/overview"
 
     assert_select "nav", /Synced 12 minutes ago/
+    assert_select "nav time[datetime][data-controller=relative-time]", "12 minutes"
+    assert_select "body[data-controller=live-refresh]"
     assert_select "nav form[action='/sync'] button:not([disabled])", "Sync now"
   end
 
