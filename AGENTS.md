@@ -144,6 +144,7 @@ Development URL: <http://localhost:3000>
 ### Frontend, charts and theme
 
 - Frontend is Importmap + Stimulus + D3 + Mapbox GL JS with no Node build. Pins live in `config/importmap.rb`; d3 and Mapbox GL JS are vendored in `vendor/javascript`.
+- `lg` is 56rem (`--breakpoint-lg` in the `@theme` block), so the iPhone Duo's open landscape (951 px) counts as desktop while its portrait (669) stays 2-up.
 - Theme is Tailwind with zinc neutrals and a lime accent, switched by `<html data-theme="system|light|dark">` (`ThemesController`, a permanent `theme` cookie, a full-page redirect). Tailwind's `dark:` variant is a `@custom-variant` on that attribute. Chart colours are `--chart-*` CSS variables in `app/assets/tailwind/application.css` (`accent`, `accent-highlight`, `accent-low`, `highlight` amber, `muted`, `grid`, `axis`) that switch with the same rule, so D3 code uses them directly (`fill: var(--chart-accent)`) with no JS for theme changes. Never use `light-dark()`: `getComputedStyle` returns it unresolved, and the map reads these values.
 - Every chart click opens the run page in the same tab (no external links from charts). Pages call `turbo_exempts_page_from_cache`, because charts draw on `connect`, and render an empty state instead of charts when there are no runs.
 - Chart controllers get server-rendered JSON through Stimulus values. Refreshes after a sync use `turbo_refreshes_with method: :replace`, so controllers reconnect and redraw; charts must not rely on morphing.
