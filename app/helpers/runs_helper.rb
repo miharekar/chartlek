@@ -1,5 +1,5 @@
 module RunsHelper
-  COLUMNS = [%w[Date date left], %w[Name name left], %w[km km right], %w[Time time right], %w[Pace pace right], %w[HR hr right], %w[Elev elevation right], %w[VDOT vdot right]].freeze
+  COLUMNS = [%w[Date date left], %w[Name name left], %w[km km right], %w[Pace pace right], %w[Elev elevation right]].freeze
   GEAR_ICON = '<path d="M1.75 12.25V9.5c0-.5.3-.8.8-.9L5.25 8l1.25-2.75 1.5 1.1c.9.7 1.9 1.4 3.4 1.9 2.1.6 3.1 1.1 3.1 2.5v1.5Z"/><path d="M1.75 10.5h12.5M6.75 8.25l1-1.5"/>'.html_safe.freeze
   WORKOUT_LABELS = {"INTERVAL_WARMUP" => "Warm-up", "INTERVAL_ACTIVE" => "Active", "INTERVAL_RECOVERY" => "Recovery", "INTERVAL_REST" => "Rest", "INTERVAL_COOLDOWN" => "Cool-down"}.freeze
   DAY = "inline-flex size-8 items-center justify-center rounded-md text-sm tabular-nums"
@@ -19,7 +19,7 @@ module RunsHelper
     end
   end
 
-  def runs_sort_header(label, key, align, info: false)
+  def runs_sort_header(label, key, align)
     current = params[:sort].presence_in(Activity::SORTS.keys) || "date"
     descending = params[:dir] != "asc"
     arrow = if current != key
@@ -32,13 +32,7 @@ module RunsHelper
     next_dir = (current == key && descending) ? "asc" : "desc"
 
     tag.th class: "#{WidgetsHelper::CELL} font-medium text-#{align}", aria: {sort: (current == key) ? (descending ? "descending" : "ascending") : nil} do
-      link = link_to "#{label}#{arrow}", runs_path(request.query_parameters.slice("year", "month", "gear").select { |_, value| value.is_a?(String) }.merge("sort" => key, "dir" => next_dir)), class: "hover:text-zinc-900 dark:hover:text-zinc-100"
-
-      if info
-        tag.span safe_join([link, vdot_info]), class: "inline-flex items-center gap-1"
-      else
-        link
-      end
+      link_to "#{label}#{arrow}", runs_path(request.query_parameters.slice("year", "month", "gear").select { |_, value| value.is_a?(String) }.merge("sort" => key, "dir" => next_dir)), class: "hover:text-zinc-900 dark:hover:text-zinc-100"
     end
   end
 

@@ -157,11 +157,11 @@ class Activity::BrowsingTest < ActiveSupport::TestCase
   end
 
   test "null values sort last in both directions" do
-    with = run_at(Time.utc(2024, 3, 1), avg_hr: 150)
+    with = run_at(Time.utc(2024, 3, 1), elevation_gain_m: 150)
     without = run_at(Time.utc(2024, 3, 2))
 
-    assert_equal [with, without], Activity.listed(sort: "hr", dir: "asc").to_a
-    assert_equal [with, without], Activity.listed(sort: "hr", dir: "desc").to_a
+    assert_equal [with, without], Activity.listed(sort: "elevation", dir: "asc").to_a
+    assert_equal [with, without], Activity.listed(sort: "elevation", dir: "desc").to_a
   end
 
   test "prior training covers 90 days before the run and excludes it" do

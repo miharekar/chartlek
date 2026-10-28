@@ -409,9 +409,25 @@ class RunsControllerTest < ActionDispatch::IntegrationTest
 
     get "/runs", params: {year: 2023}
 
-    assert_select "tbody tr:nth-child(3) td:nth-last-child(2) a", text: "Synthetic Shoe"
-    assert_select "tbody tr:nth-child(2) td:nth-last-child(2) a", text: "No gear"
-    assert_select "tbody tr:nth-child(1) td:nth-last-child(2) a", false
+    assert_select "tbody tr:nth-child(3) td:last-child a", text: "Synthetic Shoe"
+    assert_select "tbody tr:nth-child(2) td:last-child a", text: "No gear"
+    assert_select "tbody tr:nth-child(1) td:last-child a", false
+  end
+
+  test "tags and gear share one cell, empty groups are not rendered and the dropped columns are gone" do
+    gear_scanned
+    Gear.create!(strava_id: "g1", name: "Synthetic Shoe")
+    linked_run(Time.utc(2023, 5, 6, 7), gear_id: "g1", race: true)
+    run_at(Time.utc(2023, 5, 7, 7))
+
+    get "/runs", params: {year: 2023}
+
+    assert_select "tbody tr:nth-child(2) td:last-child > div > div", 2
+    assert_select "tbody tr:nth-child(2) td:last-child span", text: "race"
+    assert_select "tbody tr:nth-child(2) td:last-child a", text: "Synthetic Shoe"
+    assert_select "tbody tr:nth-child(1) td:last-child > div > div", 0
+    assert_select "th", text: "Tags & gear"
+    %w[Time HR VDOT Gear].each { |label| assert_select "th", text: /\A#{label}/, count: 0 }
   end
 
   test "the run header has a gear line under the date and above the weather, an amber No gear, or nothing" do

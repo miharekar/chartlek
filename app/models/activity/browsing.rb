@@ -5,11 +5,8 @@ module Activity::Browsing
     "date" => "local_started_at",
     "name" => "name COLLATE NOCASE",
     "km" => "distance_m",
-    "time" => "timer_s",
     "pace" => "timer_s / distance_m",
-    "hr" => "avg_hr",
-    "elevation" => "elevation_gain_m",
-    "vdot" => "vdot"
+    "elevation" => "elevation_gain_m"
   }.freeze
   SIMILAR_DISTANCE = 0.1
   FASTEST_WINDOWS = [90, 180, 365].freeze

@@ -167,8 +167,8 @@ Answers "am I getting faster?" by putting all distances on a common scale (VDOT)
 
 **Runs list (`/runs`, filterable by year, month and `gear`)**
 
-- Sortable table: date, name, km, time, pace, HR, elevation, VDOT (the header carries the VDOT explanation, §5), gear.
-- Race, PR (Garmin's own personal-record flag, `pr` in the summary), workout, treadmill and gear tags (§4.7). A run is a workout when its summary has an `INTERVAL_WARMUP`, `INTERVAL_RECOVERY`, `INTERVAL_REST` or `INTERVAL_COOLDOWN` split, or an `INTERVAL_ACTIVE` with `noOfSplits` above 1; Garmin's single whole-run `INTERVAL_ACTIVE` on plain runs is not one. The list reads it from a computed `garmin_workout` column.
+- Sortable table: date, name, km, pace, elevation (any other `sort` falls back to date), then one Tags & gear cell.
+- Race, PR (Garmin's own personal-record flag, `pr` in the summary), workout and treadmill tags, then the gear tag (§4.7), in one cell: side by side, stacked when the column is cramped. A run is a workout when its summary has an `INTERVAL_WARMUP`, `INTERVAL_RECOVERY`, `INTERVAL_REST` or `INTERVAL_COOLDOWN` split, or an `INTERVAL_ACTIVE` with `noOfSplits` above 1; Garmin's single whole-run `INTERVAL_ACTIVE` on plain runs is not one. The list reads it from a computed `garmin_workout` column.
 
 **Run page (`/runs/:id`)**, top to bottom:
 
@@ -256,7 +256,7 @@ Strava gear, read-only (§2). Modelled on the Gear page of the owner's Dreeve in
   - **Refresh from Strava:** starts a full gear scan (about 15 requests).
   - Until the first full scan has finished, the page says so (instead of listing every run as without gear); if it keeps failing, it says the first scan failed and points to Refresh. Without gear access it shows the Reconnect hint.
 - **Fixing runs with no gear:** `/runs?gear=none` lists those runs with a **Suggested** column (the gear used most in the 14 days either side) and an Open in Strava button per row. You set the gear on Strava; the run leaves the list after the next hourly recent scan (last 30 days) or a manual refresh.
-- **Runs list and run page:** a Gear column and the `gear` filter (one gear, or `none`); the run header's gear line. Runs without a Strava link show neither, since their gear is unknown rather than unset.
+- **Runs list and run page:** the gear tag in the Tags & gear cell and the `gear` filter (one gear, or `none`); the run header's gear line. Runs without a Strava link show neither, since their gear is unknown rather than unset.
 
 ### 4.8 Pro Map
 

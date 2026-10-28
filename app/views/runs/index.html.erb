@@ -27,37 +27,36 @@
         <thead class="<%= WidgetsHelper::TABLE_HEAD %>">
           <tr class="<%= WidgetsHelper::TABLE_HEAD_ROW %>">
             <% RunsHelper::COLUMNS.each do |label, key, align| %>
-              <%= runs_sort_header label, key, align, info: (key == "vdot") %>
+              <%= runs_sort_header label, key, align %>
             <% end %>
-            <th class="<%= WidgetsHelper::CELL %> text-left font-medium">Gear</th>
+            <th class="<%= WidgetsHelper::CELL %> text-left font-medium">Tags &amp; gear</th>
             <% if @suggestions %>
               <th class="<%= WidgetsHelper::CELL %> text-left font-medium">Suggested</th>
+              <th class="<%= WidgetsHelper::CELL %>"></th>
             <% end %>
-            <th class="<%= WidgetsHelper::CELL %>"></th>
           </tr>
         </thead>
         <tbody class="<%= WidgetsHelper::TABLE_BODY %>">
           <% @runs.each do |run| %>
             <tr class="<%= WidgetsHelper::TABLE_ROW %>">
               <td class="<%= WidgetsHelper::CELL %> text-zinc-600 dark:text-zinc-300"><%= link_to overview_date(run.local_started_at), run_path(run), class: WidgetsHelper::TABLE_LINK %></td>
-              <td class="<%= WidgetsHelper::CELL %> font-medium"><%= link_to run.name.presence || "Run", run_path(run), class: WidgetsHelper::TABLE_LINK %></td>
+              <td class="<%= WidgetsHelper::CELL %> max-w-md font-medium"><%= link_to run.name.presence || "Run", run_path(run), class: WidgetsHelper::TABLE_LINK %></td>
               <td class="<%= WidgetsHelper::CELL %> text-right"><%= overview_distance(run.distance_m / 1000) %></td>
-              <td class="<%= WidgetsHelper::CELL %> text-right"><%= overview_duration(run.timer_s) %></td>
               <td class="<%= WidgetsHelper::CELL %> text-right"><%= overview_pace(run.pace) %></td>
-              <td class="<%= WidgetsHelper::CELL %> text-right"><%= run.avg_hr %></td>
               <td class="<%= WidgetsHelper::CELL %> text-right"><%= run.elevation_gain_m&.round %></td>
-              <td class="<%= WidgetsHelper::CELL %> text-right"><%= run.vdot&.round(1) %></td>
-              <td class="<%= WidgetsHelper::CELL %>"><%= run_gear_tag(run) %></td>
+              <td class="<%= WidgetsHelper::CELL %>">
+                <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <% tags = run_tags(run) %>
+                  <% gear = run_gear_tag(run) %>
+                  <%= tag.div tags if tags.present? %>
+                  <%= tag.div gear if gear.present? %>
+                </div>
+              </td>
               <% if @suggestions %>
                 <% suggested = @suggestions[run.id] %>
                 <td class="<%= WidgetsHelper::CELL %>"><%= link_to suggested.display_name, runs_path(gear: suggested.strava_id, year: "all"), class: WidgetsHelper::TABLE_LINK if suggested %></td>
+                <td class="<%= WidgetsHelper::CELL %>"><%= action_button "Open in Strava", run.strava_url, target: "_blank", rel: "noopener" %></td>
               <% end %>
-              <td class="<%= WidgetsHelper::CELL %>">
-                <div class="flex flex-wrap items-center gap-2">
-                  <%= run_tags(run) %>
-                  <%= action_button "Open in Strava", run.strava_url, target: "_blank", rel: "noopener" if @suggestions %>
-                </div>
-              </td>
             </tr>
           <% end %>
         </tbody>

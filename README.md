@@ -63,7 +63,7 @@ The scatter shows the selection as amber dots (the rest fade) and moves the aver
 
 ### Runs
 
-Every run by year and month, sortable by column. Click a gear tag (in the list or the run header) to list every run with that gear; click a "No gear" chip to list the runs Strava has no gear for, with a Suggested column of the shoes you most likely wore. Rows carry gear tags and race, PR, workout and treadmill chips. The **PR** chip marks runs Garmin flagged as a personal record; **workout** marks runs with a warm-up, recoveries, a cool-down or repeated active steps.
+Every run by year and month, sortable by date, name, distance, pace or elevation. Click a gear tag (in the list or the run header) to list every run with that gear; click a "No gear" chip to list the runs Strava has no gear for, with a Suggested column of the shoes you most likely wore. Rows carry race, PR, workout and treadmill chips and the gear tag in one cell. The **PR** chip marks runs Garmin flagged as a personal record; **workout** marks runs with a warm-up, recoveries, a cool-down or repeated active steps.
 
 ![Runs list](docs/screenshots/runs.png)
 
