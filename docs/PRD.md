@@ -1,4 +1,4 @@
-# Smashback: Product Requirements Document
+# Chartlek: Product Requirements Document
 
 - **Status:** all planned work is built and deployed.
 - **Owner:** Miha Rekar
@@ -9,9 +9,9 @@ This document specifies the product as built. Coding conventions are in `AGENTS.
 
 ## 1. Summary
 
-Smashback is a local, single-user Rails app. It caches your Garmin Connect running history in SQLite and rebuilds Smashrun's charts, free and Pro, with a Tailwind UI and charts built directly on D3. It adds per-run HR zones, Garmin wellness data (resting HR, HRV, sleep, Body Battery, stress, weight), Strava gear, weather, terrain maps, Training Bands, goals and a Pro Map. It runs as a container at run.rekar.eu.
+Chartlek is a local, single-user Rails app. It caches your Garmin Connect running history in SQLite and rebuilds Smashrun's charts, free and Pro, with a Tailwind UI and charts built directly on D3. It adds per-run HR zones, Garmin wellness data (resting HR, HRV, sleep, Body Battery, stress, weight), Strava gear, weather, terrain maps, Training Bands, goals and a Pro Map. It runs as a container at run.rekar.eu.
 
-Why: Smashrun (smashrun.com/miharekar) is effectively abandonware, but its charts are still the best way to look at a long running history. The ask in [dreeveapp/dreeve#2880](https://github.com/dreeveapp/dreeve/issues/2880) was turned down because most of these charts are too runner-specific for a general-purpose app. Smashback is only about running, so it can include all of them.
+Why: Smashrun (smashrun.com/miharekar) is effectively abandonware, but its charts are still the best way to look at a long running history. The ask in [dreeveapp/dreeve#2880](https://github.com/dreeveapp/dreeve/issues/2880) was turned down because most of these charts are too runner-specific for a general-purpose app. Chartlek is only about running, so it can include all of them.
 
 ## 2. Goals and non-goals
 
@@ -465,7 +465,7 @@ Summary field notes: `startTimeGMT` and `startTimeLocal` are `"YYYY-MM-DD HH:MM:
 
 ## 8. Architecture and stack
 
-- **Generator:** `rails new . --name=smashback --css=tailwind --skip-kamal --skip-thruster --skip-docker --skip-action-mailer --skip-action-mailbox --skip-action-text --skip-jbuilder --skip-system-test`: SQLite, Importmap, Propshaft, Hotwire, Solid Cache/Queue/Cable, RuboCop omakase, Brakeman, `bin/ci`.
+- **Generator:** `rails new . --name=chartlek --css=tailwind --skip-kamal --skip-thruster --skip-docker --skip-action-mailer --skip-action-mailbox --skip-action-text --skip-jbuilder --skip-system-test`: SQLite, Importmap, Propshaft, Hotwire, Solid Cache/Queue/Cable, RuboCop omakase, Brakeman, `bin/ci`.
 - **Gems:** `dotenv` (Rails doesn't load `.env`), `factory_bot_rails` and `webmock` for tests, `rubyzip` (Garmin downloads are ZIPs), `fit4ruby` from the owner's fork (§3), `csv` for the Strava import; Nokogiri (already bundled) parses TCX.
 - **JS (Importmap only, no Node build):** d3 pinned with `bin/importmap pin`. Mapbox GL JS is the single-file UMD build vendored in `vendor/javascript` with its CSS (`app/assets/stylesheets/mapbox-gl.css`), pinned with `preload: false` and imported dynamically so only pages with a map load it; the multi-chunk ESM build breaks under Propshaft's digested paths.
 - **Code organisation (Visualizer `STYLE.md`):** rich models with thin controllers; class-scoped concerns (`Activity::Performance`, `Activity::GarminSync`, `Activity::StravaImport`, `Activity::StravaLink`, …); POROs in `app/models` for aggregates (`Overview`, `PersonalRecords`, `PaceTrend`, `PrProgress`, `HrZones`, `PaceZones`, `TrainingBands`); integrations in `app/lib` (`Garmin::Client`, `Strava::Client`, `Smashrun::Client`, `OpenMeteo::Client`); jobs follow `_later`/`_now`; view constants for cards, type and controls live in `WidgetsHelper` and `ControlsHelper` (§9).
@@ -517,9 +517,9 @@ One design system, defined once in helpers (`WidgetsHelper` for cards and type, 
 
 **Unit coverage that matters:** VDOT golden values and predictions; pace zones (boundaries at 5.5, 6.0 and 23.0 km/h, nil VDOT); PR bucketing and interpolation, streaks, trailing sums, weekly buckets, magic PR targets, top-run flagging; Garmin client (token caching, re-exchange on 401, expired key); sync (idempotent upsert, delete reconciliation); Strava cutoff, connection (state and scope checks, refresh and rotation, revoked connection), ±10 minute matching and gear sync (missing scope, gear without a row yet, null gear, `retired` absent, 401); Smashrun import; track parsers (FIT, TCX with two `<Track>`s, Smashrun JSON) and metrics (splits, variability, elevation bins, clipping, cadence doubling, the 2,000-point cap, `route` and `route_distances` staying aligned when a GPS fix is missing); weather, notables, food; hill difficulty; wellness parsers and sync (idempotent upserts, the 3-day refresh, chunking, missing metrics); HR zones and the default bands; gear stats and the "no gear" and "suggested gear" rules.
 
-**Golden values:** Smashback's values next to smashrun.com/miharekar (all time, km), as of 2026-10-25. Smashrun used its own processing and counts about 470 km of hikes that Garmin recorded as hiking. Streaks and breaks must match exactly; totals and PRs within ±0.1%. Recompute when an aggregation changes.
+**Golden values:** Chartlek's values next to smashrun.com/miharekar (all time, km), as of 2026-10-25. Smashrun used its own processing and counts about 470 km of hikes that Garmin recorded as hiking. Streaks and breaks must match exactly; totals and PRs within ±0.1%. Recompute when an aggregation changes.
 
-| Metric | Smashback | Smashrun |
+| Metric | Chartlek | Smashrun |
 |---|---|---|
 | Runs | 2,868 | 2,942 |
 | Total distance | 32,974.3 km | ≈ 33,464 km |

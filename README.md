@@ -1,6 +1,6 @@
-# Smashback
+# Chartlek
 
-Smashback is a local, single-user Rails app for runners. It caches your Garmin Connect running history in SQLite and rebuilds the charts of [Smashrun](https://smashrun.com), free and Pro, with Tailwind and D3. It then goes further: per-run heart rate zones, Garmin wellness data (resting HR, HRV, sleep, Body Battery, stress, weight), Strava gear, weather and terrain maps.
+Chartlek is a local, single-user Rails app for runners. It caches your Garmin Connect running history in SQLite and rebuilds the charts of [Smashrun](https://smashrun.com), free and Pro, with Tailwind and D3. It then goes further: per-run heart rate zones, Garmin wellness data (resting HR, HRV, sleep, Body Battery, stress, weight), Strava gear, weather and terrain maps.
 
 ![Overview](docs/screenshots/overview.png)
 
@@ -10,7 +10,7 @@ Smashback is a local, single-user Rails app for runners. It caches your Garmin C
 
 [Smashrun](https://smashrun.com) had the best charts for a long running history, but it is abandonware. [Dreeve](https://github.com/dreeveapp/dreeve), a self-hosted multi-sport dashboard, is too cycling-focused: its maintainer [found Smashrun's charts too runner-focused](https://github.com/dreeveapp/dreeve/issues/2880) to add.
 
-So Smashback is a running-first, self-hosted replacement for your own data.
+So Chartlek is a running-first, self-hosted replacement for your own data.
 
 ## Interactive by design
 
@@ -159,7 +159,7 @@ Your weekly training time, stacked by **band**: a slice of intensity. Choose wha
 
 ### Gear
 
-Your Strava shoes, read-only: runs, distance, time, last 12 months and last used per pair, plus distance per month and distance over time charts (retired shoes are off until you toggle them). Runs linked to Strava without gear are listed so you can fix them there; Smashback never writes to Strava.
+Your Strava shoes, read-only: runs, distance, time, last 12 months and last used per pair, plus distance per month and distance over time charts (retired shoes are off until you toggle them). Runs linked to Strava without gear are listed so you can fix them there; Chartlek never writes to Strava.
 
 ![Gear](docs/screenshots/gear.png)
 
@@ -186,9 +186,9 @@ Monthly and yearly distance goals. The Overview shows the yearly goal as a tile 
 | [Open-Meteo](https://open-meteo.com) | Weather at each run's start, with sunrise and sunset. |
 | Mapbox | Map tiles and terrain (Mapbox GL JS). |
 
-**Per-run HR zones.** Your zones change over the years (resting HR moves them), so a fixed set would misfile old runs. Each FIT original carries the zones the watch used and the time spent in each, which Smashback reads directly, so every run is judged against its own zones. Runs recorded before the watch stored zones get **estimated** zones from the zones of that period and the time in each from the track; they are labelled Estimated wherever they appear. Training Bands, the run's HR chart and the Pro Map all use the run's own zones.
+**Per-run HR zones.** Your zones change over the years (resting HR moves them), so a fixed set would misfile old runs. Each FIT original carries the zones the watch used and the time spent in each, which Chartlek reads directly, so every run is judged against its own zones. Runs recorded before the watch stored zones get **estimated** zones from the zones of that period and the time in each from the track; they are labelled Estimated wherever they appear. Training Bands, the run's HR chart and the Pro Map all use the run's own zones.
 
-Smashback only reads. All data stays in SQLite under `storage/`.
+Chartlek only reads. All data stays in SQLite under `storage/`.
 
 ## Running it
 

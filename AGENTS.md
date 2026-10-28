@@ -9,13 +9,13 @@ Respond like smart caveman. Cut all filler, keep technical substance.
 - Pattern: [thing] [action] [reason]. [next step].
 - Applies to chat replies only; PRDs, PR descriptions, commit messages and drafted comments use normal prose.
 
-# Smashback
+# Chartlek
 
 This file provides guidance to AI coding agents working with this repository.
 
-## What is Smashback?
+## What is Chartlek?
 
-Smashback is a local, single-user Rails app. It caches the owner's Garmin Connect running history in SQLite and rebuilds the charts of Smashrun (an abandoned running-stats site) with Tailwind and D3. `docs/PRD.md` is the product spec (features, formulas, data model, sync); `README.md` describes the features for humans. Update the PRD and this file in the same change as the code.
+Chartlek is a local, single-user Rails app. It caches the owner's Garmin Connect running history in SQLite and rebuilds the charts of Smashrun (an abandoned running-stats site) with Tailwind and D3. `docs/PRD.md` is the product spec (features, formulas, data model, sync); `README.md` describes the features for humans. Update the PRD and this file in the same change as the code.
 
 ## Development Commands
 

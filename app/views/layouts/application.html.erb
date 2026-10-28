@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html data-theme="<%= current_theme %>">
   <head>
-    <title><%= content_for(:title) || "Smashback" %></title>
+    <title><%= content_for(:title) || "Chartlek" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="Smashback">
+    <meta name="application-name" content="Chartlek">
     <meta name="mobile-web-app-capable" content="yes">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
@@ -29,7 +29,7 @@
     <%= turbo_stream_from :garmin_sync, data: {live_refresh_target: "stream"} %>
     <nav class="border-b border-zinc-200 dark:border-zinc-800">
       <div class="max-w-7xl mx-auto px-5 min-h-14 py-2 flex flex-wrap items-center gap-x-8 gap-y-2">
-        <%= link_to "Smashback", "/overview", class: "text-lg font-semibold text-lime-700 dark:text-[#9CFF44]" %>
+        <%= link_to "Chartlek", "/overview", class: "text-lg font-semibold text-lime-700 dark:text-[#9CFF44]" %>
         <div class="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
           <%= nav_link_to "Overview", "/overview" %>
           <%= nav_link_to "Runs", runs_path %>
