@@ -198,63 +198,48 @@ Chartlek only reads. All data stays in SQLite under `storage/`.
 
 ## Running it
 
-Requirements: Ruby 4.0.9, SQLite, and Node (only to run the JavaScript tests; there is no Node build).
-
-Create a `.env` with these variables (names only, set your own values):
-
-- `GARMIN_API_TOKEN`: your Garmin Personal API key.
-- `STRAVA_CLIENT_ID` and `STRAVA_SECRET`: your Strava API app. Click Connect Strava in the nav once to authorise.
-- `SMASHRUN_USERNAME` and `SMASHRUN_PASSWORD`: only for the pre-Garmin backfill.
-- `MAPBOX_TOKEN`: a public `pk.` token. Never use a secret `sk.` token.
-
-Make your own credentials first. The committed `config/credentials.yml.enc` is encrypted with the owner's key, so a fresh clone can't open it:
+Requirements: Docker and a Garmin Personal API key. No Ruby or SQLite needed.
 
 ```bash
-rm config/credentials.yml.enc
-bin/rails db:encryption:init # prints three keys; copy them
-bin/rails credentials:edit   # creates config/master.key (git-ignored) and a new credentials file
+cp .env.example .env         # fill it in: the comments say what each variable is and how to generate the secrets with openssl
+docker compose up -d
 ```
 
-Paste what `db:encryption:init` printed into the credentials editor, as the `active_record_encryption` entry with `primary_key`, `deterministic_key` and `key_derivation_salt`. They encrypt the stored Strava tokens, so Strava can't connect without them.
+Open <http://localhost:9295>. The first start builds the image, which takes a few minutes. `./storage` holds the database and your runs' originals; keep it, and keep the secrets in `.env`, because the `ACTIVE_RECORD_ENCRYPTION_*` keys encrypt the stored Strava tokens (lose them and you reconnect Strava).
+
+Strava is optional. Create an API app at strava.com/settings/api, set `STRAVA_CLIENT_ID` and `STRAVA_SECRET` in `.env`, and allow your callback domain: `localhost` for `http://localhost:9295/strava/callback`, or your own host if you serve it elsewhere. Then click Connect Strava in the nav once.
+
+**First run.** The hourly sync and Sync now already run inside the container. For the backfills use `docker compose exec chartlek bin/rails …`, in order:
+
+1. Sync Garmin: press Sync now in the nav, or `docker compose exec chartlek bin/rails activities:sync`. It imports your runs, downloads each run's original and builds the tracks.
+2. `activities:download` only if some runs still lack an original (a failed download is also retried by the next sync). It is slow, so split it across processes if you have thousands of runs.
+3. Optional, for the years before Garmin: click Connect Strava in the nav, then `strava:fetch`, then `smashrun:fetch` (they need the Garmin sync first and `SMASHRUN_USERNAME`/`SMASHRUN_PASSWORD` in `.env`).
+4. `activities:hr_zones`, then `activities:bands`: per-run HR zones and the Training Bands data for runs that are already stored. Run bands after hr_zones.
+5. `wellness:backfill`: Garmin wellness history, newest first, resumable.
+6. Optional: `weather:fetch` for weather on older runs (the sync only fetches the last 60 days).
+
+Other tasks:
+
+```bash
+docker compose exec chartlek bin/rails activities:resync      # full resync, deletes runs missing on Garmin
+docker compose exec chartlek bin/rails activities:reprocess   # rebuild tracks and metrics from stored originals
+```
+
+See `AGENTS.md` for every task and its options. After pulling new code, run `docker compose up -d --build`. Put it behind your own TLS proxy if you expose it; there is no authentication, so keep it on a private network.
+
+### Development
+
+Requirements: Ruby 4.0.9, SQLite, and Node (only to run the JavaScript tests; there is no Node build). Put the same variables in `.env`; `bin/dev` loads it.
 
 ```bash
 bin/setup                    # install gems, prepare the database, then start bin/dev (--skip-server to just set up)
 bin/dev                      # later: Rails, the Tailwind watcher and Herb on http://localhost:3000
-```
-
-**First run.** In order:
-
-1. Sync Garmin: press Sync now in the nav, or `bin/rails activities:sync`. It imports your runs, downloads each run's original and builds the tracks.
-2. `bin/rails activities:download` only if some runs still lack an original (a failed download is also retried by the next sync). It is slow, so split it across processes if you have thousands of runs.
-3. Optional, for the years before Garmin: click Connect Strava in the nav, then `bin/rails strava:fetch`, then `bin/rails smashrun:fetch` (they need the Garmin sync first).
-4. `bin/rails activities:hr_zones`, then `bin/rails activities:bands`: per-run HR zones and the Training Bands data for runs that are already stored. Run bands after hr_zones.
-5. `bin/rails wellness:backfill`: Garmin wellness history, newest first, resumable.
-6. Optional: `bin/rails weather:fetch` for weather on older runs (the sync only fetches the last 60 days).
-
-After that, `Sync now` and the hourly job in production keep everything current. Other tasks:
-
-```bash
-bin/rails activities:resync      # full resync, deletes runs missing on Garmin
-bin/rails activities:reprocess   # rebuild tracks and metrics from stored originals
-```
-
-See `AGENTS.md` for every task and its options.
-
-Tests:
-
-```bash
 bin/rails test
 node --test test/javascript/*_test.mjs
 bin/ci                       # setup, style, security audits, tests, seeds
 ```
 
-Deploy with Docker (port 9295, `./storage` mounted, config from `.env`). The container also needs `config/master.key` (mounted read-only; it opens the credentials that encrypt the stored Strava tokens), or `RAILS_MASTER_KEY` set instead (the key you made above):
-
-```bash
-docker compose up -d --build
-```
-
-Solid Queue runs inside Puma, including the hourly Garmin and wellness syncs. Put it behind your own TLS proxy; there is no authentication, so keep it on a private network.
+The tasks above also run directly as `bin/rails …`.
 
 ## Stack
 

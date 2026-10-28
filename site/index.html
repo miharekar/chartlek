@@ -96,9 +96,10 @@
 
     <section class="wrap">
       <h2>Get started</h2>
-      <p class="lead">You need Ruby 4.0.9 and SQLite, plus your own Garmin Personal API key. Then:</p>
-      <pre><code>bin/setup</code></pre>
-      <p>The <a href="https://github.com/miharekar/chartlek#running-it">README</a> has the environment variables and the first run.</p>
+      <p class="lead">You need Docker and your own Garmin Personal API key. No Ruby or database to install. Then:</p>
+      <pre><code>cp .env.example .env   # fill it in
+docker compose up -d</code></pre>
+      <p>Open <code>http://localhost:9295</code>. The <a href="https://github.com/miharekar/chartlek#running-it">README</a> has the variables and the first run.</p>
       <p>Chartlek is a personal project. There is no hosted version and there won't be one: you run it yourself, at your own risk, and keep your keys and health data safe. It has no authentication, so keep it on a private network. <a href="https://github.com/miharekar/chartlek#run-it-yourself">Read more</a>.</p>
     </section>
   </main>

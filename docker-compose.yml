@@ -16,5 +16,4 @@ services:
       SOLID_QUEUE_IN_PUMA: "1"
     volumes:
       - ./storage:/rails/storage
-      - ./config/master.key:/rails/config/master.key:ro
     restart: unless-stopped
