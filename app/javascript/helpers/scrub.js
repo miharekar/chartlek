@@ -4,7 +4,7 @@ export function isTouch(event) {
 
 export function scrub(selection, { enter, move, leave, mode = "surface" }) {
   const tap = mode === "tap"
-  if (!tap) selection.each(function () { (this.ownerSVGElement ?? this).style.touchAction = "pan-y" })
+  if (!tap) selection.each(function () { (this.ownerSVGElement ?? this).style.touchAction = "pan-y pinch-zoom" })
 
   return selection
     .on("pointerdown.scrub", function (event, datum) {

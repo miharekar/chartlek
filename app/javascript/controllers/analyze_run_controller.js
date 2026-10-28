@@ -112,7 +112,7 @@ export default class extends Controller {
     this.brushGroup.select(".selection").attr("fill", "var(--chart-accent-highlight)").attr("fill-opacity", 0.2).attr("stroke", "var(--chart-accent-highlight)")
     this.brushGroup
       .on("mousedown.hover", () => this.#hideOwn(), true)
-      .on("click", () => this.#open(this.hover))
+      .on("click", event => this.#open(this.#hitAt(event)))
     scrub(this.brushGroup, { mode: "tap", move: event => this.#move(event), leave: () => this.#leave() })
 
     this.readout = svg.append("g").attr("display", "none").style("cursor", "pointer").on("click", () => {
@@ -324,9 +324,12 @@ export default class extends Controller {
     return best
   }
 
+  #hitAt(event) {
+    return this.#hit(...pointer(event, this.stripSvg.node()))
+  }
+
   #move(event) {
-    const [px, py] = pointer(event, this.stripSvg.node())
-    this.hover = this.#hit(px, py)
+    this.hover = this.#hitAt(event)
     this.brushGroup.select(".overlay").style("cursor", this.hover == null ? "crosshair" : "pointer")
     if (this.hover == null) return this.#hideOwn()
     showTooltip(this.hover === "current" ? this.#currentHtml() : this.#dotHtml(this.runsValue[this.hover]), event)

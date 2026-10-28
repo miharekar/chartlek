@@ -31,14 +31,14 @@ test("isTouch only matches touch pointers", () => {
   assert(!isTouch({}))
 })
 
-test("surface mode sets pan-y on the owning svg (SVG shapes ignore touch-action), reports a touch press as a move and passes the rest through", () => {
+test("surface mode sets pan-y pinch-zoom on the owning svg (SVG shapes ignore touch-action), reports a touch press as a move and passes the rest through", () => {
   const calls = []
   const selection = fakeSelection()
   const move = event => calls.push(["move", event.pointerType])
   const leave = () => calls.push(["leave"])
   scrub(selection, { move, leave })
 
-  assert.equal(selection.owner.style.touchAction, "pan-y")
+  assert.equal(selection.owner.style.touchAction, "pan-y pinch-zoom")
   selection.handlers["pointerdown.scrub"].call({}, touch)
   selection.handlers["pointerdown.scrub"].call({}, mouse)
   assert.equal(selection.handlers["pointermove.scrub"], move)
