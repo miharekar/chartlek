@@ -9,6 +9,7 @@ import { paceScale } from "helpers/pace_scale"
 import { observeSize } from "helpers/resize"
 import { clear, publish, subscribe } from "helpers/run_cursor"
 import { rangeStats } from "helpers/run_stats"
+import { scrub } from "helpers/scrub"
 import { hideTooltip, moveTooltip, showTooltip, tooltipHtml } from "helpers/tooltip"
 
 const MARGIN = { top: 8, right: 24, bottom: 24, left: 44 }
@@ -88,7 +89,7 @@ export default class extends Controller {
     const showAll = () => this.#renderStats(rangeStats(bars, 0, total), false)
     showAll()
 
-    const brush = brushX().extent([[0, 0], [innerWidth, innerHeight]]).on("brush end", ({ selection }) => {
+    const brush = brushX().touchable(false).extent([[0, 0], [innerWidth, innerHeight]]).on("brush end", ({ selection }) => {
       if (!selection) {
         rects.attr("fill", "var(--chart-accent)")
         return showAll()
@@ -105,15 +106,18 @@ export default class extends Controller {
     this.#showCursor()
 
     const bySpan = bisector((start, position) => start - position)
-    layer.on("mousemove", event => {
-      const position = x.invert(pointer(event)[0]) * 1000
-      const index = Math.max(0, bySpan.right(starts, position) - 1)
-      showTooltip(this.#tooltipHtml(bars[index], starts[index]), event)
-      moveTooltip(event)
-      publish(position)
-    }).on("mouseleave", () => {
-      hideTooltip()
-      clear()
+    scrub(layer, {
+      move: event => {
+        const position = x.invert(pointer(event)[0]) * 1000
+        const index = Math.max(0, bySpan.right(starts, position) - 1)
+        showTooltip(this.#tooltipHtml(bars[index], starts[index]), event)
+        moveTooltip(event)
+        publish(position)
+      },
+      leave: () => {
+        hideTooltip()
+        clear()
+      }
     })
   }
 

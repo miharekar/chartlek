@@ -7,6 +7,7 @@ import { formatDistance } from "helpers/formatters"
 import { peakPoint, profileDomain, profilePoints } from "helpers/elevation_profile"
 import { observeSize } from "helpers/resize"
 import { clear, publish, subscribe } from "helpers/run_cursor"
+import { scrub } from "helpers/scrub"
 import { hideTooltip, showTooltip, tooltipHtml } from "helpers/tooltip"
 
 const HEIGHT = 70
@@ -56,14 +57,16 @@ export default class extends Controller {
     this.#showCursor()
 
     this.svg.append("rect").attr("width", this.width).attr("height", HEIGHT).attr("fill", "transparent")
-      .on("mousemove", event => {
-        const point = this.#nearest(x.invert(pointer(event)[0]))
-        showTooltip(tooltipHtml(`${formatDistance(point.km)} km`, [["Elevation", `${Math.round(point.alt)} m`]]), event)
-        publish(point.km * 1000)
-      })
-      .on("mouseleave", () => {
-        hideTooltip()
-        clear()
+      .call(scrub, {
+        move: event => {
+          const point = this.#nearest(x.invert(pointer(event)[0]))
+          showTooltip(tooltipHtml(`${formatDistance(point.km)} km`, [["Elevation", `${Math.round(point.alt)} m`]]), event)
+          publish(point.km * 1000)
+        },
+        leave: () => {
+          hideTooltip()
+          clear()
+        }
       })
   }
 

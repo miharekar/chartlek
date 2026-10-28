@@ -6,6 +6,7 @@ import { pointer, select } from "d3-selection"
 import { area, line } from "d3-shape"
 import { formatDate, formatDistance } from "helpers/formatters"
 import { observeSize } from "helpers/resize"
+import { scrub } from "helpers/scrub"
 import { parseTime } from "helpers/time"
 import { clearSelection, getTimes, publish, spanSelection } from "helpers/linked_selection"
 import { hideTooltip, moveTooltip, showTooltip, tooltipHtml } from "helpers/tooltip"
@@ -80,17 +81,19 @@ export default class extends Controller {
       .attr("width", width)
       .attr("height", innerHeight + MARGIN.bottom)
       .attr("fill", "transparent")
-      .on("mousemove", event => {
-        const point = points[bisect(points, x.invert(pointer(event)[0]))]
-        marker.attr("display", null).attr("cx", x(point.date)).attr("cy", y(point.km))
-        showTooltip(tooltipHtml(formatDate(point.date), [[`Last ${this.dataValue.days} days`, `${formatDistance(point.km)} km`]]), event)
-        const end = point.date.getTime() + DAY_MS
-        publish(spanSelection(getTimes(), end - this.dataValue.days * DAY_MS, end, "trailing"))
-      })
-      .on("mouseleave", () => {
-        marker.attr("display", "none")
-        hideTooltip()
-        clearSelection()
+      .call(scrub, {
+        move: event => {
+          const point = points[bisect(points, x.invert(pointer(event)[0]))]
+          marker.attr("display", null).attr("cx", x(point.date)).attr("cy", y(point.km))
+          showTooltip(tooltipHtml(formatDate(point.date), [[`Last ${this.dataValue.days} days`, `${formatDistance(point.km)} km`]]), event)
+          const end = point.date.getTime() + DAY_MS
+          publish(spanSelection(getTimes(), end - this.dataValue.days * DAY_MS, end, "trailing"))
+        },
+        leave: () => {
+          marker.attr("display", "none")
+          hideTooltip()
+          clearSelection()
+        }
       })
   }
 }

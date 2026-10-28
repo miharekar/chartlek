@@ -13,6 +13,7 @@ import { observeSize } from "helpers/resize"
 import { routeAt } from "helpers/route_point"
 import { clear, publish, subscribe } from "helpers/run_cursor"
 import { noMouseFocus } from "helpers/roving"
+import { scrub } from "helpers/scrub"
 import { hideTooltip, moveTooltip, showTooltip, showTooltipFor, tooltipHtml } from "helpers/tooltip"
 
 const PADDING = 32
@@ -213,11 +214,11 @@ export default class extends Controller {
         this.selection = nextSelection(this.selection, index)
         this.#select()
       })
-      button.addEventListener("mousemove", event => {
+      const showBar = event => {
         showTooltip(tooltipHtml(labels[index].title, [["Time", `${formatDuration(totals[index].time)} (${(share * 100).toFixed(1)}%)`], ["Distance", `${formatDistance(totals[index].distance / 1000)} km`]]), event)
         moveTooltip(event)
-      })
-      button.addEventListener("mouseleave", hideTooltip)
+      }
+      scrub(select(button), { mode: "items", enter: showBar, move: showBar, leave: hideTooltip })
       return { button, bar, index }
     })
     this.barsTarget.replaceChildren(...this.barButtons.map(({ button }) => button))
@@ -306,18 +307,20 @@ export default class extends Controller {
     this.cursorLine = chart.append("line").attr("y1", 0).attr("y2", innerHeight).attr("stroke", "var(--chart-highlight)").attr("stroke-width", 1.5).attr("pointer-events", "none").attr("display", "none")
     this.#showCursor()
 
-    const overlayRect = chart.append("rect").attr("width", innerWidth).attr("height", innerHeight).attr("fill", "none").attr("pointer-events", "all").attr("tabindex", 0).attr("role", "img").attr("aria-label", "Change in pace. Left and right arrows move along the route, Home and End jump to the ends, Escape clears.").style("touch-action", "pan-y").style("outline-offset", "-2px")
+    const overlayRect = chart.append("rect").attr("width", innerWidth).attr("height", innerHeight).attr("fill", "none").attr("pointer-events", "all").attr("tabindex", 0).attr("role", "img").attr("aria-label", "Change in pace. Left and right arrows move along the route, Home and End jump to the ends, Escape clears.").style("outline-offset", "-2px")
       .on("mousedown", noMouseFocus)
-      .on("pointermove", event => {
-        this.keyboard = false
-        const position = x.invert(pointer(event)[0]) * 1000
-        showTooltip(this.#tooltipHtml(this.#binAt(position)), event)
-        moveTooltip(event)
-        publish(position)
-      })
-      .on("pointerleave", () => {
-        hideTooltip()
-        clear()
+      .call(scrub, {
+        move: event => {
+          this.keyboard = false
+          const position = x.invert(pointer(event)[0]) * 1000
+          showTooltip(this.#tooltipHtml(this.#binAt(position)), event)
+          moveTooltip(event)
+          publish(position)
+        },
+        leave: () => {
+          hideTooltip()
+          clear()
+        }
       })
       .on("focus", () => {
         this.graphFocused = this.keyboard = true

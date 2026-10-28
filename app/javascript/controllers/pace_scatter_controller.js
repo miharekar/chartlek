@@ -8,6 +8,7 @@ import { formatDate, formatDistance, formatPace } from "helpers/formatters"
 import { paceScale } from "helpers/pace_scale"
 import { clearRuns, clearSelection, hoverSelection, publish, selectionMean, setRuns, subscribe } from "helpers/linked_selection"
 import { observeSize } from "helpers/resize"
+import { scrub } from "helpers/scrub"
 import { hideTooltip, moveTooltip, showTooltip, tooltipHtml } from "helpers/tooltip"
 
 const MARGIN = { top: 8, right: 12, bottom: 24, left: 44 }
@@ -200,27 +201,29 @@ export default class extends Controller {
       .attr("width", innerWidth + MARGIN.left + MARGIN.right)
       .attr("height", innerHeight + MARGIN.top + MARGIN.bottom)
       .attr("fill", "transparent")
-      .on("mousemove", event => {
-        const [mouseX, mouseY] = pointer(event)
-        const inPlot = mouseX >= 0 && mouseX <= innerWidth && mouseY >= 0 && mouseY <= innerHeight
-        const found = inPlot && points.length ? delaunay.find(mouseX, mouseY) : -1
-        const near = found >= 0 && Math.hypot(points[found][0] - mouseX, points[found][1] - mouseY) <= HIT_RADIUS
-        publish({ runs: new Set(hoverSelection(quadrantPoints, mouseX, mouseY, innerWidth, innerHeight)), span: null, source: "scatter" })
-        current = near ? shown[found].run : null
-        event.currentTarget.style.cursor = near ? "pointer" : "default"
+      .call(scrub, {
+        move: event => {
+          const [mouseX, mouseY] = pointer(event)
+          const inPlot = mouseX >= 0 && mouseX <= innerWidth && mouseY >= 0 && mouseY <= innerHeight
+          const found = inPlot && points.length ? delaunay.find(mouseX, mouseY) : -1
+          const near = found >= 0 && Math.hypot(points[found][0] - mouseX, points[found][1] - mouseY) <= HIT_RADIUS
+          publish({ runs: new Set(hoverSelection(quadrantPoints, mouseX, mouseY, innerWidth, innerHeight)), span: null, source: "scatter" })
+          current = near ? shown[found].run : null
+          event.currentTarget.style.cursor = near ? "pointer" : "default"
 
-        if (near) {
-          ring.attr("display", null).attr("cx", points[found][0]).attr("cy", points[found][1])
-          showTooltip(this.tooltip(current), event)
-        } else {
+          if (near) {
+            ring.attr("display", null).attr("cx", points[found][0]).attr("cy", points[found][1])
+            showTooltip(this.tooltip(current), event)
+          } else {
+            ring.attr("display", "none")
+            hideTooltip()
+          }
+        },
+        leave: () => {
           ring.attr("display", "none")
           hideTooltip()
+          clearSelection()
         }
-      })
-      .on("mouseleave", () => {
-        ring.attr("display", "none")
-        hideTooltip()
-        clearSelection()
       })
       .on("click", () => {
         if (current) window.Turbo.visit(current.href)

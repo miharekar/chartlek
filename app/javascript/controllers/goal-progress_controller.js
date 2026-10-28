@@ -7,6 +7,7 @@ import { formatDate, formatDistance } from "helpers/formatters"
 import { catchUpLine, catchUpOpacity, DAY, dayIndexAt, hoverAt, pathAt, yMax } from "helpers/goal_progress"
 import { observeSize } from "helpers/resize"
 import { noMouseFocus, rovingTarget } from "helpers/roving"
+import { scrub } from "helpers/scrub"
 import { hideTooltip, showTooltip, showTooltipFor, tooltipHtml } from "helpers/tooltip"
 
 const MARGIN = { top: 8, right: 12, bottom: 24, left: 52 }
@@ -77,22 +78,24 @@ export default class extends Controller {
     this.overlay = chart.append("rect").attr("width", innerWidth).attr("height", innerHeight).attr("fill", "transparent").attr("tabindex", 0).attr("role", "img")
       .attr("aria-label", `${this.element.dataset.label}. Left and right arrows step through days, Enter opens the run, Escape clears.`)
       .on("mousedown", noMouseFocus)
-      .on("mousemove", event => this.#hover(event, x))
-      .on("mouseleave", () => this.#leave())
-      .on("click", () => this.#open())
+      .call(scrub, { move: event => this.#hover(event, x), leave: () => this.#leave() })
+      .on("click", event => this.#open(this.#indexAt(event, x)))
       .on("blur", () => this.#leave())
       .on("keydown", event => this.#key(event))
     this.#showCursor()
   }
 
   #hover(event, x) {
-    const index = dayIndexAt(x.invert(pointer(event, this.overlay.node())[0]).getTime(), this.series.start, this.series.days)
-    this.#select(index, html => showTooltip(html, event))
+    this.#select(this.#indexAt(event, x), html => showTooltip(html, event))
+  }
+
+  #indexAt(event, x) {
+    return dayIndexAt(x.invert(pointer(event, this.overlay.node())[0]).getTime(), this.series.start, this.series.days)
   }
 
   #key(event) {
     if (event.key === "Escape") return this.#leave()
-    if (event.key === "Enter") return this.#open()
+    if (event.key === "Enter") return this.#open(this.index)
     const last = this.series.days - 1
     const current = this.index ?? Math.max(0, this.series.cumulative.length - 1)
     const target = rovingTarget(event.key, current, last)
@@ -113,8 +116,8 @@ export default class extends Controller {
     hideTooltip()
   }
 
-  #open() {
-    const day = this.dailyAt.get(this.index)
+  #open(index) {
+    const day = this.dailyAt.get(index)
     if (day) window.Turbo.visit(day.url)
   }
 

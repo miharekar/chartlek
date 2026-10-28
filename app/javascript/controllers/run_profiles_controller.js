@@ -8,6 +8,7 @@ import { formatDistance } from "helpers/formatters"
 import { zoneBands, zoneStops } from "helpers/hr_zones"
 import { observeSize } from "helpers/resize"
 import { clear, publish, subscribe } from "helpers/run_cursor"
+import { scrub } from "helpers/scrub"
 
 const MARGIN = { top: 20, right: 24, bottom: 4, left: 44 }
 const AXIS_HEIGHT = 20
@@ -115,8 +116,7 @@ export default class extends Controller {
     this.hovers.push({ cursor, readout, unit, x, values })
 
     chart.append("rect").attr("width", innerWidth).attr("height", innerHeight).attr("fill", "transparent")
-      .on("mousemove", event => publish(x.invert(pointer(event)[0]) * 1000))
-      .on("mouseleave", () => clear())
+      .call(scrub, { move: event => publish(x.invert(pointer(event)[0]) * 1000), leave: () => clear() })
   }
 
   #show() {

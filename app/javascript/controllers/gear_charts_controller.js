@@ -8,6 +8,7 @@ import { utcFormat } from "d3-time-format"
 import { formatDistance } from "helpers/formatters"
 import { cumulative, initialHidden, monthRows, seriesColor, stackRows, toggled, zoom } from "helpers/gear_charts"
 import { observeSize } from "helpers/resize"
+import { scrub } from "helpers/scrub"
 import { parseTime } from "helpers/time"
 import { hideTooltip, moveTooltip, showTooltip, tooltipHtml } from "helpers/tooltip"
 
@@ -134,14 +135,17 @@ export default class extends Controller {
   }
 
   #hitAreas(chart, indexes, left, step, innerHeight, visible, value, months, running = false) {
-    chart.append("g").selectAll("rect").data(indexes).join("rect")
+    const hits = chart.append("g").selectAll("rect").data(indexes).join("rect")
       .attr("x", left)
       .attr("width", step)
       .attr("height", innerHeight + MARGIN.bottom)
       .attr("fill", "transparent")
-      .on("mouseenter", (event, index) => showTooltip(this.#tooltip(index, visible, value, months, running), event))
-      .on("mousemove", event => moveTooltip(event))
-      .on("mouseleave", () => hideTooltip())
+    scrub(hits, {
+      mode: "items",
+      enter: (event, index) => showTooltip(this.#tooltip(index, visible, value, months, running), event),
+      move: event => moveTooltip(event),
+      leave: () => hideTooltip()
+    })
   }
 
   #tooltip(index, visible, value, months, running) {

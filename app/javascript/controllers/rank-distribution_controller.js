@@ -6,6 +6,7 @@ import { formatDistance, formatPace } from "helpers/formatters"
 import { distribution } from "helpers/rank_distribution"
 import { observeSize } from "helpers/resize"
 import { noMouseFocus } from "helpers/roving"
+import { scrub } from "helpers/scrub"
 import { hideTooltip, isTooltipFor, moveTooltip, showTooltipFor, tooltipHtml } from "helpers/tooltip"
 
 const HEIGHT = 150
@@ -49,15 +50,18 @@ export default class extends Controller {
       .attr("x", bin => x(bin.from)).attr("width", bin => Math.max(1, x(bin.to) - x(bin.from) - 1))
       .attr("y", bin => y(bin.count)).attr("height", bin => bottom - y(bin.count))
       .attr("fill", bin => bin.current ? "var(--chart-highlight)" : "var(--chart-accent)")
-      .on("mouseenter", (event, bin) => {
-        showTooltipFor(this.tooltip(bin), event.currentTarget)
-        if (document.activeElement !== event.currentTarget) moveTooltip(event)
-      })
-      .on("mousemove", event => {
-        if (isTooltipFor(event.currentTarget) && document.activeElement !== event.currentTarget) moveTooltip(event)
-      })
-      .on("mouseleave", event => {
-        if (isTooltipFor(event.currentTarget) && document.activeElement !== event.currentTarget) hideTooltip()
+      .call(scrub, {
+        mode: "items",
+        enter: (event, bin) => {
+          showTooltipFor(this.tooltip(bin), event.currentTarget)
+          if (document.activeElement !== event.currentTarget) moveTooltip(event)
+        },
+        move: event => {
+          if (isTooltipFor(event.currentTarget) && document.activeElement !== event.currentTarget) moveTooltip(event)
+        },
+        leave: event => {
+          if (isTooltipFor(event.currentTarget) && document.activeElement !== event.currentTarget) hideTooltip()
+        }
       })
       .on("focus", (event, bin) => {
         select(event.currentTarget).attr("stroke", "var(--chart-axis)").attr("stroke-width", 2)

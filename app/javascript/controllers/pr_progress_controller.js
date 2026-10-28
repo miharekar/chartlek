@@ -9,6 +9,7 @@ import { formatDate, formatDistance, formatDuration, formatPace } from "helpers/
 import { paceScale } from "helpers/pace_scale"
 import { daysSince, daysSincePr, magicText, parseRuns, percentSlower, predictions, recordsByBucket, windowBest } from "helpers/pr_progress"
 import { observeSize } from "helpers/resize"
+import { scrub } from "helpers/scrub"
 import { createTimeline } from "helpers/timeline"
 import { escapeHtml, hideTooltip, moveTooltip, showTooltip } from "helpers/tooltip"
 import { parseTime } from "helpers/time"
@@ -139,8 +140,7 @@ export default class extends Controller {
       .attr("width", width - MARGIN.left - MARGIN.right)
       .attr("height", height - MARGIN.top - MARGIN.bottom)
       .attr("fill", "transparent")
-      .on("mousemove", event => this.hover(event))
-      .on("mouseleave", () => this.leave())
+      .call(scrub, { move: event => this.hover(event), leave: () => this.leave() })
       .on("click", event => this.pick(event))
 
     this.drawWindow()

@@ -1,5 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
+import { selectAll } from "d3-selection"
 import { noMouseFocus, rovingTarget } from "helpers/roving"
+import { scrub } from "helpers/scrub"
 import { hideTooltip, isTooltipFor, moveTooltip, showTooltipFor, tooltipHtml } from "helpers/tooltip"
 
 export default class extends Controller {
@@ -7,9 +9,11 @@ export default class extends Controller {
 
   connect() {
     this.current = 0
+    scrub(selectAll(this.segmentTargets), { mode: "items", enter: event => this.enter(event), move: event => this.move(event), leave: event => this.leave(event) })
   }
 
   disconnect() {
+    selectAll(this.segmentTargets).on(".scrub", null)
     this.#dismiss()
   }
 

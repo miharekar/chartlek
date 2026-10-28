@@ -13,6 +13,7 @@ import { OVERLAYS, overlayAt, overlaySeries, overlayWithin } from "helpers/pace_
 import { predictTime } from "helpers/predictions"
 import { linearRegression, weeklyChange } from "helpers/regression"
 import { observeSize } from "helpers/resize"
+import { scrub } from "helpers/scrub"
 import { createTimeline } from "helpers/timeline"
 import { parseTime } from "helpers/time"
 import { hideTooltip, moveTooltip, showTooltip, tooltipHtml } from "helpers/tooltip"
@@ -107,7 +108,8 @@ export default class extends Controller {
     this.topDots = this.plot.append("path").attr("fill", "none").attr("stroke", "var(--chart-highlight)").attr("stroke-width", 7).attr("stroke-linecap", "round")
     this.ring = this.svg.append("circle").attr("r", 7).attr("fill", "none").attr("stroke", "var(--chart-accent-highlight)").attr("stroke-width", 2).attr("pointer-events", "none").attr("display", "none")
     this.overlay = this.svg.append("rect").attr("fill", "transparent")
-    this.overlay.on("mousemove", event => this.#hover(event)).on("mouseleave", () => this.#unhover()).on("click", event => this.#open(event))
+    scrub(this.overlay, { move: event => this.#hover(event), leave: () => this.#unhover() })
+    this.overlay.on("click", event => this.#open(event))
   }
 
   #resize(width) {

@@ -7,7 +7,7 @@
   </h2>
   <dl class="mt-3 divide-y divide-zinc-200 dark:divide-zinc-800" data-controller="streaks">
     <% [["Longest break", streaks.longest_break], ["Longest streak", streaks.longest_streak]].each do |title, segment| %>
-      <%= tag.div class: "flex items-center gap-6 py-4", data: (segment && {from: segment.from.iso8601, to: segment.to.iso8601, action: "mouseenter->streaks#select mouseleave->streaks#clear"}) do %>
+      <%= tag.div class: "flex items-center gap-6 py-4", data: (segment && {from: segment.from.iso8601, to: segment.to.iso8601, action: "pointerenter->streaks#select pointerleave->streaks#clear"}) do %>
         <dt class="w-24 <%= WidgetsHelper::TILE_LABEL %>"><%= title %></dt>
         <dd>
           <% if segment %>
@@ -20,7 +20,7 @@
       <% end %>
     <% end %>
     <% if current %>
-      <%= tag.div class: "flex items-center gap-6 py-4", data: {from: current.from.iso8601, to: current.to.iso8601, action: "mouseenter->streaks#select mouseleave->streaks#clear"} do %>
+      <%= tag.div class: "flex items-center gap-6 py-4", data: {from: current.from.iso8601, to: current.to.iso8601, action: "pointerenter->streaks#select pointerleave->streaks#clear"} do %>
         <dt class="w-24 <%= WidgetsHelper::TILE_LABEL %>">Current <%= current.kind %></dt>
         <dd>
           <p class="<%= WidgetsHelper::TILE_VALUE %> <%= WidgetsHelper::ACCENT %>"><%= current.days %><span class="<%= WidgetsHelper::TILE_UNIT %>">days</span></p>

@@ -10,6 +10,7 @@ import { activePreset, PRESETS, presetWindow } from "helpers/pace_trends_presets
 import { observeSize } from "helpers/resize"
 import { noMouseFocus } from "helpers/roving"
 import { clear, publish, subscribe } from "helpers/run_cursor"
+import { scrub } from "helpers/scrub"
 import { createTimeline } from "helpers/timeline"
 import { parseTime } from "helpers/time"
 import { hideTooltip, showTooltip, showTooltipFor, tooltipHtml } from "helpers/tooltip"
@@ -261,8 +262,7 @@ export default class extends Controller {
     chart.cursorLine = chart.svg.append("line").attr("stroke", "var(--chart-highlight)").attr("stroke-width", 1.5).attr("pointer-events", "none").attr("display", "none")
     chart.overlay = chart.svg.append("rect").attr("fill", "transparent").attr("tabindex", 0).attr("role", "img").attr("aria-label", `${target.dataset.label}. Left and right arrows step through days, Escape clears.`)
       .on("mousedown", noMouseFocus)
-      .on("mousemove", event => this.#hover(chart, event))
-      .on("mouseleave", () => this.#leave())
+      .call(scrub, { move: event => this.#hover(chart, event), leave: () => this.#leave() })
       .on("focus", () => this.#focus(chart))
       .on("blur", () => this.#blur(chart))
       .on("keydown", event => this.#key(chart, event))

@@ -9,6 +9,7 @@ import { formatDate, formatDuration } from "helpers/formatters"
 import { activePreset, PRESETS, presetWindow } from "helpers/pace_trends_presets"
 import { observeSize } from "helpers/resize"
 import { noMouseFocus } from "helpers/roving"
+import { scrub } from "helpers/scrub"
 import { createTimeline } from "helpers/timeline"
 import { parseTime } from "helpers/time"
 import { hideTooltip, showTooltip, showTooltipFor, tooltipHtml } from "helpers/tooltip"
@@ -110,8 +111,7 @@ export default class extends Controller {
     this.cursorLine = this.svg.append("line").attr("stroke", "var(--chart-highlight)").attr("stroke-width", 1.5).attr("pointer-events", "none").attr("display", "none")
     this.overlay = this.svg.append("rect").attr("fill", "transparent").attr("tabindex", 0).attr("role", "img").attr("aria-label", `${this.chartTarget.dataset.label}. Left and right arrows step through weeks, Escape clears.`)
       .on("mousedown", noMouseFocus)
-      .on("mousemove", event => this.#hover(event))
-      .on("mouseleave", () => this.#leave())
+      .call(scrub, { move: event => this.#hover(event), leave: () => this.#leave() })
       .on("blur", () => this.#leave())
       .on("keydown", event => this.#key(event))
   }

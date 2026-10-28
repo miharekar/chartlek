@@ -19,7 +19,7 @@ The charts are not pictures. Most of the value is in moving the pointer over the
 - **Linked hover.** On the Overview, pointing at a chart selects a set of runs and highlights those same runs in the other charts.
 - **One cursor across charts.** On a run, hovering one chart moves a cursor on all of them and a marker along the route map. On Wellness, hovering marks the same day on every chart.
 - **Brushes.** Drag a timeline to change the window of Pace Trends, PR Progress, Wellness and Training Bands (Pace Trends, Wellness and Training Bands also have 3 mo to all time presets). Drag across the speed chart or the Analyze Run strip to summarise a stretch or a group of runs.
-- **Tooltips everywhere**, and an ⓘ next to every chart title that explains how to read it.
+- **Tooltips everywhere**, and an ⓘ next to every chart title that explains how to read it. Charts scrub with a finger too: drag across one on a phone and it (and the charts linked to it) follow, while a vertical swipe still scrolls the page.
 - **Clicks go somewhere.** Clicking a run in a chart opens its run page; clicking a distance bar drills into that period.
 - **Keyboard.** Charts with a cursor are one Tab stop: Wellness, Training Bands, Goals, Analyze Run and the Pro Map graph. Left and Right step the cursor (or move between dots in Analyze Run), Home and End jump to the ends, Escape clears the cursor and hides the tooltip, and Enter opens the run in Goals and Analyze Run. The run page's pace variability wheel, HR zone bar and rank histograms are Tab stops too, with Escape hiding the tooltip. The Overview's linked hover is mouse-driven.
 

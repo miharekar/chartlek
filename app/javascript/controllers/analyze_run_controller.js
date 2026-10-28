@@ -6,6 +6,7 @@ import { formatDate, formatDistance, formatDuration, formatPace } from "helpers/
 import { DAY_MS, METRICS, average, axis, brushSelection, dayLabel, dayStart, edgeLabelPositions, formatValue, groupDays, lit, nextReadout, readoutText, summarize, timelineTicks, valueOrder } from "helpers/analyze_run"
 import { observeSize } from "helpers/resize"
 import { noMouseFocus, rovingTarget } from "helpers/roving"
+import { scrub } from "helpers/scrub"
 import { hideTooltip, isTooltipFor, moveTooltip, showTooltip, showTooltipFor, tooltipHtml } from "helpers/tooltip"
 
 const MARGIN = { left: 16, right: 16 }
@@ -110,10 +111,9 @@ export default class extends Controller {
     this.brushGroup = svg.append("g").call(this.brush)
     this.brushGroup.select(".selection").attr("fill", "var(--chart-accent-highlight)").attr("fill-opacity", 0.2).attr("stroke", "var(--chart-accent-highlight)")
     this.brushGroup
-      .on("mousemove", event => this.#move(event))
       .on("mousedown.hover", () => this.#hideOwn(), true)
-      .on("mouseleave", () => this.#leave())
       .on("click", () => this.#open(this.hover))
+    scrub(this.brushGroup, { mode: "tap", move: event => this.#move(event), leave: () => this.#leave() })
 
     this.readout = svg.append("g").attr("display", "none").style("cursor", "pointer").on("click", () => {
       this.mode = nextReadout(this.mode)
@@ -250,37 +250,42 @@ export default class extends Controller {
       .attr("height", TIMELINE.bar)
       .attr("fill", "var(--chart-accent)")
       .style("cursor", "pointer")
-      .on("mousemove", (event, day) => {
-        const index = this.days.indexOf(day)
-        if (index !== this.hoverDay) {
-          this.hoverDay = index
-          showTooltip(this.#dayHtml(day), event)
-          this.#render()
-        }
-        moveTooltip(event)
-      })
-      .on("mouseleave", () => {
-        this.hoverDay = null
-        hideTooltip()
-        this.#render()
-      })
       .on("click", (_, day) => {
         hideTooltip()
         this.#open(day.indexes[0])
       })
+    const hoverDay = (event, day) => {
+      const index = this.days.indexOf(day)
+      if (index !== this.hoverDay) {
+        this.hoverDay = index
+        showTooltip(this.#dayHtml(day), event)
+        this.#render()
+      }
+      moveTooltip(event)
+    }
+    scrub(this.dayMarks, {
+      mode: "items",
+      enter: hoverDay,
+      move: hoverDay,
+      leave: () => {
+        this.hoverDay = null
+        hideTooltip()
+        this.#render()
+      }
+    })
     const ownWidth = split ? barWidth / 2 : barWidth
-    svg
+    const ownRun = svg
       .append("rect")
       .attr("x", this.tx(runDay) + (split ? barWidth / 2 : 0))
       .attr("width", ownWidth)
       .attr("y", TIMELINE.top)
       .attr("height", TIMELINE.bar)
       .attr("fill", "var(--chart-highlight)")
-      .on("mousemove", event => {
-        showTooltip(tooltipHtml(`${formatDate(this.toValue)} · ${dayLabel(this.toValue, this.toValue, run.race)}`, [["Distance", `${formatDistance(run.km)} km`], ["Pace", `${formatPace(run.pace)} /km`]], { heading: "This run" }), event)
-        moveTooltip(event)
-      })
-      .on("mouseleave", hideTooltip)
+    const showOwn = event => {
+      showTooltip(tooltipHtml(`${formatDate(this.toValue)} · ${dayLabel(this.toValue, this.toValue, run.race)}`, [["Distance", `${formatDistance(run.km)} km`], ["Pace", `${formatPace(run.pace)} /km`]], { heading: "This run" }), event)
+      moveTooltip(event)
+    }
+    scrub(ownRun, { mode: "items", enter: showOwn, move: showOwn, leave: hideTooltip })
   }
 
   #paintDays() {

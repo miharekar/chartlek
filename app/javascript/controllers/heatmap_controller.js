@@ -2,6 +2,7 @@ import { Controller } from "@hotwired/stimulus"
 import { select } from "d3-selection"
 import { cellSelected, clearSelection, dayStart, getTimes, keysOf, levelKeys, publish, runsInKeys, spanSelection, subscribe, weekStart } from "helpers/linked_selection"
 import { observeSize } from "helpers/resize"
+import { scrub } from "helpers/scrub"
 import { escapeHtml, hideTooltip, moveTooltip, showTooltip } from "helpers/tooltip"
 
 const GAP = 2
@@ -105,16 +106,20 @@ export default class extends Controller {
       .join("g")
       .attr("transform", cellData => `translate(${cellData.col * cell},${cellData.row * cell})`)
       .style("cursor", cellData => (cellData.href ? "pointer" : "default"))
-      .on("mouseenter", (event, cellData) => {
+      .on("click", (_, cellData) => this.open(cellData))
+
+    scrub(groups, {
+      mode: "items",
+      enter: (event, cellData) => {
         showTooltip(cellData.tip.map((line, index) => `<div class="${index === 0 ? "font-medium" : ""}">${escapeHtml(line)}</div>`).join(""), event)
         publish(spanSelection(getTimes(), cellData.from, cellData.from + this.step * DAY_MS, "cell"))
-      })
-      .on("mousemove", moveTooltip)
-      .on("mouseleave", () => {
+      },
+      move: moveTooltip,
+      leave: () => {
         hideTooltip()
         clearSelection()
-      })
-      .on("click", (_, cellData) => this.open(cellData))
+      }
+    })
 
     groups
       .append("rect")
@@ -162,9 +167,11 @@ export default class extends Controller {
       .join("g")
       .attr("transform", (_, index) => `translate(${index * itemWidth},0)`)
 
-    items
-      .on("mouseenter", (_, item) => publish({ runs: new Set(runsInKeys(getTimes(), this.#keyOf(), levelKeys(this.cells, item.level))), span: null, source: "legend" }))
-      .on("mouseleave", () => clearSelection())
+    scrub(items, {
+      mode: "items",
+      enter: (_, item) => publish({ runs: new Set(runsInKeys(getTimes(), this.#keyOf(), levelKeys(this.cells, item.level))), span: null, source: "legend" }),
+      leave: () => clearSelection()
+    })
     items.append("text").attr("y", swatch / 2).attr("dominant-baseline", "central").attr("font-size", 11).attr("fill", "var(--chart-axis)").text(item => `>${item.threshold}`)
     items
       .append("rect")

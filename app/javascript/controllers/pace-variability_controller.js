@@ -4,6 +4,7 @@ import { select } from "d3-selection"
 import { centreFontSize, variabilityWedges, wedgeSummary } from "helpers/pace_variability"
 import { observeSize } from "helpers/resize"
 import { noMouseFocus, rovingTarget } from "helpers/roving"
+import { scrub } from "helpers/scrub"
 import { hideTooltip, isTooltipFor, moveTooltip, showTooltipFor, tooltipHtml } from "helpers/tooltip"
 
 const MAX_SIZE = 280
@@ -69,17 +70,20 @@ export default class extends Controller {
     const settle = node => select(node).select(".fill").attr("fill", "var(--chart-accent)")
 
     groups
-      .on("mouseenter", (event, wedge) => {
-        show(event, wedge)
-        if (document.activeElement !== event.currentTarget) moveTooltip(event)
-      })
-      .on("mousemove", event => {
-        if (isTooltipFor(event.currentTarget) && document.activeElement !== event.currentTarget) moveTooltip(event)
-      })
-      .on("mouseleave", event => {
-        if (document.activeElement === event.currentTarget) return
-        settle(event.currentTarget)
-        if (isTooltipFor(event.currentTarget)) hideTooltip()
+      .call(scrub, {
+        mode: "items",
+        enter: (event, wedge) => {
+          show(event, wedge)
+          if (document.activeElement !== event.currentTarget) moveTooltip(event)
+        },
+        move: event => {
+          if (isTooltipFor(event.currentTarget) && document.activeElement !== event.currentTarget) moveTooltip(event)
+        },
+        leave: event => {
+          if (document.activeElement === event.currentTarget) return
+          settle(event.currentTarget)
+          if (isTooltipFor(event.currentTarget)) hideTooltip()
+        }
       })
       .on("focus", (event, wedge) => {
         this.#rove(groups, event.currentTarget)

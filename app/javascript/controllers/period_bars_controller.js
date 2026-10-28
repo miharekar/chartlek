@@ -7,6 +7,7 @@ import { utcFormat } from "d3-time-format"
 import { formatDate, formatDistance, formatPace } from "helpers/formatters"
 import { bucketShares, bucketSpan, clearSelection, getRuns, getTimes, publish, spanSelection, subscribe } from "helpers/linked_selection"
 import { observeSize } from "helpers/resize"
+import { scrub } from "helpers/scrub"
 import { parseTime } from "helpers/time"
 import { hideTooltip, moveTooltip, showTooltip, tooltipHtml } from "helpers/tooltip"
 
@@ -137,7 +138,7 @@ export default class extends Controller {
       .attr("fill", "var(--chart-accent-highlight)")
       .attr("class", "pointer-events-none")
     this.view = { bars, shareNodes: shares.nodes(), drawn: heights.map(() => 0), active: false, heights, innerHeight, metric, starts: buckets.map(bucket => parseTime(bucket.from).getTime()) }
-    chart
+    const hits = chart
       .append("g")
       .selectAll("rect")
       .data(buckets)
@@ -147,19 +148,22 @@ export default class extends Controller {
       .attr("height", innerHeight + MARGIN.bottom)
       .attr("fill", "transparent")
       .style("cursor", bucket => (bucket.href ? "pointer" : "default"))
-      .on("mouseenter", (event, bucket) => {
+      .on("click", (_, bucket) => this.open(bucket))
+    scrub(hits, {
+      mode: "items",
+      enter: (event, bucket) => {
         const index = buckets.indexOf(bucket)
         bars.filter((_, position) => position === index).attr("fill", "var(--chart-accent-highlight)")
         showTooltip(this.tooltip(bucket, granularity, metric), event)
         publish(spanSelection(getTimes(), ...bucketSpan(this.view.starts, index, granularity), "bars"))
-      })
-      .on("mousemove", event => moveTooltip(event))
-      .on("mouseleave", () => {
+      },
+      move: event => moveTooltip(event),
+      leave: () => {
         bars.attr("fill", "var(--chart-accent)")
         hideTooltip()
         clearSelection()
-      })
-      .on("click", (_, bucket) => this.open(bucket))
+      }
+    })
   }
 
   tickIndexes(buckets, granularity, step) {

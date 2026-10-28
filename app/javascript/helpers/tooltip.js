@@ -1,6 +1,7 @@
 const OFFSET = 14
 const ANCHOR_GAP = 6
 const MARGIN = 8
+const TOUCH_GAP = 48
 
 let element
 let owner
@@ -37,12 +38,22 @@ export function showTooltip(html, event) {
   moveTooltip(event)
 }
 
+export function pointerPosition(point, size, viewport, touch = false) {
+  if (touch) {
+    const left = Math.max(MARGIN, Math.min(point.x - size.width / 2, viewport.width - size.width - MARGIN))
+    const above = point.y - TOUCH_GAP - size.height
+    return { left, top: above < MARGIN ? point.y + TOUCH_GAP : above }
+  }
+  const left = point.x + OFFSET + size.width > viewport.width ? point.x - OFFSET - size.width : point.x + OFFSET
+  const top = point.y + OFFSET + size.height > viewport.height ? point.y - OFFSET - size.height : point.y + OFFSET
+  return { left: Math.max(0, left), top: Math.max(0, top) }
+}
+
 export function moveTooltip(event) {
   const tooltip = tooltipElement()
   const { width, height } = tooltip.getBoundingClientRect()
-  const left = event.clientX + OFFSET + width > window.innerWidth ? event.clientX - OFFSET - width : event.clientX + OFFSET
-  const top = event.clientY + OFFSET + height > window.innerHeight ? event.clientY - OFFSET - height : event.clientY + OFFSET
-  tooltip.style.transform = `translate(${Math.max(0, left)}px, ${Math.max(0, top)}px)`
+  const { left, top } = pointerPosition({ x: event.clientX, y: event.clientY }, { width, height }, { width: window.innerWidth, height: window.innerHeight }, event.pointerType === "touch")
+  tooltip.style.transform = `translate(${left}px, ${top}px)`
 }
 
 export function anchoredPosition(anchor, size, viewport) {
