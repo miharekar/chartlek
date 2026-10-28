@@ -198,7 +198,7 @@ Chartlek only reads. All data stays in SQLite under `storage/`.
 
 ## Running it
 
-Requirements: Docker and a Garmin Personal API key. No Ruby or SQLite needed.
+Requirements: Docker and a Garmin Personal API key.
 
 ```bash
 cp .env.example .env         # fill it in: the comments say what each variable is and how to generate the secrets with openssl
@@ -229,7 +229,7 @@ See `AGENTS.md` for every task and its options. After pulling new code, run `doc
 
 ### Development
 
-Requirements: Ruby 4.0.9, SQLite, and Node (only to run the JavaScript tests; there is no Node build). Put the same variables in `.env`; `bin/dev` loads it.
+Requirements: Ruby 4.0.9, SQLite, and Node for the JavaScript tests. Put the same variables in `.env`; `bin/dev` loads it.
 
 ```bash
 bin/setup                    # install gems, prepare the database, then start bin/dev (--skip-server to just set up)
