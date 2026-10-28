@@ -254,6 +254,8 @@ export default class extends Controller {
     if (!data.length || !width) return
 
     const innerWidth = width - MARGIN.left - MARGIN.right
+    if (innerWidth <= 0) return
+
     const innerHeight = height - MARGIN.top - MARGIN.bottom
     const paced = data.filter(bin => bin.pace != null)
     if (!paced.length) return

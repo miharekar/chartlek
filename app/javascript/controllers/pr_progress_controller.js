@@ -118,6 +118,8 @@ export default class extends Controller {
   }
 
   drawChart(width) {
+    if (width - MARGIN.left - MARGIN.right <= 0) return
+
     const height = width < 640 ? 360 : 460
     const x = scaleLog().domain(this.xDomain).range([MARGIN.left, width - MARGIN.right])
     const y = paceScale(this.paceDomain, [MARGIN.top, height - MARGIN.bottom])

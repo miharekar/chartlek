@@ -56,6 +56,8 @@ export default class extends Controller {
     this.distances = distances
     const charts = CHARTS.filter(chart => rest[chart.key])
     const innerWidth = this.width - MARGIN.left - MARGIN.right
+    if (innerWidth <= 0) return
+
     const x = scaleLinear().domain([0, distances.at(-1)]).range([0, innerWidth])
     this.root.selectAll("*").remove()
     this.hovers = []

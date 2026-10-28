@@ -33,6 +33,8 @@ export default class extends Controller {
       const target = this[`${name}Target`]
       this.svgs[name] = select(target).append("svg").attr("class", "block").attr("role", "img").attr("aria-label", target.dataset.label)
       return observeSize(target, size => {
+        if (size.width - MARGIN.left - MARGIN.right <= 0) return
+
         this.sizes[name] = size
         draw()
       })

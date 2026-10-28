@@ -61,6 +61,8 @@ export default class extends Controller {
       return start
     })
     const innerWidth = width - MARGIN.left - MARGIN.right
+    if (innerWidth <= 0) return
+
     const reserve = this.steps.length ? STRIP_SPACE : 0
     const innerHeight = height - MARGIN.top - reserve - MARGIN.bottom
     const paces = bars.map(bar => bar.pace).sort((a, b) => a - b)

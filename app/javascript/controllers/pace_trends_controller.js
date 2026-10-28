@@ -113,6 +113,8 @@ export default class extends Controller {
   }
 
   #resize(width) {
+    if (width - this.margin.left - this.margin.right <= 0) return
+
     this.width = width
     this.height = Math.round(Math.min(420, Math.max(260, width * 0.36)))
     this.x.range([this.margin.left, width - this.margin.right])

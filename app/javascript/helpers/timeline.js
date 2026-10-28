@@ -33,6 +33,8 @@ export function createTimeline(element, { data, domain, selection, height = 96, 
   let drawn = false
 
   function draw(width) {
+    if (width - MARGIN.left - MARGIN.right <= 0) return
+
     x.range([MARGIN.left, width - MARGIN.right])
     svg.attr("width", width)
     bars

@@ -39,8 +39,7 @@ export default class extends Controller {
     document.addEventListener("keydown", this.onKey)
     this.stopObserving = observeSize(this.stripTarget, ({ width }) => {
       if (width === this.width) return
-      this.width = width
-      this.#layout()
+      this.#layout(width)
     })
   }
 
@@ -65,8 +64,10 @@ export default class extends Controller {
     this.#place(true)
   }
 
-  #layout() {
-    const { width } = this
+  #layout(width) {
+    if (width - MARGIN.left - MARGIN.right <= 0) return
+
+    this.width = width
     this.selected = null
     this.selection = null
     this.hoverDay = null
