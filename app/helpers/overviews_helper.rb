@@ -18,7 +18,7 @@ module OverviewsHelper
   end
 
   def overview_distance(km)
-    format("%.1f", km)
+    number_with_delimiter(format("%.1f", km))
   end
 
   def overview_date(date)

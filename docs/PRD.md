@@ -67,7 +67,7 @@ Why: Smashrun (smashrun.com/miharekar) is effectively abandonware, but its chart
 - **Titles and install:** every page's `<title>` is its header followed by "· Chartlek" (a run page uses the run's name), and the app serves a web app manifest (`/manifest.json`) so browsers can install it.
 - **Theme:** a switch is a full page load, because Turbo doesn't update `<html>` attributes.
 - **Controls:** a choice among options is a button group with `aria-pressed`; independent filters are toggle buttons; actions are buttons (§9).
-- **Formatting:** pace `m:ss /km`; durations `h:mm:ss`; distances one decimal in km everywhere (tooltips included); dates `21 Apr 2020`; numbers `tabular-nums`.
+- **Formatting:** pace `m:ss /km`; durations `h:mm:ss`; distances one decimal in km everywhere (tooltips included), with thousands separators ("1,234.5"); dates `21 Apr 2020`; numbers `tabular-nums`.
 - **Links:** clicking a run in any chart opens its run page in the same tab. The run page links out to Garmin or Strava.
 - **Chart info:** every chart has an ⓘ explaining how to read it, adapted from Smashrun's FAQ. The text shows in the shared tooltip on hover, keyboard focus or tap; Escape or a click elsewhere hides it.
 - **Empty states:** a page with no runs or no data shows an empty state instead of charts.
@@ -131,7 +131,7 @@ Answers "am I getting faster?" by putting all distances on a common scale (VDOT)
 
 - Under the chart card, a 72 px timeline of bars shows each run's duration in hours over the whole history. A `d3-brush` on it selects the window; the default is the last 12 months. The main chart zooms to the window.
 - **Presets:** a button group sets the window in one click: 3 mo, 6 mo, 1 yr, 2 yr, All time. Each ends at the last day of the page's range (today on Pace Trends and PR Progress, the last day with data on Wellness and Training Bands) and starts that many calendar months earlier, clamped to the month's length; All time starts at the first run, and a span longer than the history also starts there (the longer preset is then the one marked). The preset matching the window has `aria-pressed`; the default marks 1 yr. A drag or resize clears the mark unless the new window equals a preset exactly. The window is in the `from` and `to` URL params, so reloads, links and filter chips keep it. The block of range, hint and presets is the same on Pace Trends, PR Progress, Wellness and Training Bands (the `application/_window_block` partial, `ControlsHelper#window_presets`, `helpers/presets.js`), and so is the 72 px timeline.
-- The header shows the date range, "Change in VDOT: **+0.05/week**" (slope × 7, two decimals) and "Cut **34:28** from your estimated **5K / 10K / Half / Marathon** finish time" (distance is a button group): the predicted time at that distance from the regression VDOT at the start of the window versus the end; negative reads "Added".
+- The header shows the date range, "Change in VDOT: **+0.05/week**" (slope × 7, two decimals) and "Cut **34:28** from your estimated **5K / 10K / Half / Marathon** finish time" (distance is a button group): the predicted time at that distance from the regression VDOT at the start of the window versus the end; negative reads "Added **1:05** to your estimated … finish time".
 - The regression and header are recomputed in the browser while dragging.
 
 **Filters** (toggle buttons): Exclude pauses (`no_pauses`), Races only (`races`, Garmin event type `race`).
@@ -503,7 +503,7 @@ One design system, defined once in helpers (`WidgetsHelper` for cards and type, 
   - **Toggle button** (`toggle_button`): an independent on/off filter, drawn like one selected segment.
   - **Icon button:** the ⓘ (`ControlsHelper::INFO`) and the theme switch's icon segments (`ICON_SEGMENT`).
   - **Focus ring:** one global `a`/`button` `:focus-visible` rule in `application.css` (2 px, the chart accent, 2 px offset); no control writes its own.
-- **Tooltips:** the shared tooltip. Title-and-rows tooltips use `tooltipHtml` (a muted title, then label/value rows), everything escaped; distances to one decimal.
+- **Tooltips:** the shared tooltip. Title-and-rows tooltips use `tooltipHtml` (a muted title, then label/value rows), everything escaped; distances to one decimal, with thousands separators.
 - **Motion:** 150 to 250 ms transitions on chart updates; the one longer motion is the dot glide in "Runs in the prior 90 days" (about 400 ms).
 - **Accessibility:** keyboard-operable charts (§4.1), visible `:focus-visible` rings, labelled controls, text contrast in both themes.
 

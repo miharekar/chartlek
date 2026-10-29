@@ -39,6 +39,7 @@ class PrProgressesControllerTest < ActionDispatch::IntegrationTest
 
     get pr_progress_path
 
+    assert_select "[data-pr-progress-target=magic]", false
     assert_select "h2", /Best in window/
     assert_select "h2", {text: /\AWindow/, count: 0}
     assert_select "section [data-pr-progress-target=table]"

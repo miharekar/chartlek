@@ -2,7 +2,7 @@
 <% years = ([year] + years).compact.uniq.sort.reverse %>
 <div class="mt-4 flex flex-col items-start gap-2">
   <%= button_group "Period", nav: true do %>
-    <%= segment "All", href: runs_path(year: "all", gear:), selected: year.nil? %>
+    <%= segment "All time", href: runs_path(year: "all", gear:), selected: year.nil? %>
     <% years.each do |candidate| %>
       <%= segment candidate, href: runs_path(year: candidate, gear:), selected: year == candidate %>
     <% end %>

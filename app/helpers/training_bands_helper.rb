@@ -6,7 +6,7 @@ module TrainingBandsHelper
   def training_bands_info
     paces = TrainingBands::PACE_GROUPS.map { |label, zones| "#{label} #{training_bands_pace_range(zones)}" }.join(", ")
 
-    "Training time per week, stacked by band, so the colours show how your running splits between easy and hard. Pace uses the 37 pace zones, grouped as #{paces}. Heart rate is time in your five zones. Grade is the slope over each stretch of about 100 m. Absolute shows hours per week; % shows each band's share of that week's running, so hiding bands shows how much of your running they are. Each run uses the heart rate zones it was run with; runs before the watch zones were recorded use estimated zones. Drag the timeline to change the window, and hover the chart for a week."
+    "Training time per week, stacked by band, so the colors show how your running splits between easy and hard. Pace uses the 37 pace zones, grouped as #{paces}. Heart rate is time in your five zones. Grade is the slope over each stretch of about 100 m. Absolute shows hours per week; % shows each band's share of that week's running, so hiding bands shows how much of your running they are. Each run uses the heart rate zones it was run with; runs before the watch zones were recorded use estimated zones. Drag the timeline to change the window, and hover the chart for a week."
   end
 
   def training_bands_categories(bands)

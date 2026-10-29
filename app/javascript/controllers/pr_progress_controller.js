@@ -35,7 +35,7 @@ const TABLE_LINK = "hover:text-lime-700 hover:underline dark:hover:text-[#9CFF44
 const CHIP = "rounded px-1.5 py-0.5 text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
 
 export default class extends Controller {
-  static targets = ["chart", "timeline", "table", "range", "preset", "beat", "magic", "reference", "legend"]
+  static targets = ["chart", "timeline", "table", "range", "preset", "beat", "reference", "legend"]
   static values = { data: Object, mode: String, days: Number }
 
   connect() {
@@ -398,7 +398,6 @@ export default class extends Controller {
     this.element.querySelectorAll("[data-days]").forEach(button => button.setAttribute("aria-pressed", Number(button.dataset.days) === this.days))
     this.beatTarget.classList.toggle("hidden", this.mode !== "beat")
     this.beatTarget.classList.toggle("flex", this.mode === "beat")
-    this.magicTarget.classList.toggle("hidden", this.mode !== "magic")
   }
 
   renderReference(reference) {

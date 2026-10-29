@@ -102,14 +102,14 @@ class StravaConnectionsControllerTest < ActionDispatch::IntegrationTest
 
     get strava_callback_path(error: "access_denied", state: "x")
 
-    assert_equal "Strava connection was cancelled.", flash[:alert]
+    assert_equal "Strava connection was canceled.", flash[:alert]
     assert_not Profile.instance.strava_connected?
   end
 
   test "an arbitrary error parameter is never echoed" do
     get strava_callback_path(error: "<b>Call me</b>")
 
-    assert_equal "Strava connection was cancelled.", flash[:alert]
+    assert_equal "Strava connection was canceled.", flash[:alert]
     assert_no_match "Call me", flash[:alert]
   end
 

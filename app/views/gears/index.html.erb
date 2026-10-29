@@ -6,7 +6,7 @@
 
 <% if !@profile.strava_gear_access? %>
   <%= empty_state "Gear needs Strava profile access." do %>
-    Use Reconnect Strava (or Connect Strava) in the nav bar and leave the profile access ticked.
+    Use Reconnect Strava (or Connect Strava) in the nav and leave the profile access ticked.
   <% end %>
 <% elsif @profile.strava_gear_scan_failed? %>
   <%= empty_state "The first gear scan failed." do %>

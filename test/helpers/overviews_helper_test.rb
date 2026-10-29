@@ -11,6 +11,8 @@ class OverviewsHelperTest < ActionView::TestCase
 
   test "formats distance and dates" do
     assert_equal "12.3", overview_distance(12.34)
+    assert_equal "1,234.6", overview_distance(1234.56)
+    assert_equal "0.0", overview_distance(0.04)
     assert_equal "21 Apr 2020", overview_date(Date.new(2020, 4, 21))
     assert_equal "21 Apr 2020", overview_date(Time.utc(2020, 4, 21, 5))
     assert_equal "21 Apr 2020", overview_range(Date.new(2020, 4, 21), Date.new(2020, 4, 21))

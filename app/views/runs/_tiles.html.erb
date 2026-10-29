@@ -70,7 +70,7 @@
         <% zone = run.performance_zone %>
         <% zones = run.performance_zone_range %>
         <% five_k_pace = overview_pace(finishes.first[:seconds] / finishes.first[:km]) %>
-        <div class="mt-3" role="img" aria-label="Performance zone <%= PaceZones.label(zone) %>, 5K pace <%= five_k_pace %> per kilometre">
+        <div class="mt-3" role="img" aria-label="Performance zone <%= PaceZones.label(zone) %>, 5K pace <%= five_k_pace %> per kilometer">
           <div class="relative">
             <div class="flex h-3 overflow-hidden rounded-sm ring-1 ring-zinc-200 dark:ring-zinc-700">
               <% zones.each do |index| %>
@@ -106,11 +106,11 @@
 
   <% if run.pace_variability %>
     <section class="<%= card %> col-span-2 lg:col-span-1">
-      <h2 class="<%= label %> flex items-center gap-1.5">Pace variability <%= overview_info "How much your speed varied. Each wedge is 100 metres, clockwise from the start. The longer the wedge, the further that stretch was from your average speed, faster or slower (hover for which). The number is the average gap, measured over 10 second stretches, as a percentage of average speed. Stops with the timer running count; pauses are excluded." %></h2>
+      <h2 class="<%= label %> flex items-center gap-1.5">Pace variability <%= overview_info "How much your speed varied. Each wedge is 100 meters, clockwise from the start. The longer the wedge, the further that stretch was from your average speed, faster or slower (hover for which). The number is the average gap, measured over 10 second stretches, as a percentage of average speed. Stops with the timer running count; pauses are excluded." %></h2>
       <% bars = run.track&.wheel_bars %>
       <% if bars.to_a.size > 1 %>
         <div class="mt-3" data-controller="pace-variability" data-pace-variability-bars-value="<%= bars.to_json %>" data-pace-variability-percent-value="<%= run.pace_variability.round(1) %>">
-          <div data-pace-variability-target="chart" role="group" aria-label="Pace variability <%= run.pace_variability.round(1) %> percent, one wedge per 100 metres"></div>
+          <div data-pace-variability-target="chart" role="group" aria-label="Pace variability <%= run.pace_variability.round(1) %> percent, one wedge per 100 meters"></div>
         </div>
       <% else %>
         <p class="<%= big %>"><%= run.pace_variability.round(1) %><span class="<%= unit %>">%</span></p>
@@ -135,7 +135,7 @@
       <div class="mt-3 grid gap-4 sm:grid-cols-3 sm:items-center">
         <% if has_altitude %>
           <div class="min-w-0 sm:col-span-2" data-controller="elevation-profile" data-elevation-profile-distances-value="<%= run.track.data["d"].to_json %>" data-elevation-profile-altitudes-value="<%= run.track.data["alt"].to_json %>">
-            <div data-elevation-profile-target="chart" role="img" aria-label="Elevation profile, highest point <%= run.track.data["alt"].compact.max.round %> metres"></div>
+            <div data-elevation-profile-target="chart" role="img" aria-label="Elevation profile, highest point <%= run.track.data["alt"].compact.max.round %> meters"></div>
           </div>
         <% end %>
         <dl class="grid grid-cols-1 gap-x-4 gap-y-2 <%= "sm:col-span-3 sm:grid-cols-3" unless has_altitude %>">

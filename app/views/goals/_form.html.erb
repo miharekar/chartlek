@@ -30,7 +30,7 @@
   </div>
 
   <div class="flex flex-wrap gap-2">
-    <%= form.submit class: ControlsHelper::BUTTON %>
+    <%= form.submit (goal.persisted? ? "Update goal" : "Create goal"), class: ControlsHelper::BUTTON %>
     <%= action_button "Cancel", (goal.persisted? ? goal_path(goal) : goals_path) %>
   </div>
 <% end %>

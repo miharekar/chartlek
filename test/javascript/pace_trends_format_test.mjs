@@ -26,8 +26,8 @@ test("formatChange keeps two decimals for small VDOT changes", () => {
   assert.equal(formatChange(-0.001), "0.00/week")
 })
 
-test("formatFinishDelta says Cut or Added", () => {
-  assert.deepEqual(formatFinishDelta(2068), { verb: "Cut", time: "34:28" })
-  assert.deepEqual(formatFinishDelta(-65), { verb: "Added", time: "1:05" })
-  assert.deepEqual(formatFinishDelta(0), { verb: "Cut", time: "0:00" })
+test("formatFinishDelta says Cut from or Added to", () => {
+  assert.deepEqual(formatFinishDelta(2068), { verb: "Cut", preposition: "from", time: "34:28" })
+  assert.deepEqual(formatFinishDelta(-65), { verb: "Added", preposition: "to", time: "1:05" })
+  assert.deepEqual(formatFinishDelta(0), { verb: "Cut", preposition: "from", time: "0:00" })
 })

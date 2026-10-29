@@ -7,6 +7,7 @@ class TrainingBandsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "p", "No training bands yet."
     assert_select "[data-controller='training-bands']", false
+    assert_select "code", "docker compose exec chartlek bin/rails activities:bands"
   end
 
   test "renders the chart payload and controls" do

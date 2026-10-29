@@ -7,6 +7,7 @@ class WellnessesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "[data-controller='wellness']", false
     assert_select "p", /No wellness data yet/
+    assert_select "code", "docker compose exec chartlek bin/rails wellness:backfill"
   end
 
   test "renders the empty state when no column can make a chart" do

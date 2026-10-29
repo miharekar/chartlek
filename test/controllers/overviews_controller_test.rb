@@ -25,6 +25,8 @@ class OverviewsControllerTest < ActionDispatch::IntegrationTest
     assert_select "p", text: /fifteen/i
     assert_select "a[href='/overview/2023']"
     assert_select "a[href='/overview/2024']"
+    assert_select "h2 button[data-controller=info][aria-label='All distances are rounded down and times are interpolated.']"
+    assert_select "p", text: /rounded down/, count: 0
   end
 
   test "compresses the response when the client accepts gzip" do

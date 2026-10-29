@@ -17,7 +17,7 @@
   </div>
 <% else %>
   <%= empty_state "No wellness data yet." do %>
-    The hourly wellness sync fills this in. To load the history now, run bin/rails wellness:backfill.
+    The hourly wellness sync fills this in. To load the history now, run <code>docker compose exec chartlek bin/rails wellness:backfill</code>.
   <% end %>
 <% end %>
 <% end %>

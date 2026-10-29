@@ -25,7 +25,7 @@ class RunsControllerTest < ActionDispatch::IntegrationTest
 
     assert_select "a", text: "May Run"
     assert_select "a", text: "June Run", count: 0
-    assert_select "a[href=?]", runs_path(year: "all"), text: "All"
+    assert_select "a[href=?]", runs_path(year: "all"), text: "All time"
 
     get "/runs", params: {year: "all"}
 
@@ -289,7 +289,7 @@ class RunsControllerTest < ActionDispatch::IntegrationTest
 
     assert_select "[data-controller=pace-variability][data-pace-variability-percent-value='6.5']"
     assert_select "[data-controller=pace-variability][data-pace-variability-bars-value=?]", [{from: 0.0, to: 0.1, distance: 100.0, time: 30.0}, {from: 0.1, to: 0.2, distance: 100.0, time: 20.0}, {from: 0.2, to: 0.3, distance: 100.0, time: 40.0}].to_json
-    assert_select "[data-pace-variability-target=chart][role=group][aria-label*='100 metres']"
+    assert_select "[data-pace-variability-target=chart][role=group][aria-label*='100 meters']"
     assert_select "p", text: /Green: faster/, count: 0
     assert_select "section.col-span-2.lg\\:col-span-1 h2", text: /Pace variability/
   end
@@ -418,7 +418,7 @@ class RunsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a", text: "On It"
     assert_select "th", text: "Suggested", count: 0
     assert_select "span", text: "Synthetic Shoe"
-    assert_select "a[href=?]", runs_path(year: "all", gear: "g1"), text: "All"
+    assert_select "a[href=?]", runs_path(year: "all", gear: "g1"), text: "All time"
   end
 
   test "the gear column shows gear, No gear, or nothing for an unlinked run" do
@@ -489,10 +489,11 @@ class RunsControllerTest < ActionDispatch::IntegrationTest
     assert_select "header svg[aria-hidden=true]", false
   end
 
-  test "the gear none hint says older runs need Refresh from Strava" do
+  test "the gear none explanation sits in an info tooltip, not a hint" do
     get "/runs", params: {gear: "none"}
 
-    assert_select "p", text: /a recent run leaves this list after the next hourly scan, an older one after Refresh from Strava/
+    assert_select "button[data-controller=info][aria-label*='a recent run leaves this list after the next hourly scan, an older one after Refresh from Strava']"
+    assert_select "p", text: /Runs linked to Strava with no gear set/
   end
 
   test "Show all gear from an all-time gear list keeps all time" do

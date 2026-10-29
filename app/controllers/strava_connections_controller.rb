@@ -3,7 +3,7 @@ class StravaConnectionsController < ApplicationController
     state = session.delete(:strava_state)
 
     if params[:error].present?
-      redirect_to root_path, alert: "Strava connection was cancelled."
+      redirect_to root_path, alert: "Strava connection was canceled."
     elsif params[:code].present? && state.present? && ActiveSupport::SecurityUtils.secure_compare(state, params[:state].to_s)
       activity_access?(params[:scope].to_s) ? connect(params[:code], params[:scope].to_s) : redirect_to(root_path, alert: "Strava activity access is needed to link your runs. Connect again and leave the activity access ticked.")
     else

@@ -42,6 +42,12 @@ test("formatDuration", () => {
 test("formatDistance", () => {
   assert.equal(formatDistance(12.34), "12.3")
   assert.equal(formatDistance(5), "5.0")
+  assert.equal(formatDistance(0.04), "0.0")
+  assert.equal(formatDistance(1234.56), "1,234.6")
+  assert.equal(formatDistance(32994.96), "32,995.0")
+  assert.equal(formatDistance(1.45), "1.4")
+  assert.equal(formatDistance(0.35), "0.3")
+  assert.throws(() => formatDistance(undefined), TypeError)
 })
 
 test("parseTime reads epoch milliseconds and ISO strings as UTC", () => {
@@ -176,4 +182,6 @@ test("formatDistanceRange shows a range, or a single value when both ends round 
   assert.equal(formatDistanceRange(12.34, 12.349), "12.3 km")
   assert.equal(formatDistanceRange(5.44, 5.46), "5.4–5.5 km")
   assert.equal(formatDistanceRange(0, 0), "0.0 km")
+  assert.equal(formatDistanceRange(999.96, 1000.04), "1,000.0 km")
+  assert.equal(formatDistanceRange(999.9, 1001.1), "999.9–1,001.1 km")
 })

@@ -17,8 +17,10 @@ export function formatDuration(seconds) {
   return hours > 0 ? `${hours}:${pad(minutes)}:${rest}` : `${minutes}:${rest}`
 }
 
+const DISTANCE = new Intl.NumberFormat("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+
 export function formatDistance(km) {
-  return km.toFixed(1)
+  return DISTANCE.format(Number(km.toFixed(1)))
 }
 
 export function formatDistanceRange(fromKm, toKm) {

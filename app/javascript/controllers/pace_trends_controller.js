@@ -25,7 +25,7 @@ const HOVER_RADIUS = 16
 const BY_TIME = bisector(run => run.t)
 
 export default class extends Controller {
-  static targets = ["chart", "timeline", "range", "change", "cut", "verb", "delta", "distance", "overlayOption", "message", "link", "preset"]
+  static targets = ["chart", "timeline", "range", "change", "cut", "verb", "delta", "preposition", "distance", "overlayOption", "message", "link", "preset"]
   static values = { payload: Object }
 
   connect() {
@@ -225,8 +225,9 @@ export default class extends Controller {
     this.changeTarget.innerHTML = `Change in VDOT: <strong>${formatChange(perWeek)}</strong>`
     const table = this.tables[this.distance]
     const seconds = predictTime(table, this.fit.at(start / DAY_MS)) - predictTime(table, this.fit.at(end / DAY_MS))
-    const { verb, time } = formatFinishDelta(seconds)
+    const { verb, preposition, time } = formatFinishDelta(seconds)
     this.verbTarget.textContent = verb
+    this.prepositionTarget.textContent = preposition
     this.deltaTarget.textContent = time
   }
 
@@ -269,7 +270,7 @@ export default class extends Controller {
     const config = OVERLAYS[this.overlayKey]
     const value = config && overlayAt(this.overlays[this.overlayKey], run.t)
     if (value != null) rows.push([config.tooltip, `${value.toFixed(config.digits ?? 0)} ${config.unit}`])
-    return tooltipHtml(formatDate(run.t), rows, { heading: run.name || "Untitled run" })
+    return tooltipHtml(formatDate(run.t), rows, { heading: run.name || "Run" })
   }
 
   #syncUrl() {

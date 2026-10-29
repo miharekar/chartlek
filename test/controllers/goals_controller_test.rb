@@ -53,6 +53,7 @@ class GoalsControllerTest < ActionDispatch::IntegrationTest
 
     assert_select "input[name='goal[period]'][value=year][checked]"
     assert_select "input[name='goal[starts_on]'][value='2026-03-04']"
+    assert_select "input[type=submit][value='Create goal']"
 
     assert_difference -> { Goal.count }, 1 do
       post goals_path, params: {goal: {period: "month", starts_on: "2026-10-17", distance_km: "120.5"}}
@@ -86,6 +87,7 @@ class GoalsControllerTest < ActionDispatch::IntegrationTest
 
     get edit_goal_path(existing)
     assert_select "input[name='goal[distance_km]'][value='150.0']"
+    assert_select "input[type=submit][value='Update goal']"
 
     patch goal_path(existing), params: {goal: {distance_km: "175"}}
 

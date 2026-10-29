@@ -29,8 +29,8 @@ class MapsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "[data-controller=pro-map][data-pro-map-token-value=?]", "pk.test"
-    assert_equal %w[Pace HR Grade Cadence], css_select("[role=group][aria-label='Colour route by'] button").map { it.text.strip }
-    assert_select "[role=group][aria-label='Colour route by'] button[value=pace][aria-pressed=true]"
+    assert_equal %w[Pace HR Grade Cadence], css_select("[role=group][aria-label='Color route by'] button").map { it.text.strip }
+    assert_select "[role=group][aria-label='Color route by'] button[value=pace][aria-pressed=true]"
     assert_select "[data-pro-map-target=range]", 3
     assert_select "[data-pro-map-target=graph]"
     assert_select "[data-pro-map-target=splits]"
@@ -50,7 +50,7 @@ class MapsControllerTest < ActionDispatch::IntegrationTest
     get run_map_path(run)
 
     assert_response :success
-    assert_select "[role=group][aria-label='Colour route by']", false
+    assert_select "[role=group][aria-label='Color route by']", false
     assert_select "[data-pro-map-target=graph]", false
     assert_select "[data-pro-map-target=range]", false
     assert_select "[data-pro-map-target=map]"

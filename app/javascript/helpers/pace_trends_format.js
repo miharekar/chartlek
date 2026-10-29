@@ -7,5 +7,6 @@ export function formatChange(perWeek) {
 }
 
 export function formatFinishDelta(seconds) {
-  return { verb: seconds < 0 ? "Added" : "Cut", time: formatDuration(Math.abs(seconds)) }
+  const added = seconds < 0
+  return { verb: added ? "Added" : "Cut", preposition: added ? "to" : "from", time: formatDuration(Math.abs(seconds)) }
 }

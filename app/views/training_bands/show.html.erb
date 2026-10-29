@@ -19,7 +19,7 @@
   <div data-training-bands-target="timeline" class="mt-3 w-full"></div>
 <% else %>
   <%= empty_state "No training bands yet." do %>
-    New runs get their bands when their track is processed. To compute them for the history now, run bin/rails activities:bands.
+    New runs get their bands when their track is processed. To compute them for the history now, run <code>docker compose exec chartlek bin/rails activities:bands</code>.
   <% end %>
 <% end %>
 <% end %>

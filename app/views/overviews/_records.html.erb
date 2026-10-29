@@ -2,7 +2,10 @@
 <% if records.any? %>
 <% th = "#{WidgetsHelper::CELL} text-right font-medium" %>
 <section class="mt-4 <%= WidgetsHelper::CARD %>">
-  <h2 class="<%= WidgetsHelper::CARD_TITLE %>">Personal records</h2>
+  <h2 class="<%= WidgetsHelper::CARD_TITLE %>">
+    Personal records
+    <%= overview_info "All distances are rounded down and times are interpolated." %>
+  </h2>
   <div class="mt-3 overflow-x-auto">
     <table class="<%= WidgetsHelper::TABLE %>">
       <thead class="<%= WidgetsHelper::TABLE_HEAD %>">
@@ -29,6 +32,5 @@
       </tbody>
     </table>
   </div>
-  <p class="mt-3 <%= WidgetsHelper::HINT %>">All distances are rounded down and times are interpolated.</p>
 </section>
 <% end %>
