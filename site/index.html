@@ -20,7 +20,7 @@
       <p><a class="button" href="https://github.com/miharekar/chartlek">View on GitHub</a></p>
       <picture>
         <source srcset="screenshots/overview-dark.png" media="(prefers-color-scheme: dark)">
-        <img class="shot shot-hero" src="screenshots/overview.png" width="1300" height="2386" alt="The Overview page: kilometers run, goals, distance per month, trailing 365 day kilometers, pace against distance, streaks, a weekly heatmap and personal records.">
+        <img class="shot shot-hero" src="screenshots/overview.png" width="1300" height="2196" alt="The Overview page: kilometers run, goals, distance per month, trailing 365 day kilometers, pace against distance, streaks, a weekly heatmap and personal records.">
       </picture>
     </div>
   </header>
@@ -32,7 +32,7 @@
       <ul class="points">
         <li><strong>Linked hover.</strong> On the Overview, pointing at a chart selects a set of runs and highlights the same runs in the other charts.</li>
         <li><strong>One cursor.</strong> On a run, hovering one chart moves a cursor on all of them and a marker along the route map.</li>
-        <li><strong>Brushes.</strong> Drag a timeline to change the window, or drag across a chart to summarise a stretch.</li>
+        <li><strong>Brushes.</strong> Drag a timeline to change the window, or drag across a chart to summarize a stretch.</li>
         <li><strong>Touch and keyboard.</strong> Charts scrub with a finger, and the ones with a cursor are a Tab stop with arrow keys.</li>
       </ul>
       <img class="shot" src="screenshots/overview-hover.png" width="1286" height="1000" loading="lazy" alt="Hovering the trailing 365 day line on the Overview: the runs of the year before that day are highlighted in the distance bars and as amber dots in the pace scatter.">
@@ -42,9 +42,12 @@
       <h2>Features</h2>
       <div class="grid">
         <article class="card">
-          <img class="shot" src="screenshots/overview-dark.png" width="1300" height="2386" loading="lazy" alt="The Overview page in the dark theme.">
+          <picture>
+            <source srcset="screenshots/overview.png" media="(prefers-color-scheme: dark)">
+            <img class="shot" src="screenshots/overview-dark.png" width="1300" height="2196" loading="lazy" alt="The Overview page with goal tiles, charts and personal records, in the theme opposite to the one at the top of the page.">
+          </picture>
           <h3>Overview</h3>
-          <p>Pick All time, a year or a month and every widget follows: distance per period, trailing kilometers, pace against distance, streaks, a weekly heatmap and personal records. Light, dark or System theme.</p>
+          <p>Pick All time, a year or a month and every widget follows: goal tiles, distance per period, trailing kilometers, pace against distance, streaks, a weekly heatmap and personal records. Light, dark or System theme.</p>
         </article>
         <article class="card">
           <img class="shot" src="screenshots/run.png" width="1300" height="1080" loading="lazy" alt="A run page with weather, gear, distance, time, pace, heart rate, a performance index, pace variability wheel and elevation profile.">
@@ -52,19 +55,19 @@
           <p>Everything about one run: weather, gear, a VDOT performance index with an estimated finish time, notables, workout steps, a pace variability wheel, heart rate zones and one shared cursor across the route map and charts.</p>
         </article>
         <article class="card">
-          <img class="shot" src="screenshots/pro-map.png" width="1300" height="1400" loading="lazy" alt="The Pro Map: a route coloured by pace, with a distribution of time per pace bucket and a change in pace graph underneath.">
+          <img class="shot" src="screenshots/pro-map.png" width="1300" height="1400" loading="lazy" alt="The Pro Map: a route colored by pace, with a distribution of time per pace bucket and a change in pace graph underneath.">
           <h3>Pro Map</h3>
-          <p>A full-page map of one run, coloured by pace, heart rate, grade or cadence. Click a bar to isolate a bucket, or pick the fastest segments and splits.</p>
+          <p>A full-page map of one run, colored by pace, heart rate, grade or cadence. Click a bar to isolate a bucket, or pick the fastest segments and splits.</p>
         </article>
         <article class="card">
-          <img class="shot" src="screenshots/pace-trends.png" width="1300" height="820" loading="lazy" alt="Pace Trends: runs as dots at their VDOT with a fitted trend, a resting heart rate overlay and a timeline to brush.">
+          <img class="shot" src="screenshots/pace-trends.png" width="1300" height="908" loading="lazy" alt="Pace Trends, the first tab of Performance: runs as dots at their VDOT with a fitted trend, a resting heart rate overlay and a timeline to brush.">
           <h3>Pace Trends</h3>
-          <p>Is your fitness going up? A fitted trend through your best runs, the change in VDOT per week, and an optional overlay of resting HR, HRV or sleep.</p>
+          <p>The first tab of Performance. Is your fitness going up? A fitted trend through your best runs, the change in VDOT per week, and an optional overlay of resting HR, HRV or sleep.</p>
         </article>
         <article class="card">
-          <img class="shot" src="screenshots/pr-progress.png" width="1300" height="1303" loading="lazy" alt="PR Progress: every run by distance and pace, with the all-time PR line and a table of PRs per distance.">
+          <img class="shot" src="screenshots/pr-progress.png" width="1300" height="1373" loading="lazy" alt="PR Progress, the second tab of Performance: every run by distance and pace, with the all-time PR line and a table of PRs per distance.">
           <h3>PR Progress</h3>
-          <p>Every run by distance and pace, your all-time best at each benchmark distance, the PRs you can beat next, and the next round time below each PR.</p>
+          <p>The second tab of Performance. Every run by distance and pace, your all-time best at each benchmark distance, the PRs you can beat next, and the next round time below each PR.</p>
         </article>
         <article class="card">
           <img class="shot" src="screenshots/wellness.png" width="1300" height="2000" loading="lazy" alt="Wellness: resting heart rate, heart rate variability, sleep and Body Battery charts on one shared timeline.">
@@ -72,7 +75,7 @@
           <p>Garmin health data for your whole history on one timeline and one hover cursor: resting HR, HRV, sleep, Body Battery, stress and weight.</p>
         </article>
         <article class="card">
-          <img class="shot" src="screenshots/training-bands.png" width="1300" height="870" loading="lazy" alt="Training Bands: weekly training time stacked by pace zone, over all time.">
+          <img class="shot" src="screenshots/training-bands.png" width="1300" height="891" loading="lazy" alt="Training Bands: weekly training time stacked by pace zone, over all time.">
           <h3>Training Bands</h3>
           <p>Your weekly training time stacked by pace, heart rate or grade. It answers how much of your running was actually easy.</p>
         </article>
@@ -82,9 +85,9 @@
           <p>Your Strava shoes, read-only: runs, distance and last used per pair, with distance per month and over time.</p>
         </article>
         <article class="card">
-          <img class="shot" src="screenshots/goals.png" width="1300" height="740" loading="lazy" alt="A yearly goal: distance done, how far ahead or behind the direct path, needed per day, and a progress chart with a catch-up line.">
+          <img class="shot" src="screenshots/goals.png" width="1300" height="745" loading="lazy" alt="A yearly goal: distance done, how far ahead or behind the direct path, needed per day, and a progress chart with a catch-up line.">
           <h3>Goals</h3>
-          <p>Monthly and yearly distance goals with a direct path, the distance needed per day and a catch-up line when you fall behind.</p>
+          <p>Set monthly and yearly distance goals from the Overview: the goal tile sits beside Kilometers run, and any year or month without one has a create link. The goal page adds a direct path, the distance needed per day and a catch-up line when you fall behind.</p>
         </article>
       </div>
     </section>

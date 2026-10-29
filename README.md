@@ -4,7 +4,7 @@ Chartlek is a local, single-user Rails app for runners. It caches your Garmin Co
 
 ![Overview](docs/screenshots/overview.png)
 
-**Contents:** [Run it yourself](#run-it-yourself) · [Why it exists](#why-it-exists) · [Interactive by design](#interactive-by-design) · [Features](#features) (Overview, Runs, Run page, Pro Map, Pace Trends, PR Progress, Wellness, Training Bands, Gear, Goals) · [Data sources](#data-sources) · [Running it](#running-it) · [Stack](#stack)
+**Contents:** [Run it yourself](#run-it-yourself) · [Why it exists](#why-it-exists) · [Interactive by design](#interactive-by-design) · [Features](#features) (Overview, Runs, Run page, Pro Map, Pace Trends and PR Progress (Performance), Wellness, Training Bands, Gear, Goals) · [Data sources](#data-sources) · [Running it](#running-it) · [Stack](#stack)
 
 ## Run it yourself
 
@@ -24,7 +24,7 @@ The charts are not pictures. Most of the value is in moving the pointer over the
 
 - **Linked hover.** On the Overview, pointing at a chart selects a set of runs and highlights those same runs in the other charts.
 - **One cursor across charts.** On a run, hovering one chart moves a cursor on all of them and a marker along the route map. On Wellness, hovering marks the same day on every chart.
-- **Brushes.** Drag a timeline to change the window of Pace Trends, PR Progress, Wellness and Training Bands (Pace Trends, Wellness and Training Bands also have 3 mo to all time presets). Drag across the speed chart or the Analyze Run strip to summarise a stretch or a group of runs.
+- **Brushes.** Drag a timeline to change the window of Pace Trends, PR Progress, Wellness and Training Bands (all four also have 3 mo to all time presets). Drag across the speed chart or the Analyze Run strip to summarise a stretch or a group of runs.
 - **Tooltips everywhere**, and an ⓘ next to every chart title that explains how to read it. Charts scrub with a finger too: drag across one on a phone and it (and the charts linked to it) follow, while a vertical swipe still scrolls the page.
 - **Clicks go somewhere.** Clicking a run in a chart opens its run page; clicking a distance bar drills into that period.
 - **Keyboard.** Charts with a cursor are one Tab stop: Wellness, Training Bands, Goals, Analyze Run and the Pro Map graph. Left and Right step the cursor (or move between dots in Analyze Run), Home and End jump to the ends, Escape clears the cursor and hides the tooltip, and Enter opens the run in Goals and Analyze Run. The run page's pace variability wheel, HR zone bar and rank histograms are Tab stops too, with Escape hiding the tooltip. The Overview's linked hover has no keyboard path (mouse and touch only).
@@ -44,7 +44,7 @@ Metric only (km, min/km, m, °C). The theme is System, Light or Dark (a switch i
 Pick All time, a year or a month; every widget follows.
 
 - **Stat tiles:** kilometers run (with the number in words, Smashrun-style), average run length, days run per week, time of day, average pace.
-- **Goals:** a yearly goal tile beside kilometers run and a monthly goal widget (see [Goals](#goals)).
+- **Goals:** the period's goal tiles beside kilometers run, or a link to create a goal on a year or month page (see [Goals](#goals)).
 - **Distance per period:** bars per month, week or day; a button group switches the metric to elevation gained, average distance, pace or VDOT.
 - **Trailing days:** the rolling distance of the last 365 days (90 in a year view, 7 in a month view).
 - **Pace vs distance:** every run as a dot; the y axis can be pace, average HR or VDOT. The last run is amber and a ring marks the average.
@@ -120,7 +120,7 @@ A full-page map of one run, from the route card's Open Pro Map button. It needs 
 
 ### Pace Trends
 
-Is your fitness going up? Every run is a muted dot at its VDOT; the brighter amber dots are the top three runs of each 30 days. A band shows the fitted trend through those top runs, with the **change in VDOT per week** and what that is worth as time off your estimated finish for 5K, 10K, half or marathon. Choose a window from 3 months to all time or drag the timeline; toggles exclude pauses or show races only.
+The first tab of Performance in the nav (PR Progress, below, is the other). Is your fitness going up? Every run is a muted dot at its VDOT; the brighter amber dots are the top three runs of each 30 days. A band shows the fitted trend through those top runs, with the **change in VDOT per week** and what that is worth as time off your estimated finish for 5K, 10K, half or marathon. Choose a window from 3 months to all time or drag the timeline; toggles exclude pauses or show races only.
 
 An **overlay** adds resting HR (7-day average), HRV or sleep hours on a second axis, so you can see fitness against recovery. It changes nothing about the trend. Click a dot to open the run.
 
@@ -128,7 +128,7 @@ An **overlay** adds resting HR (7-day average), HRV or sleep hours on a second a
 
 ### PR Progress
 
-Every run by distance (log scale) and pace. The solid line is your all-time best at each benchmark distance, so everything above it is still to be achieved; the dashed line is your best inside the window you brush on the timeline below.
+Every run by distance (log scale) and pace. The solid line is your all-time best at each benchmark distance, so everything above it is still to be achieved; the dashed line is your best inside the window, chosen with the presets or by brushing the timeline. The window, mode and reference period stay in the URL, so a reload keeps them.
 - **PRs you can beat** predicts each distance from your best VDOT run of the last 30, 60 or 90 days, or from any run you click.
 - **Magic PRs** shows the next round time below each PR (the next sub-20:00, the next sub-1:40) with the three closest targets pulsing.
 
@@ -171,13 +171,13 @@ Your Strava shoes, read-only: runs, distance, time, last 12 months and last used
 
 ### Goals
 
-Monthly and yearly distance goals. The Overview shows the yearly goal as a tile and the monthly goal as a widget; each links to the goal's page.
+Monthly and yearly distance goals, set from the Overview. Goal tiles sit beside kilometers run (all time shows this year's and this month's goal; a year or month page shows its own), and each links to the goal's page.
 
 - **Direct path:** the straight line from zero to the target across the period. How far above or below it you are is "ahead" or "behind", in km.
 - **Needed per day:** what is left divided by the days left, today included, next to your average of the last 28 days.
 - **Open-today rule:** until you have run today, the expected distance counts days through yesterday, so you aren't marked behind for a run you haven't done yet.
 - **Catch-up line:** when you are behind, a dashed line runs from where you are to the target at the end of the period. Its colour gets stronger the harder the catch-up is compared with your recent average, and fades when it is within reach.
-- **Manage them:** Goals in the nav, then New goal (choose monthly or yearly and a distance in km). The goal page has Edit and Delete, and the Overview's "Set a monthly goal" and "Set a yearly goal" links open the form for the current period.
+- **Manage them:** a year or month page without a goal ends its kilometers tile with a "Create a goal for …" link, which opens the form (monthly or yearly, and a distance in km). The goal page has Edit, Delete and All goals.
 - **Hover a day:** a past day shows where you were, a future day shows the average per day you would then need. Click a run day to open that run; the chart is also a Tab stop with arrow keys and Enter.
 
 ![Goal](docs/screenshots/goals.png)
