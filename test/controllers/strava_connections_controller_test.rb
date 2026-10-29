@@ -143,6 +143,23 @@ class StravaConnectionsControllerTest < ActionDispatch::IntegrationTest
     assert_equal 0, Profile.instance.strava_gear_attempts
   end
 
+  test "unreadable stored tokens leave the app up and reconnecting stores new ones" do
+    other_keys = ActiveRecord::Encryption::DerivedSecretKeyProvider.new("another key")
+    ActiveRecord::Encryption.with_encryption_context(key_provider: other_keys) do
+      Profile.instance.store_strava_tokens(access_token: "a", refresh_token: "r", expires_at: 1.hour.from_now.to_i)
+    end
+
+    get "/overview"
+    assert_response :success
+    assert_select "form[action=?][data-turbo=false] button", strava_connection_path, text: "Connect Strava"
+
+    state = start["state"]
+    stub_request(:post, TOKEN_URL).to_return(body: {access_token: "a-2", refresh_token: "r-2", expires_at: 6.hours.from_now.to_i}.to_json)
+    get strava_callback_path(code: "c", state:, scope: "read,activity:read_all")
+
+    assert_equal "r-2", Profile.instance.strava_refresh_token
+  end
+
   test "the nav button is Connect, Reconnect or absent by connection and scope" do
     get root_path
     follow_redirect!

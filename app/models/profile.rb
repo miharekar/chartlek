@@ -6,7 +6,9 @@ class Profile < ApplicationRecord
   encrypts :strava_access_token, :strava_refresh_token
 
   def self.instance
-    first_or_create!
+    profile = first_or_create!
+    profile.disconnect_unreadable_strava
+    profile
   end
 
   def start_sync
@@ -70,7 +72,15 @@ class Profile < ApplicationRecord
   end
 
   def disconnect_strava
-    update!(strava_access_token: nil, strava_refresh_token: nil, strava_token_expires_at: nil, strava_scope: nil)
+    update_columns(strava_access_token: nil, strava_refresh_token: nil, strava_token_expires_at: nil, strava_scope: nil)
+  end
+
+  def disconnect_unreadable_strava
+    strava_access_token
+    strava_refresh_token
+  rescue ActiveRecord::Encryption::Errors::Decryption
+    Rails.logger.warn "Stored Strava tokens can't be decrypted with the current encryption keys; Strava disconnected"
+    disconnect_strava
   end
 
   def invalid_key?
