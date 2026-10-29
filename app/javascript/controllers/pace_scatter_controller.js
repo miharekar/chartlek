@@ -3,7 +3,7 @@ import { axisBottom, axisLeft } from "d3-axis"
 import { extent, max } from "d3-array"
 import { Delaunay } from "d3-delaunay"
 import { scaleLinear } from "d3-scale"
-import { pointer, select } from "d3-selection"
+import { create, pointer, select } from "d3-selection"
 import { formatDate, formatDistance, formatPace } from "helpers/formatters"
 import { paceScale } from "helpers/pace_scale"
 import { clearRuns, clearSelection, hoverSelection, publish, selectionMean, setRuns, subscribe } from "helpers/linked_selection"
@@ -132,8 +132,8 @@ export default class extends Controller {
     }
 
     const points = shown.map(({ run }) => position(run))
-    const dots = chart
-      .append("g")
+    const dotLayer = create("svg:g")
+    const dots = dotLayer
       .selectAll("circle")
       .data(points)
       .join("circle")
@@ -142,6 +142,7 @@ export default class extends Controller {
       .attr("r", 2.5)
       .attr("fill", "var(--chart-accent)")
       .attr("fill-opacity", 0.5)
+    chart.append(() => dotLayer.node())
 
     const lastRun = runs[last]
     let lastDot

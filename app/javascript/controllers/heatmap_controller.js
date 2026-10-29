@@ -1,5 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
-import { select } from "d3-selection"
+import { create, select } from "d3-selection"
 import { cellSelected, clearSelection, dayStart, getTimes, keysOf, levelKeys, publish, runsInKeys, spanSelection, subscribe, weekStart } from "helpers/linked_selection"
 import { observeSize } from "helpers/resize"
 import { scrub } from "helpers/scrub"
@@ -30,6 +30,7 @@ export default class extends Controller {
   connect() {
     this.svg = select(this.chartTarget).append("svg").attr("class", "block")
     this.stopObserving = observeSize(this.chartTarget, ({ width }) => {
+      if (width === this.width) return
       this.width = width
       this.draw()
     })
@@ -100,13 +101,25 @@ export default class extends Controller {
         .text(column => column.label)
     )
 
-    const groups = chart
+    const layer = create("svg:g")
+    const groups = layer
       .selectAll("g.cell")
       .data(cells)
       .join("g")
       .attr("transform", cellData => `translate(${cellData.col * cell},${cellData.row * cell})`)
       .style("cursor", cellData => (cellData.href ? "pointer" : "default"))
       .on("click", (_, cellData) => this.open(cellData))
+
+    groups
+      .append("rect")
+      .attr("width", cell - GAP)
+      .attr("height", cell - GAP)
+      .attr("rx", Math.min(3, cell / 5))
+      .attr("fill", cellData => FILLS[cellData.level][0])
+      .attr("fill-opacity", cellData => FILLS[cellData.level][1])
+    groups.filter(cellData => cellData.text && cell >= 24).append("text").attr("x", 4).attr("y", 12).attr("font-size", 10).attr("pointer-events", "none").attr("fill", cellData => (cellData.level >= 3 ? "var(--chart-grid)" : "var(--chart-axis)")).text(cellData => cellData.text)
+    this.decorate(groups.filter(cellData => cellData.level >= 5), cell - GAP)
+    chart.append(() => layer.node())
 
     scrub(groups, {
       mode: "items",
@@ -121,15 +134,6 @@ export default class extends Controller {
       }
     })
 
-    groups
-      .append("rect")
-      .attr("width", cell - GAP)
-      .attr("height", cell - GAP)
-      .attr("rx", Math.min(3, cell / 5))
-      .attr("fill", cellData => FILLS[cellData.level][0])
-      .attr("fill-opacity", cellData => FILLS[cellData.level][1])
-    groups.filter(cellData => cellData.text && cell >= 24).append("text").attr("x", 4).attr("y", 12).attr("font-size", 10).attr("pointer-events", "none").attr("fill", cellData => (cellData.level >= 3 ? "var(--chart-grid)" : "var(--chart-axis)")).text(cellData => cellData.text)
-    this.decorate(groups.filter(cellData => cellData.level >= 5), cell - GAP)
     this.groups = groups
     this.nodes = groups.nodes()
     this.dimmed = this.nodes.map(() => false)
