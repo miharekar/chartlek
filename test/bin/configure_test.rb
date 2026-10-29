@@ -87,7 +87,7 @@ class ConfigureTest < ActiveSupport::TestCase
   end
 
   test "a set secret behind export or indentation is kept and nothing is appended" do
-    ["export SECRET_KEY_BASE=keep", "  SECRET_KEY_BASE=keep", "\texport  SECRET_KEY_BASE=keep"].each do |line|
+    ["export SECRET_KEY_BASE=keep", "  SECRET_KEY_BASE=keep", "\texport  SECRET_KEY_BASE=keep", "SECRET_KEY_BASE = keep"].each do |line|
       File.write(env_path, "GARMIN_API_TOKEN=garmin-fake\n#{line}\n")
       before = File.binread(env_path)
 
@@ -98,15 +98,17 @@ class ConfigureTest < ActiveSupport::TestCase
     end
   end
 
-  test "a blank export line is replaced in place" do
-    File.write(env_path, "GARMIN_API_TOKEN=garmin-fake\nexport SECRET_KEY_BASE=\nMAPBOX_TOKEN=pk.fake\n")
+  test "a blank export or spaced line is replaced in place" do
+    ["export SECRET_KEY_BASE=", "SECRET_KEY_BASE = ", "export SECRET_KEY_BASE =  "].each do |line|
+      File.write(env_path, "GARMIN_API_TOKEN=garmin-fake\n#{line}\nMAPBOX_TOKEN=pk.fake\n")
 
-    configure
+      configure
 
-    lines = File.readlines(env_path, chomp: true)
-    assert_equal 3, lines.size
-    assert_match(/\ASECRET_KEY_BASE=\h{128}\z/, lines[1])
-    assert_match(/\A\h{128}\z/, Dotenv.parse(env_path, overwrite: true)["SECRET_KEY_BASE"])
+      lines = File.readlines(env_path, chomp: true)
+      assert_equal 3, lines.size, line
+      assert_match(/\ASECRET_KEY_BASE=\h{128}\z/, lines[1], line)
+      assert_match(/\A\h{128}\z/, Dotenv.parse(env_path, overwrite: true)["SECRET_KEY_BASE"], line)
+    end
   end
 
   test "a set secret is kept" do

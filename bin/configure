@@ -12,7 +12,7 @@ fi
 [ -f .env ] || cp .env.example .env
 
 secret=$(openssl rand -hex 64)
-line="^[[:space:]]*(export[[:space:]]+)?SECRET_KEY_BASE="
+line="^[[:space:]]*(export[[:space:]]+)?SECRET_KEY_BASE[[:space:]]*="
 blank="$line[[:space:]]*(\"[[:space:]]*\"|'[[:space:]]*')?[[:space:]]*\$"
 
 if ! grep -Eq "$line" .env; then
