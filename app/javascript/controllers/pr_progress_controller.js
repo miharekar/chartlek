@@ -213,7 +213,7 @@ export default class extends Controller {
     const group = svg.append("g")
     group.append("path").attr("d", line()(points)).attr("fill", "none").attr("stroke", "var(--chart-accent)").attr("stroke-width", 2.5).attr("stroke-linejoin", "round")
     group.append("g").attr("fill", "var(--chart-accent)").selectAll("circle").data(points).join("circle").attr("cx", point => point[0]).attr("cy", point => point[1]).attr("r", 4.5)
-    this.markers.frontier = this.frontier.map((record, index) => ({ x: points[index][0], y: points[index][1], html: this.frontierHtml(record), url: record.url }))
+    this.markers.frontier = this.frontier.map((record, index) => ({ x: points[index][0], y: points[index][1], html: this.frontierHtml(record), url: record.url, pick: this.byId.get(record.id) }))
   }
 
   drawWindow() {
@@ -227,7 +227,7 @@ export default class extends Controller {
       if (!run) return
       const point = this.point(bucket, (run.best / this.benchmarks[bucket].meters) * 1000)
       points.push(point)
-      this.markers.window.push({ x: point[0], y: point[1], html: this.windowHtml(bucket, run), url: run.url })
+      this.markers.window.push({ x: point[0], y: point[1], html: this.windowHtml(bucket, run), url: run.url, pick: run })
     })
 
     this.windowLayer.selectAll("*").remove()
@@ -329,7 +329,8 @@ export default class extends Controller {
   }
 
   pickableRun(x, y) {
-    const run = this.dotTargetAt(x, y)?.run
+    const marker = this.nearestMarker(x, y)
+    const run = marker ? marker.pick : this.dotTargetAt(x, y)?.run
     if (run?.vdot != null) return run
   }
 

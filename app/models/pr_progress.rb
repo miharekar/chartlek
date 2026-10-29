@@ -57,7 +57,7 @@ class PrProgress
   end
 
   def frontier_entry(record)
-    {bucket: bucket_index(record.name), time: record.time_s.round(2), pace: record.pace.round(2), date: epoch_ms(record.activity.local_started_at), race: record.race, name: record.activity.name, url: Rails.application.routes.url_helpers.run_path(record.activity)}
+    {id: record.activity.id, bucket: bucket_index(record.name), time: record.time_s.round(2), pace: record.pace.round(2), date: epoch_ms(record.activity.local_started_at), race: record.race, name: record.activity.name, url: Rails.application.routes.url_helpers.run_path(record.activity)}
   end
 
   def bucket_index(name)

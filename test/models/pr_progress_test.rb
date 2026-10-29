@@ -49,6 +49,7 @@ class PrProgressTest < ActiveSupport::TestCase
     assert_equal 2700, frontier.last[:time]
     assert_equal 270, frontier.last[:pace]
     assert frontier.last[:race]
+    assert_equal pr.id, frontier.last[:id]
     assert_equal "/runs/#{pr.id}", frontier.last[:url]
     assert_equal Time.utc(2024, 1, 1, 8).to_i * 1000, frontier.last[:date]
   end
