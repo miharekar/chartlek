@@ -124,6 +124,17 @@ class PagesTest < ActionDispatch::IntegrationTest
     assert_select "p[role=alert]", false
   end
 
+  test "the manifest is served as JSON and linked from every page" do
+    get "/manifest.json"
+
+    assert_response :success
+    assert_equal "Chartlek", response.parsed_body["name"]
+
+    get "/overview"
+
+    assert_select "link[rel=manifest][href='/manifest.json']"
+  end
+
   test "overview constrains year and month" do
     get "/overview/24"
     assert_response :not_found
