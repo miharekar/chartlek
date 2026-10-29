@@ -218,7 +218,7 @@ class RunsControllerTest < ActionDispatch::IntegrationTest
     get run_path(run)
 
     assert_response :success
-    assert_select "a[target=_blank]", false
+    assert_select "main a[target=_blank]", false
   end
 
   test "show highlights the run among the fastest and finishes with vdot" do

@@ -39,16 +39,14 @@
           <%= nav_link_to "Gear", gears_path %>
           <%= nav_link_to "Goals", goals_path %>
         </div>
-        <div class="ml-auto flex flex-wrap items-center gap-x-4 gap-y-2">
-          <%= yield :nav_right %>
-          <div class="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm <%= WidgetsHelper::MUTED %>">
-            <%= render "syncs/status", profile: sync_profile %>
-            <% unless sync_profile.strava_gear_access? %>
-              <%= button_to (sync_profile.strava_reconnect? ? "Reconnect Strava" : "Connect Strava"), strava_connection_path, form: {data: {turbo: false}}, class: ControlsHelper::BUTTON %>
-            <% end %>
-            <%= theme_switch %>
-            <%= button_to "Sync now", sync_path, class: ControlsHelper::BUTTON %>
-          </div>
+        <div class="ml-auto flex flex-wrap items-center gap-x-3 gap-y-2 text-sm <%= WidgetsHelper::MUTED %>">
+          <%= github_link %>
+          <%= render "syncs/status", profile: sync_profile %>
+          <%= button_to "Sync now", sync_path, class: ControlsHelper::BUTTON %>
+          <% unless sync_profile.strava_gear_access? %>
+            <%= button_to (sync_profile.strava_reconnect? ? "Reconnect Strava" : "Connect Strava"), strava_connection_path, form: {data: {turbo: false}}, class: ControlsHelper::BUTTON %>
+          <% end %>
+          <%= theme_switch %>
         </div>
       </div>
     </nav>

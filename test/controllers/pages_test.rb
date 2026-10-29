@@ -39,6 +39,19 @@ class PagesTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label=Main] a", text: "PR Progress", count: 0
   end
 
+  test "the nav links to GitHub in a new tab" do
+    get "/overview"
+
+    assert_select "nav a[href='https://github.com/miharekar/chartlek'][aria-label='Chartlek on GitHub'][title='Chartlek on GitHub'][target=_blank][rel=noopener]"
+  end
+
+  test "Sync now sits outside the live sync status" do
+    get "/overview"
+
+    assert_select "#sync_status form", false
+    assert_select "nav form[action='#{sync_path}']"
+  end
+
   test "overview constrains year and month" do
     get "/overview/24"
     assert_response :not_found

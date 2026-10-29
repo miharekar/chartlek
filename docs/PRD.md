@@ -58,7 +58,7 @@ Why: Smashrun (smashrun.com/miharekar) is effectively abandonware, but its chart
 
 ### 4.1 Global
 
-- **Nav:** Overview, Runs, Performance (Pace Trends and PR Progress, §4.3 and §4.4), Wellness, Training Bands, Gear, Goals. An item is current, with the accent and `aria-current="page"`, on its own path and the paths it matches (Performance on `/pace_trend` and `/pr_progress`). Items wrap instead of overflowing; no dropdown menus. The Pro Map opens from a run. On the right: the sync status, **Sync now**, **Connect Strava** (or **Reconnect Strava** when the stored grant lacks gear access, §6.5) and the theme switch.
+- **Nav:** Overview, Runs, Performance (Pace Trends and PR Progress, §4.3 and §4.4), Wellness, Training Bands, Gear, Goals. An item is current, with the accent and `aria-current="page"`, on its own path and the paths it matches (Performance on `/pace_trend` and `/pr_progress`). Items wrap instead of overflowing; no dropdown menus. The Pro Map opens from a run. On the right: a GitHub link (the Octicons mark, "Chartlek on GitHub", opening in a new tab), the sync status, **Sync now**, **Connect Strava** (or **Reconnect Strava** when the stored grant lacks gear access, §6.5) and the theme switch.
 - **Sync status:**
   - Shows "Synced 12 min ago", "Syncing…" live, and the **Sync now** button.
   - A sync runs every hour in the background (a Solid Queue recurring task in the container) and on the button. Opening a page does not sync.
