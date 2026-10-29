@@ -58,7 +58,7 @@ Why: Smashrun (smashrun.com/miharekar) is effectively abandonware, but its chart
 
 ### 4.1 Global
 
-- **Nav:** Overview, Runs, Pace Trends, PR Progress, Wellness, Training Bands, Gear, Goals. Items wrap instead of overflowing; no dropdown menus. The Pro Map opens from a run. On the right: the sync status, **Sync now**, **Connect Strava** (or **Reconnect Strava** when the stored grant lacks gear access, §6.5) and the theme switch.
+- **Nav:** Overview, Runs, Performance (Pace Trends and PR Progress, §4.3 and §4.4), Wellness, Training Bands, Gear, Goals. An item is current, with the accent and `aria-current="page"`, on its own path and the paths it matches (Performance on `/pace_trend` and `/pr_progress`). Items wrap instead of overflowing; no dropdown menus. The Pro Map opens from a run. On the right: the sync status, **Sync now**, **Connect Strava** (or **Reconnect Strava** when the stored grant lacks gear access, §6.5) and the theme switch.
 - **Sync status:**
   - Shows "Synced 12 min ago", "Syncing…" live, and the **Sync now** button.
   - A sync runs every hour in the background (a Solid Queue recurring task in the container) and on the button. Opening a page does not sync.
@@ -118,6 +118,8 @@ The selection is only for the current view, is published through one shared modu
 
 ### 4.3 Pace Trends
 
+The default tab of Performance (the nav item opens it). Both tabs share the page title "Performance" and a tab bar below the header (a `button_group "Performance", nav: true` of links, so each tab keeps its own URL and params), also in the empty states.
+
 Answers "am I getting faster?" by putting all distances on a common scale (VDOT).
 
 **Main chart**
@@ -140,6 +142,8 @@ Answers "am I getting faster?" by putting all distances on a common scale (VDOT)
 **Overlay:** a button group above the chart chooses None (default), Resting HR, HRV or Sleep, drawn as a thin muted line on a secondary right-hand axis fitted to the window (follows the brush). Resting HR is the 7-day average, HRV the nightly value, Sleep the night's hours (the night before the run's day); a missing day is a gap. The tooltip gains a line with the value for the run's day; regression, stats and predictions don't change. An option appears only when `WellnessDay` has that series, and the group is hidden without wellness data. The choice is the `overlay` URL param (`rhr`, `hrv`, `sleep`; unknown means None), kept by the preset, brush and filter links. All series are in the page payload, so switching needs no request.
 
 ### 4.4 PR Progress
+
+The second tab of Performance (§4.3).
 
 **Main chart**
 

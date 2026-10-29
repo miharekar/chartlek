@@ -1,15 +1,17 @@
 <% if @pr_progress.empty? %>
-  <%= page_header "PR Progress" %>
+  <%= page_header "Performance" %>
+  <%= render "performance_tabs", current: :pr_progress %>
   <%= empty_state "No runs to show yet." %>
 <% else %>
   <%= tag.div data: {controller: "pr-progress", pr_progress_data_value: @pr_progress.data, pr_progress_mode_value: @mode, pr_progress_days_value: @days} do %>
-    <%= page_header "PR Progress", info: overview_info("Every run by distance and pace. Distance across on a log scale, pace up (faster is higher). The solid line is your all-time best at each benchmark distance; what lies above it is still to be achieved. The dashed line is your best at each distance inside the window below. PRs you can beat predicts each distance from the best VDOT run of the last 30, 60 or 90 days, or any run you click. Magic PRs shows the next round time below each PR, with the three closest targets pulsing.") do %>
+    <%= page_header "Performance", info: overview_info("Every run by distance and pace. Distance across on a log scale, pace up (faster is higher). The solid line is your all-time best at each benchmark distance; what lies above it is still to be achieved. The dashed line is your best at each distance inside the window below. PRs you can beat predicts each distance from the best VDOT run of the last 30, 60 or 90 days, or any run you click. Magic PRs shows the next round time below each PR, with the three closest targets pulsing.") do %>
       <%= button_group "Mode" do %>
         <%= segment "Progress", data: {action: "pr-progress#setMode", mode: "progress"} %>
         <%= segment "PRs you can beat", data: {action: "pr-progress#setMode", mode: "beat"} %>
         <%= segment "Magic PRs", data: {action: "pr-progress#setMode", mode: "magic"} %>
       <% end %>
     <% end %>
+    <%= render "performance_tabs", current: :pr_progress %>
 
     <div class="mt-6 space-y-4">
       <section class="<%= WidgetsHelper::CARD %>">

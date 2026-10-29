@@ -1,9 +1,10 @@
 <%= tag.div data: (@pace_trend.runs.any? ? {controller: "pace-trends", pace_trends_payload_value: @pace_trend.payload} : {}) do %>
-<%= page_header "Pace Trends", info: overview_info("#{vdot_explanation} Every run is a muted dot, scored by VDOT so all distances share one scale. Bright dots are top runs: the top 3 by score in the 30 days ending on that run. The band is the least-squares line through the top runs in the window, plus or minus one standard deviation of the residuals. Drag the timeline to change the window. The overlay draws resting heart rate (7-day average) or last night's HRV from your Garmin wellness data on a second axis; it changes nothing about the trend.") do %>
+<%= page_header "Performance", info: overview_info("#{vdot_explanation} Every run is a muted dot, scored by VDOT so all distances share one scale. Bright dots are top runs: the top 3 by score in the 30 days ending on that run. The band is the least-squares line through the top runs in the window, plus or minus one standard deviation of the residuals. Drag the timeline to change the window. The overlay draws resting heart rate (7-day average) or last night's HRV from your Garmin wellness data on a second axis; it changes nothing about the trend.") do %>
   <div class="flex flex-wrap items-center gap-2">
     <%= pace_trend_filter_chips %>
   </div>
 <% end %>
+<%= render "performance_tabs", current: :pace_trends %>
 
 <% if @pace_trend.runs.any? %>
   <div class="mt-6">

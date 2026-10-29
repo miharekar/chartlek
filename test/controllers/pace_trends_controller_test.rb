@@ -7,6 +7,17 @@ class PaceTrendsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "[data-controller='pace-trends']", false
     assert_select "p", /No runs to show/
+    assert_select "nav[aria-label=Performance] a[aria-current=page]", count: 1, text: "Pace Trends"
+  end
+
+  test "shows the Performance tabs with Pace Trends current" do
+    create(:activity)
+
+    get pace_trend_path
+
+    assert_select "h1", /Performance/
+    assert_select "nav[aria-label=Performance] a[href='#{pace_trend_path}'][aria-current=page]", text: "Pace Trends"
+    assert_select "nav[aria-label=Performance] a[href='#{pr_progress_path}']:not([aria-current])", text: "PR Progress"
   end
 
   test "renders the chart with runs" do

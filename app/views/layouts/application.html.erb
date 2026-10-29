@@ -27,14 +27,13 @@
 
   <body class="bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 font-sans antialiased" data-controller="live-refresh">
     <%= turbo_stream_from :garmin_sync, data: {live_refresh_target: "stream"} %>
-    <nav class="border-b border-zinc-200 dark:border-zinc-800">
+    <nav aria-label="Main" class="border-b border-zinc-200 dark:border-zinc-800">
       <div class="max-w-7xl mx-auto px-5 min-h-14 py-2 flex flex-wrap items-center gap-x-8 gap-y-2">
         <%= link_to "Chartlek", "/overview", class: "text-lg font-semibold text-lime-700 dark:text-[#9CFF44]" %>
         <div class="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
           <%= nav_link_to "Overview", "/overview" %>
           <%= nav_link_to "Runs", runs_path %>
-          <%= nav_link_to "Pace Trends", pace_trend_path %>
-          <%= nav_link_to "PR Progress", pr_progress_path %>
+          <%= nav_link_to "Performance", pace_trend_path, match: [pace_trend_path, pr_progress_path] %>
           <%= nav_link_to "Wellness", wellness_path %>
           <%= nav_link_to "Training Bands", training_bands_path %>
           <%= nav_link_to "Gear", gears_path %>

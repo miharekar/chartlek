@@ -1,0 +1,6 @@
+<div class="mt-4">
+  <%= button_group "Performance", nav: true do %>
+    <%= segment "Pace Trends", href: pace_trend_path, selected: current == :pace_trends %>
+    <%= segment "PR Progress", href: pr_progress_path, selected: current == :pr_progress %>
+  <% end %>
+</div>

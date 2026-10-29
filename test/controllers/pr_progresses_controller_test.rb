@@ -7,6 +7,17 @@ class PrProgressesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "[data-controller=pr-progress]", false
     assert_select "p", text: "No runs to show yet."
+    assert_select "nav[aria-label=Performance] a[aria-current=page]", count: 1, text: "PR Progress"
+  end
+
+  test "shows the Performance tabs with PR Progress current" do
+    create(:activity)
+
+    get pr_progress_path
+
+    assert_select "h1", /Performance/
+    assert_select "nav[aria-label=Performance] a[href='#{pr_progress_path}'][aria-current=page]", text: "PR Progress"
+    assert_select "nav[aria-label=Performance] a[href='#{pace_trend_path}']:not([aria-current])", text: "Pace Trends"
   end
 
   test "renders the chart controller with the serialized runs" do
