@@ -4,24 +4,26 @@
     Workout
     <%= overview_info "Garmin gives one total per step type, not one row per repetition, so ×8 means eight active steps added together." %>
   </h2>
-  <table class="mt-3 <%= WidgetsHelper::TABLE %>">
-    <thead class="<%= WidgetsHelper::TABLE_HEAD %>">
-      <tr class="<%= WidgetsHelper::TABLE_HEAD_ROW %>">
-        <th class="<%= WidgetsHelper::CELL %> text-left font-medium">Step</th>
-        <th class="<%= WidgetsHelper::CELL %> text-right font-medium">km</th>
-        <th class="<%= WidgetsHelper::CELL %> text-right font-medium">Time</th>
-        <th class="<%= WidgetsHelper::CELL %> text-right font-medium">Pace</th>
-      </tr>
-    </thead>
-    <tbody class="<%= WidgetsHelper::TABLE_BODY %>">
-      <% run.workout_splits.each do |step| %>
-        <tr>
-          <td class="<%= WidgetsHelper::CELL %>"><%= workout_step_swatch(step) if legend %><%= workout_step_label(step) %></td>
-          <td class="<%= WidgetsHelper::CELL %> text-right"><%= step[:distance_m].positive? ? overview_distance(step[:distance_m] / 1000) : "–" %></td>
-          <td class="<%= WidgetsHelper::CELL %> text-right"><%= overview_duration(step[:duration_s]) %></td>
-          <td class="<%= WidgetsHelper::CELL %> whitespace-nowrap text-right"><%= step[:pace] ? "#{overview_pace(step[:pace])} /km" : "–" %></td>
+  <div class="mt-3 overflow-x-auto">
+    <table class="<%= WidgetsHelper::TABLE %>">
+      <thead class="<%= WidgetsHelper::TABLE_HEAD %>">
+        <tr class="<%= WidgetsHelper::TABLE_HEAD_ROW %>">
+          <th class="<%= WidgetsHelper::CELL %> text-left font-medium">Step</th>
+          <th class="<%= WidgetsHelper::CELL %> text-right font-medium">km</th>
+          <th class="<%= WidgetsHelper::CELL %> text-right font-medium">Time</th>
+          <th class="<%= WidgetsHelper::CELL %> text-right font-medium">Pace</th>
         </tr>
-      <% end %>
-    </tbody>
-  </table>
+      </thead>
+      <tbody class="<%= WidgetsHelper::TABLE_BODY %>">
+        <% run.workout_splits.each do |step| %>
+          <tr>
+            <td class="<%= WidgetsHelper::CELL %>"><%= workout_step_swatch(step) if legend %><%= workout_step_label(step) %></td>
+            <td class="<%= WidgetsHelper::CELL %> text-right"><%= step[:distance_m].positive? ? overview_distance(step[:distance_m] / 1000) : "–" %></td>
+            <td class="<%= WidgetsHelper::CELL %> text-right"><%= overview_duration(step[:duration_s]) %></td>
+            <td class="<%= WidgetsHelper::CELL %> whitespace-nowrap text-right"><%= step[:pace] ? "#{overview_pace(step[:pace])} /km" : "–" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
 </section>

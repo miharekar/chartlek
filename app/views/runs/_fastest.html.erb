@@ -4,17 +4,19 @@
     <% (Activity::FASTEST_WINDOWS + [nil]).each do |days| %>
       <div>
         <h3 class="<%= WidgetsHelper::TILE_LABEL %>"><%= days ? "Last #{days} days" : "All time" %></h3>
-        <table class="mt-2 <%= WidgetsHelper::TABLE %>">
-          <tbody class="<%= WidgetsHelper::TABLE_BODY %>">
-            <% run.fastest_similar(days).each do |other| %>
-              <tr class="<%= "bg-lime-50 font-medium dark:bg-lime-950/40" if other.id == run.id %>">
-                <td class="<%= WidgetsHelper::CELL %>"><%= link_to overview_date(other.local_started_at), run_path(other), class: WidgetsHelper::TABLE_LINK %></td>
-                <td class="<%= WidgetsHelper::CELL %> text-right"><%= overview_distance(other.distance_m / 1000) %> km</td>
-                <td class="<%= WidgetsHelper::CELL %> text-right"><%= overview_pace(other.pace) %> /km</td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
+        <div class="mt-2 overflow-x-auto">
+          <table class="<%= WidgetsHelper::TABLE %>">
+            <tbody class="<%= WidgetsHelper::TABLE_BODY %>">
+              <% run.fastest_similar(days).each do |other| %>
+                <tr class="<%= "bg-lime-50 font-medium dark:bg-lime-950/40" if other.id == run.id %>">
+                  <td class="<%= WidgetsHelper::CELL %>"><%= link_to overview_date(other.local_started_at), run_path(other), class: WidgetsHelper::TABLE_LINK %></td>
+                  <td class="<%= WidgetsHelper::CELL %> text-right"><%= overview_distance(other.distance_m / 1000) %> km</td>
+                  <td class="<%= WidgetsHelper::CELL %> text-right"><%= overview_pace(other.pace) %> /km</td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
       </div>
     <% end %>
   </div>

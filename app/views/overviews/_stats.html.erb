@@ -29,8 +29,8 @@
 
 <section class="<%= card %>">
   <h2 class="<%= label %>">Time of day</h2>
-  <div class="mt-1 flex items-center gap-3">
-    <p class="<%= big %>"><%= overview.pm_percent %><span class="<%= unit %>">% PM</span></p>
+  <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+    <p class="<%= big %> whitespace-nowrap"><%= overview.pm_percent %><span class="<%= unit %>">% PM</span></p>
     <div class="ml-auto size-12 shrink-0 rounded-full" title="<%= overview.pm_count %> PM, <%= overview.count - overview.pm_count %> AM" style="background: conic-gradient(var(--chart-accent) 0 <%= overview.pm_percent %>%, var(--chart-accent-low) 0); mask: radial-gradient(circle, transparent 55%, #000 56%); -webkit-mask: radial-gradient(circle, transparent 55%, #000 56%)"></div>
   </div>
 </section>

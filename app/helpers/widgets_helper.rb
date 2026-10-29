@@ -6,7 +6,7 @@ module WidgetsHelper
   PAGE_TITLE = "flex items-center gap-2 text-2xl font-semibold"
   MUTED = "text-zinc-500 dark:text-zinc-400"
   TILE_LABEL = "text-sm font-medium #{MUTED}"
-  TILE_VALUE = "mt-1 text-4xl font-semibold tabular-nums"
+  TILE_VALUE = "mt-1 text-3xl sm:text-4xl font-semibold tabular-nums"
   TILE_UNIT = "ml-1 text-sm font-normal #{MUTED}"
   HEADER_LINE = "text-sm tabular-nums text-zinc-600 dark:text-zinc-300"
   TILE_SUB = "mt-1 #{HEADER_LINE}"
