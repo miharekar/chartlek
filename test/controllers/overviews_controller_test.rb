@@ -27,6 +27,14 @@ class OverviewsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href='/overview/2024']"
   end
 
+  test "compresses the response when the client accepts gzip" do
+    create_runs
+
+    get "/overview", headers: {"Accept-Encoding" => "gzip"}
+
+    assert_equal "gzip", response.headers["content-encoding"]
+  end
+
   test "links to the latest run on every period" do
     create_runs
     latest = Activity.order(:local_started_at).last
