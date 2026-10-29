@@ -1,6 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 import { max, min, quantile } from "d3-array"
 import { Delaunay } from "d3-delaunay"
+import { axisBottom, axisLeft } from "d3-axis"
 import { pointer, select } from "d3-selection"
 import { scaleLog } from "d3-scale"
 import { line } from "d3-shape"
@@ -12,7 +13,7 @@ import { daysSince, daysSincePr, magicText, parseRuns, percentSlower, prediction
 import { observeSize } from "helpers/resize"
 import { scrub } from "helpers/scrub"
 import { createTimeline } from "helpers/timeline"
-import { escapeHtml, hideTooltip, moveTooltip, showTooltip } from "helpers/tooltip"
+import { escapeHtml, hideTooltip, moveTooltip, showTooltip, tooltipHtml } from "helpers/tooltip"
 import { parseTime } from "helpers/time"
 
 const MARGIN = { top: 12, right: 28, bottom: 40, left: 56 }
@@ -149,7 +150,7 @@ export default class extends Controller {
     this.windowLayer = svg.append("g")
     this.drawFrontier(svg)
     this.overlayLayer = svg.append("g")
-    this.ring = svg.append("circle").attr("r", 7).attr("fill", "none").attr("stroke", "var(--chart-axis)").attr("stroke-width", 1.5).attr("pointer-events", "none").attr("display", "none")
+    this.ring = svg.append("circle").attr("r", 7).attr("fill", "none").attr("stroke", "var(--chart-accent-highlight)").attr("stroke-width", 2).attr("pointer-events", "none").attr("display", "none")
     this.surface = svg
       .append("rect")
       .attr("x", MARGIN.left)
@@ -158,32 +159,37 @@ export default class extends Controller {
       .attr("height", height - MARGIN.top - MARGIN.bottom)
       .attr("fill", "transparent")
       .call(scrub, { move: event => this.hover(event), leave: () => this.leave() })
-      .on("click", event => this.pick(event))
+      .on("click", event => this.open(event))
 
     this.drawWindow()
     this.drawOverlay()
   }
 
   drawAxes(svg, x, y, width, height) {
-    const grid = svg.append("g").attr("stroke", "var(--chart-grid)")
-    const labels = svg.append("g").attr("fill", "var(--chart-axis)").attr("font-size", 11)
-    const bottom = height - MARGIN.bottom
-
-    for (const pace of y.ticks(8)) {
-      if (pace < this.paceDomain[0] || pace > this.paceDomain[1]) continue
-      grid.append("line").attr("x1", MARGIN.left).attr("x2", width - MARGIN.right).attr("y1", y(pace)).attr("y2", y(pace))
-      labels.append("text").attr("x", MARGIN.left - 8).attr("y", y(pace)).attr("dy", "0.32em").attr("text-anchor", "end").text(formatPace(pace))
-    }
-
+    const paces = y.ticks(8).filter(pace => pace >= this.paceDomain[0] && pace <= this.paceDomain[1])
+    const labels = new Map()
     let previous = -Infinity
     for (const [km, label] of X_LABELS) {
       if (km < this.xDomain[0] || km > this.xDomain[1] || x(km) - previous < 44) continue
       previous = x(km)
-      grid.append("line").attr("x1", x(km)).attr("x2", x(km)).attr("y1", MARGIN.top).attr("y2", bottom)
-      labels.append("text").attr("x", x(km)).attr("y", bottom + 16).attr("text-anchor", "middle").text(label)
+      labels.set(km, label)
     }
 
-    labels.append("text").attr("x", MARGIN.left - 8).attr("y", MARGIN.top - 2).attr("text-anchor", "end").attr("font-size", 10).text("min/km")
+    const yAxis = svg
+      .append("g")
+      .attr("transform", `translate(${MARGIN.left},0)`)
+      .call(axisLeft(y).tickValues(paces).tickFormat(formatPace).tickSize(-(width - MARGIN.left - MARGIN.right)).tickSizeOuter(0))
+    const xAxis = svg
+      .append("g")
+      .attr("transform", `translate(0,${height - MARGIN.bottom})`)
+      .call(axisBottom(x).tickValues([...labels.keys()]).tickFormat(km => labels.get(km)).tickSizeOuter(0))
+    for (const axis of [xAxis, yAxis]) {
+      axis.select(".domain").attr("stroke", "var(--chart-grid)")
+      axis.selectAll(".tick line").attr("stroke", "var(--chart-grid)")
+      axis.selectAll("text").attr("fill", "var(--chart-axis)")
+    }
+    yAxis.select(".domain").remove()
+    svg.append("text").attr("fill", "var(--chart-axis)").attr("font-size", 11).attr("x", MARGIN.left).attr("y", 9).text("min/km")
   }
 
   drawDots(svg) {
@@ -207,7 +213,7 @@ export default class extends Controller {
     const group = svg.append("g")
     group.append("path").attr("d", line()(points)).attr("fill", "none").attr("stroke", "var(--chart-accent)").attr("stroke-width", 2.5).attr("stroke-linejoin", "round")
     group.append("g").attr("fill", "var(--chart-accent)").selectAll("circle").data(points).join("circle").attr("cx", point => point[0]).attr("cy", point => point[1]).attr("r", 4.5)
-    this.markers.frontier = this.frontier.map((record, index) => ({ x: points[index][0], y: points[index][1], html: this.frontierHtml(record) }))
+    this.markers.frontier = this.frontier.map((record, index) => ({ x: points[index][0], y: points[index][1], html: this.frontierHtml(record), url: record.url }))
   }
 
   drawWindow() {
@@ -221,7 +227,7 @@ export default class extends Controller {
       if (!run) return
       const point = this.point(bucket, (run.best / this.benchmarks[bucket].meters) * 1000)
       points.push(point)
-      this.markers.window.push({ x: point[0], y: point[1], html: this.windowHtml(bucket, run) })
+      this.markers.window.push({ x: point[0], y: point[1], html: this.windowHtml(bucket, run), url: run.url })
     })
 
     this.windowLayer.selectAll("*").remove()
@@ -275,20 +281,18 @@ export default class extends Controller {
       this.overlayLayer.append("line").attr("x1", from[0]).attr("y1", from[1]).attr("x2", to[0]).attr("y2", to[1]).attr("stroke", "var(--chart-highlight)").attr("stroke-width", 1.5).attr("stroke-dasharray", "3 3")
       this.overlayLayer.append("circle").attr("class", "motion-safe:animate-ping origin-center [transform-box:fill-box]").attr("cx", to[0]).attr("cy", to[1]).attr("r", 6).attr("fill", "var(--chart-highlight)").attr("fill-opacity", 0.55)
       this.overlayLayer.append("circle").attr("cx", to[0]).attr("cy", to[1]).attr("r", 5.5).attr("fill", "var(--chart-highlight)")
-      this.markers.overlay.push({ x: to[0], y: to[1], html: `<div class="font-medium">${escapeHtml(magicText(name, target.target, record.time, target.percent))}</div><div class="${MUTED}">PR ${formatDuration(record.time)} · target pace ${formatPace((target.target / meters) * 1000)} /km</div>` })
+      this.markers.overlay.push({ x: to[0], y: to[1], html: tooltipHtml("Magic PR", [["PR", formatDuration(record.time)], ["Target pace", `${formatPace((target.target / meters) * 1000)} /km`]], { heading: magicText(name, target.target, record.time, target.percent) }) })
     }
   }
 
   hover(event) {
     const [x, y] = pointer(event)
-    const marker = this.nearestMarker(x, y)
-    const index = marker ? null : this.nearestDot(x, y)
-    const target = marker || (index != null ? { x: this.positions[index][0], y: this.positions[index][1], html: this.runHtml(this.dots[index]) } : null)
+    const target = this.targetAt(x, y)
 
     if (!target) return this.leave()
     this.ring.attr("cx", target.x).attr("cy", target.y).attr("display", null)
-    this.surface.style("cursor", this.mode === "beat" && index != null ? "pointer" : "default")
-    const key = marker || index
+    this.surface.style("cursor", this.clickable(target, x, y) ? "pointer" : "default")
+    const key = target.run || target
     if (key === this.hovered) return moveTooltip(event)
     this.hovered = key
     showTooltip(target.html, event)
@@ -300,12 +304,38 @@ export default class extends Controller {
     hideTooltip()
   }
 
-  pick(event) {
-    if (this.mode !== "beat") return
-    const [x, y] = pointer(event)
+  targetAt(x, y) {
+    return this.nearestMarker(x, y) || this.dotTargetAt(x, y)
+  }
+
+  dotTargetAt(x, y) {
     const index = this.nearestDot(x, y)
-    const run = index != null && this.dots[index]
-    if (!run || run.vdot == null) return
+    if (index == null) return
+
+    const run = this.dots[index]
+    return { x: this.positions[index][0], y: this.positions[index][1], html: this.runHtml(run), url: run.url, run }
+  }
+
+  clickable(target, x, y) {
+    return this.mode === "beat" ? Boolean(this.pickableRun(x, y)) : Boolean(target.url)
+  }
+
+  open(event) {
+    const [x, y] = pointer(event)
+    if (this.mode === "beat") return this.pick(this.pickableRun(x, y))
+
+    const target = this.targetAt(x, y)
+    if (target?.url) window.Turbo.visit(target.url)
+  }
+
+  pickableRun(x, y) {
+    const run = this.dotTargetAt(x, y)?.run
+    if (run?.vdot != null) return run
+  }
+
+  pick(run) {
+    if (!run) return
+
     this.referenceId = run.id
     this.days = null
     this.syncControls()
@@ -334,30 +364,29 @@ export default class extends Controller {
 
   frontierHtml(record) {
     const { name, meters } = this.benchmarks[record.bucket]
-    return `<div class="font-medium">${escapeHtml(name)} PR${record.race ? ` ${this.tag("Race")}` : ""}</div><div>${formatDuration(record.time)} · ${formatPace((record.time / meters) * 1000)} /km</div><div class="${MUTED}">${formatDate(record.date)} · ${escapeHtml(record.name || "")}</div>`
+    const rows = [["Time", formatDuration(record.time)], ["Pace", `${formatPace((record.time / meters) * 1000)} /km`], ["Run", record.name || "Run"]]
+    return tooltipHtml(formatDate(record.date), rows, { heading: `${name} PR${record.race ? " · race" : ""}` })
   }
 
   windowHtml(bucket, run) {
     const { name, meters } = this.benchmarks[bucket]
     const record = this.records[bucket]
-    const versus = run.best <= record.time ? this.tag("PR") : `+${percentSlower(run.best, record.time).toFixed(1)}% vs PR`
-    return `<div class="font-medium">Best in window · ${escapeHtml(name)}</div><div>${formatDuration(run.best)} · ${formatPace((run.best / meters) * 1000)} /km · ${versus}</div><div class="${MUTED}">${formatDate(run.time)} · ${escapeHtml(run.name || "")}</div>`
+    const versus = run.best <= record.time ? "PR" : `+${percentSlower(run.best, record.time).toFixed(1)}%`
+    const rows = [["Time", formatDuration(run.best)], ["Pace", `${formatPace((run.best / meters) * 1000)} /km`], ["vs PR", versus], ["Run", run.name || "Run"]]
+    return tooltipHtml(formatDate(run.time), rows, { heading: `Best in window · ${name}` })
   }
 
   predictionHtml(row, reference) {
     const { name } = this.benchmarks[row.bucket]
     const record = this.records[row.bucket]
-    let versus = `<div class="${MUTED}">No PR yet</div>`
-    if (record) {
-      const faster = row.change >= 0
-      versus = `<div class="${MUTED}">${Math.abs(row.change).toFixed(1)}% ${faster ? "faster" : "slower"} than your PR (${formatDuration(record.time)})</div>`
-    }
-    return `<div class="font-medium">Predicted ${escapeHtml(name)} at VDOT ${reference.vdot.toFixed(1)}</div><div>${formatDuration(row.time)} · ${formatPace(row.pace)} /km</div>${versus}`
+    let versus = ["vs PR", "No PR yet"]
+    if (record) versus = ["vs PR", `${Math.abs(row.change).toFixed(1)}% ${row.change >= 0 ? "faster" : "slower"} (${formatDuration(record.time)})`]
+    return tooltipHtml(`At VDOT ${reference.vdot.toFixed(1)}`, [["Time", formatDuration(row.time)], ["Pace", `${formatPace(row.pace)} /km`], versus], { heading: `Predicted ${name}` })
   }
 
   runHtml(run) {
-    const vdot = run.vdot == null ? "" : ` · VDOT ${run.vdot.toFixed(1)}`
-    return `<div class="font-medium">${escapeHtml(run.name || "Run")}${run.race ? ` ${this.tag("Race")}` : ""}</div><div>${formatDistance(run.distance)} km · ${formatPace(run.pace)} /km${vdot}</div><div class="${MUTED}">${formatDate(run.time)}</div>`
+    const rows = [["Distance", `${formatDistance(run.distance)} km`], ["Pace", `${formatPace(run.pace)} /km`], run.vdot == null ? null : ["VDOT", run.vdot.toFixed(1)]]
+    return tooltipHtml(formatDate(run.time), rows, { heading: `${run.name || "Run"}${run.race ? " · race" : ""}` })
   }
 
   tag(label) {

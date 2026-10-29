@@ -153,6 +153,7 @@ The second tab of Performance (§4.3).
 
 - Under the chart card, the shared window block (range, hint, presets: §4.3; the default window is the last 12 months) sits above the chart, and a timeline of runs per day with a brush below it. Selecting a window draws a second line: the best performance at each benchmark among runs in that window. Dragging scrubs through history, showing how long it has been since you ran or set a PR at each distance. The table card, titled "Best in window", compares the window with the all-time PRs.
 - `from`, `to`, `mode` and `days` are URL params, updated in place on a brush end, a preset and a mode or reference-period change, and read back by `PrProgressesController` (invalid values fall back to the defaults), so a reload or a sync's page refresh keeps the mode and window.
+- **Tooltips** use the shared shape: the run's name (or "Run", with " · race" for races) as the heading, the date, then rows (distance, pace, VDOT). The PR line and the best-in-window line follow it (heading, date, time, pace, run). Clicking a run opens it in the same tab in Progress and Magic PRs modes; in "PRs you can beat" a click picks the reference run. The pointer cursor shows only where a click does something.
 
 **"PRs you can beat"**
 
