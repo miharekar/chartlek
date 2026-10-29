@@ -231,7 +231,7 @@ Smashrun supplies only the years before Garmin; Garmin-era runs are ignored.
 
 - `site/` is the static landing page for chartlek.com: `index.html`, `styles.css`, the favicon set (`icon.svg`, `favicon.ico`, `apple-touch-icon.png`) and `screenshots/`. Cloudflare Pages serves it with no build command and output directory `site`, so the app is never exposed.
 - No JS, no framework, no build step, no analytics, no external fonts or CDNs. Light and dark follow `prefers-color-scheme`.
-- `site/screenshots/` is a copy of `docs/screenshots/` (Pages can't reach `docs/`): retake the shots in `docs/screenshots/` and copy them over when the UI changes. The favicon set is copied from `public/` (the same files the app serves).
+- `site/screenshots/` is a copy of `docs/screenshots/` (Pages can't reach `docs/`): retake the shots in `docs/screenshots/` and copy them over when the UI changes. The two animations there (`overview-hover.webp`, `run-cursor.webp`, with the stills `overview-hover.png` and `run-cursor.png` for reduced motion) are retaken the same way: recorded frame by frame from the running app with a fake cursor (headless screenshots draw none), mouse moves dispatched along an eased path, and encoded lossless with `ffmpeg -c:v libwebp_anim -lossless 1 -quality 100 -loop 0` (smaller than lossy for flat chart colors). The favicon set is copied from `public/` (the same files the app serves).
 - Copy is condensed from the README; update the page when the README's features change.
 
 ## Coding style guidelines

@@ -113,6 +113,11 @@ main .wrap {
   object-position: top;
 }
 
+.demo {
+  display: block;
+  margin: 0 0 1.5rem;
+}
+
 .points {
   max-width: 44rem;
   margin: 0 0 1.5rem;
