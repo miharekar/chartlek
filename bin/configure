@@ -1,0 +1,38 @@
+#!/bin/sh
+set -eu
+umask 077
+
+cd "$(dirname "$0")/.."
+
+if ! command -v openssl >/dev/null 2>&1; then
+  echo "openssl is missing. Install it and run bin/configure again." >&2
+  exit 1
+fi
+
+[ -f .env ] || cp .env.example .env
+
+secret=$(openssl rand -hex 64)
+line="^[[:space:]]*(export[[:space:]]+)?SECRET_KEY_BASE="
+blank="$line[[:space:]]*(\"[[:space:]]*\"|'[[:space:]]*')?[[:space:]]*\$"
+
+if ! grep -Eq "$line" .env; then
+  [ -z "$(tail -c1 .env)" ] || echo >> .env
+  echo "SECRET_KEY_BASE=$secret" >> .env
+elif grep -Eq "$blank" .env; then
+  tmp=.env.configure.$$
+  trap 'rm -f "$tmp"' EXIT
+  SECRET=$secret BLANK=$blank awk '$0 ~ ENVIRON["BLANK"] { print "SECRET_KEY_BASE=" ENVIRON["SECRET"]; next } { print }' .env > "$tmp"
+  mv "$tmp" .env
+fi
+
+echo ".env is ready."
+
+if ! grep -q '^GARMIN_API_TOKEN=.' .env; then
+  echo "Put your Garmin Personal API key in .env as GARMIN_API_TOKEN."
+fi
+
+if ! docker compose version >/dev/null 2>&1; then
+  echo "Docker Compose isn't available yet: install Docker Desktop and start it once, or Docker Engine with the Compose plugin."
+fi
+
+echo "Then run: docker compose up -d, and open http://localhost:9295"

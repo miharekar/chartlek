@@ -198,16 +198,17 @@ Chartlek only reads. All data stays in SQLite under `storage/`.
 
 ## Running it
 
-Requirements: Docker and a Garmin Personal API key.
+Requirements: Docker with Compose and a Garmin Personal API key.
 
 ```bash
-cp .env.example .env         # fill it in: the comments say what each variable is and how to generate the secrets with openssl
+git clone https://github.com/miharekar/chartlek && cd chartlek
+bin/configure                # writes .env with a generated secret; add your Garmin key to it
 docker compose up -d
 ```
 
 Open <http://localhost:9295>. The first start builds the image, which takes a few minutes. `./storage` holds the database and your runs' originals; keep it, and keep `.env`: `SECRET_KEY_BASE` also encrypts the stored Strava tokens (lose it and you connect Strava again).
 
-Strava is optional. Create an API app at strava.com/settings/api, set `STRAVA_CLIENT_ID` and `STRAVA_SECRET` in `.env`, and allow your callback domain: `localhost` for `http://localhost:9295/strava/callback`, or your own host if you serve it elsewhere. Then click Connect Strava in the nav once.
+Strava is optional. Create an API app at strava.com/settings/api, copy its Client ID and Client Secret into `STRAVA_CLIENT_ID` and `STRAVA_SECRET` in `.env`, and allow your callback domain: `localhost` for `http://localhost:9295/strava/callback`, or your own host if you serve it elsewhere. Then click Connect Strava in the nav once.
 
 **First run.** The hourly sync and Sync now already run inside the container. For the backfills use `docker compose exec chartlek bin/rails …`, in order:
 
@@ -229,7 +230,7 @@ See `AGENTS.md` for every task and its options. After pulling new code, run `doc
 
 ### Development
 
-Requirements: Ruby 4.0.9, SQLite, and Node for the JavaScript tests. Put the same variables in `.env`; `bin/dev` loads it.
+Requirements: Ruby 4.0.9, SQLite, and Node for the JavaScript tests. `bin/configure` writes `.env` here too, and `bin/dev` loads it.
 
 ```bash
 bin/setup                    # install gems, prepare the database, then start bin/dev (--skip-server to just set up)
