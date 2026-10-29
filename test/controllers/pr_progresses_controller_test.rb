@@ -34,6 +34,33 @@ class PrProgressesControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-pr-progress-target=table]"
   end
 
+  test "the best in window card is titled and the window block replaces the window card" do
+    create(:activity)
+
+    get pr_progress_path
+
+    assert_select "h2", /Best in window/
+    assert_select "h2", {text: /\AWindow/, count: 0}
+    assert_select "section [data-pr-progress-target=table]"
+  end
+
+  test "from and to set the window the chart starts on, and garbage falls back to the last year" do
+    create(:activity, local_started_at: Time.utc(2024, 3, 5, 7))
+
+    get pr_progress_path(from: "2024-02-01", to: "2024-03-31", mode: "beat", days: 60)
+
+    data = JSON.parse(css_select("[data-controller=pr-progress]").first["data-pr-progress-data-value"])
+    assert_equal [Time.utc(2024, 2, 1), Time.utc(2024, 4, 1)].map { it.to_i * 1000 }, data["window"]
+    assert_select "[data-pr-progress-mode-value=beat][data-pr-progress-days-value=60]"
+
+    get pr_progress_path(from: "garbage", to: "2024-13-45", mode: "nope", days: "x")
+
+    data = JSON.parse(css_select("[data-controller=pr-progress]").first["data-pr-progress-data-value"])
+    today = Activity.today
+    assert_equal [(today << 12).to_time(:utc).to_i * 1000, (today + 1).to_time(:utc).to_i * 1000], data["window"]
+    assert_select "[data-pr-progress-mode-value=progress][data-pr-progress-days-value=90]"
+  end
+
   test "mode and days come from params" do
     create(:activity)
 

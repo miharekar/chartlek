@@ -9,7 +9,7 @@ import { snapToDays } from "helpers/time"
 
 const MARGIN = { top: 4, right: 12, bottom: 20, left: 12 }
 
-export function createTimeline(element, { data, domain, selection, height = 96, onBrush = () => {}, onEnd = () => {} }) {
+export function createTimeline(element, { data, domain, selection, height = 72, onBrush = () => {}, onEnd = () => {} }) {
   const days = [
     ...rollup(
       data,

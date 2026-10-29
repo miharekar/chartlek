@@ -4,9 +4,10 @@ import { Delaunay } from "d3-delaunay"
 import { pointer, select } from "d3-selection"
 import { scaleLog } from "d3-scale"
 import { line } from "d3-shape"
-import { utcDay, utcMonth } from "d3-time"
+import { utcDay } from "d3-time"
 import { formatDate, formatDistance, formatDuration, formatPace } from "helpers/formatters"
 import { paceScale } from "helpers/pace_scale"
+import { activePreset, PRESETS, presetWindow } from "helpers/presets"
 import { daysSince, daysSincePr, magicText, parseRuns, percentSlower, predictions, recordsByBucket, windowBest } from "helpers/pr_progress"
 import { observeSize } from "helpers/resize"
 import { scrub } from "helpers/scrub"
@@ -33,7 +34,7 @@ const TABLE_LINK = "hover:text-lime-700 hover:underline dark:hover:text-[#9CFF44
 const CHIP = "rounded px-1.5 py-0.5 text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
 
 export default class extends Controller {
-  static targets = ["chart", "timeline", "table", "range", "beat", "magic", "reference", "legend"]
+  static targets = ["chart", "timeline", "table", "range", "preset", "beat", "magic", "reference", "legend"]
   static values = { data: Object, mode: String, days: Number }
 
   connect() {
@@ -48,6 +49,7 @@ export default class extends Controller {
     this.mode = event.currentTarget.dataset.mode
     this.syncControls()
     this.drawOverlay()
+    this.syncUrl()
   }
 
   setDays(event) {
@@ -55,6 +57,14 @@ export default class extends Controller {
     this.referenceId = this.references[this.days]
     this.syncControls()
     this.drawOverlay()
+    this.syncUrl()
+  }
+
+  preset(event) {
+    const { months } = PRESETS.find(({ key }) => key === event.currentTarget.dataset.preset)
+    this.timeline.setSelection(presetWindow(months, this.domain))
+    this.setWindow(this.timeline.selection())
+    this.syncUrl()
   }
 
   build() {
@@ -73,13 +83,16 @@ export default class extends Controller {
     this.hovered = null
     this.setScales()
 
-    const today = parseTime(data.today)
+    this.domain = [parseTime(data.first), parseTime(data.today)]
     this.timeline = createTimeline(this.timelineTarget, {
       data: this.runs.map(run => ({ date: parseTime(run.time), value: 1 })),
-      domain: [parseTime(data.first), today],
-      selection: [utcMonth.offset(today, -12), utcDay.offset(today, 1)],
+      domain: this.domain,
+      selection: data.window.map(parseTime),
       onBrush: range => this.setWindow(range),
-      onEnd: range => this.setWindow(range)
+      onEnd: range => {
+        this.setWindow(range)
+        this.syncUrl()
+      }
     })
     this.window = this.timeline.selection().map(Number)
     this.stopObserving = observeSize(this.chartTarget, ({ width }) => {
@@ -88,6 +101,7 @@ export default class extends Controller {
       this.drawChart(width)
     })
     this.syncControls()
+    this.renderRange()
   }
 
   teardown() {
@@ -114,6 +128,7 @@ export default class extends Controller {
 
   setWindow(range) {
     this.window = range.map(Number)
+    this.renderRange()
     this.drawWindow()
   }
 
@@ -213,7 +228,6 @@ export default class extends Controller {
     this.windowLayer.append("path").attr("d", line()(points)).attr("fill", "none").attr("stroke", "var(--chart-accent-highlight)").attr("stroke-width", 2).attr("stroke-dasharray", "6 4")
     this.windowLayer.append("g").attr("fill", "none").attr("stroke", "var(--chart-accent-highlight)").attr("stroke-width", 2).selectAll("circle").data(points).join("circle").attr("cx", point => point[0]).attr("cy", point => point[1]).attr("r", 4)
 
-    this.renderRange()
     this.renderTable(best, since, sincePr)
   }
 
@@ -296,6 +310,7 @@ export default class extends Controller {
     this.days = null
     this.syncControls()
     this.drawOverlay()
+    this.syncUrl()
   }
 
   nearestMarker(x, y) {
@@ -367,8 +382,22 @@ export default class extends Controller {
 
   renderRange() {
     const [start, end] = this.window
-    const count = this.runs.filter(run => run.time >= start && run.time < end).length
-    this.rangeTarget.textContent = `${formatDate(start)} – ${formatDate(end - 1)} · ${count} ${count === 1 ? "run" : "runs"}`
+    const active = activePreset(this.window, this.domain)
+    this.presetTargets.forEach(button => button.setAttribute("aria-pressed", button.dataset.preset === active))
+    this.rangeTarget.textContent = `${formatDate(start)} – ${formatDate(utcDay.offset(new Date(end), -1))}`
+  }
+
+  syncUrl() {
+    const [start, end] = this.window
+    const params = {
+      from: new Date(start).toISOString().slice(0, 10),
+      to: utcDay.offset(new Date(end), -1).toISOString().slice(0, 10),
+      mode: this.mode,
+      days: this.days
+    }
+    const url = new URL(location.href)
+    for (const [key, value] of Object.entries(params)) value == null ? url.searchParams.delete(key) : url.searchParams.set(key, value)
+    history.replaceState(history.state, "", url)
   }
 
   renderLegend() {

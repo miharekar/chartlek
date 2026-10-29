@@ -17,7 +17,7 @@ registerHooks({
   }
 })
 
-const { presetWindow, activePreset, PRESETS } = await import("helpers/pace_trends_presets")
+const { presetWindow, activePreset, PRESETS } = await import("helpers/presets")
 
 const utc = (y, m, d) => new Date(Date.UTC(y, m - 1, d))
 const iso = range => range.map(date => date.toISOString().slice(0, 10))

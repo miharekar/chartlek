@@ -9,11 +9,7 @@
 <% if @pace_trend.runs.any? %>
   <div class="mt-6">
     <div class="flex flex-wrap items-start justify-between gap-x-8 gap-y-3">
-      <div>
-        <div class="text-sm font-semibold tabular-nums" data-pace-trends-target="range"></div>
-        <div class="<%= WidgetsHelper::HINT %>">Pick a span or drag the timeline below to change the window.</div>
-        <div class="mt-2"><%= pace_trend_presets %></div>
-      </div>
+      <%= render "window_block", controller: "pace-trends" %>
       <div class="text-sm tabular-nums sm:text-right">
         <div data-pace-trends-target="change"></div>
         <div data-pace-trends-target="cut">
@@ -36,8 +32,10 @@
         <%= pace_trend_overlays(@pace_trend) %>
       </div>
     <% end %>
-    <div data-pace-trends-target="chart" class="mt-3 w-full"></div>
-    <div data-pace-trends-target="timeline" class="mt-2 w-full"></div>
+    <section class="mt-3 <%= WidgetsHelper::CARD %>">
+      <div data-pace-trends-target="chart" class="w-full"></div>
+    </section>
+    <div data-pace-trends-target="timeline" class="mt-3 w-full"></div>
   </div>
 <% else %>
   <%= empty_state "No runs to show#{" with these filters" if request.query_parameters.slice("no_pauses", "races").any?}." %>

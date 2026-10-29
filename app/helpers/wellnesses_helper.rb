@@ -10,12 +10,4 @@ module WellnessesHelper
     vdot: ["Top-run VDOT", "The VDOT of your top runs, the line Pace Trends fits its trend to. Garmin's Personal API has no VO2max."],
     zones: ["Time in heart rate zones per week", "Weekly time in each zone, each run timed with the zones that were set on your watch then. Runs before the watch zones were recorded use estimated zones."]
   }.freeze
-
-  def wellness_presets
-    button_group "Window" do
-      safe_join(PaceTrendsHelper::PRESETS.map { |label, key|
-        segment label, data: {action: "wellness#preset", wellness_target: "preset", preset: key}
-      })
-    end
-  end
 end

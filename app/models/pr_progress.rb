@@ -10,13 +10,15 @@ class PrProgress
     @benchmarks ||= PersonalRecords::BENCHMARKS.map { |name, meters| {name:, meters:, table: Vdot.time_table(meters)} }.freeze
   end
 
-  def self.for_all
-    new(Activity.select(Activity.column_names - %w[summary splits weather bands hr_zones]))
+  def self.for_all(**options)
+    new(Activity.select(Activity.column_names - %w[summary splits weather bands hr_zones]), **options)
   end
 
-  def initialize(activities, today: nil)
+  def initialize(activities, today: nil, from: nil, to: nil)
     @activities = activities.sort_by(&:local_started_at)
     @today = today || Activity.today
+    @from = parse_date(from)
+    @to = parse_date(to)
   end
 
   def reference_for(days)
@@ -38,7 +40,8 @@ class PrProgress
       references: REFERENCE_DAYS.index_with { reference_for(it)&.id },
       magic: magic_prs.map { {bucket: bucket_index(it.name), target: it.target_s, percent: it.percent.round(2)} },
       first: epoch_ms(@activities.first.local_started_at),
-      today: epoch_ms(today.to_time(:utc))
+      today: epoch_ms(today.to_time(:utc)),
+      window: [epoch_ms(window_start.to_time(:utc)), epoch_ms(window_end.to_time(:utc))]
     }
   end
 
@@ -61,7 +64,21 @@ class PrProgress
     PersonalRecords::BENCHMARKS.index { |benchmark, _| benchmark == name }
   end
 
+  def window_start
+    @from || (today << 12)
+  end
+
+  def window_end
+    (@to || today) + 1
+  end
+
   def epoch_ms(time)
     time.to_i * 1000
+  end
+
+  def parse_date(value)
+    Date.iso8601(value) if value.is_a?(String)
+  rescue Date::Error
+    nil
   end
 end

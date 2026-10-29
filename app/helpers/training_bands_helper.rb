@@ -25,14 +25,6 @@ module TrainingBandsHelper
     end
   end
 
-  def training_bands_presets
-    button_group "Window" do
-      safe_join(PaceTrendsHelper::PRESETS.map { |label, key|
-        segment label, data: {action: "training-bands#preset", training_bands_target: "preset", preset: key}
-      })
-    end
-  end
-
   def training_bands_filters(bands)
     safe_join(bands.categories.map { |name|
       tag.div class: "flex flex-wrap items-center gap-2", hidden: name != bands.category, role: "group", aria: {label: "#{CATEGORY_LABELS.fetch(name)} bands"}, data: {training_bands_target: "filters", category: name} do

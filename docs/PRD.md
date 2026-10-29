@@ -129,8 +129,8 @@ Answers "am I getting faster?" by putting all distances on a common scale (VDOT)
 
 **Timeline and window**
 
-- Below the chart, a timeline of bars shows each run's duration in hours over the whole history. A `d3-brush` on it selects the window; the default is the last 12 months. The main chart zooms to the window.
-- **Presets:** a button group sets the window in one click: 3 mo, 6 mo, 1 yr, 2 yr, All time. Each ends at the date of the latest run and starts that many calendar months earlier, clamped to the month's length; All time starts at the first run, and a span longer than the history also starts there (the longer preset is then the one marked). The preset matching the window has `aria-pressed`; the default marks 1 yr. A drag or resize clears the mark unless the new window equals a preset exactly. The window is in the `from` and `to` URL params, so reloads, links and filter chips keep it. PR Progress has no presets.
+- Under the chart card, a 72 px timeline of bars shows each run's duration in hours over the whole history. A `d3-brush` on it selects the window; the default is the last 12 months. The main chart zooms to the window.
+- **Presets:** a button group sets the window in one click: 3 mo, 6 mo, 1 yr, 2 yr, All time. Each ends at the last day of the page's range (today on Pace Trends and PR Progress, the last day with data on Wellness and Training Bands) and starts that many calendar months earlier, clamped to the month's length; All time starts at the first run, and a span longer than the history also starts there (the longer preset is then the one marked). The preset matching the window has `aria-pressed`; the default marks 1 yr. A drag or resize clears the mark unless the new window equals a preset exactly. The window is in the `from` and `to` URL params, so reloads, links and filter chips keep it. The block of range, hint and presets is the same on Pace Trends, PR Progress, Wellness and Training Bands (the `application/_window_block` partial, `ControlsHelper#window_presets`, `helpers/presets.js`), and so is the 72 px timeline.
 - The header shows the date range, "Change in VDOT: **+0.05/week**" (slope × 7, two decimals) and "Cut **34:28** from your estimated **5K / 10K / Half / Marathon** finish time" (distance is a button group): the predicted time at that distance from the regression VDOT at the start of the window versus the end; negative reads "Added".
 - The regression and header are recomputed in the browser while dragging.
 
@@ -151,7 +151,8 @@ The second tab of Performance (§4.3).
 
 **Timeline brush**
 
-- Below the chart, a timeline of runs per day with a brush. Selecting a window draws a second line: the best performance at each benchmark among runs in that window. Dragging scrubs through history, showing how long it has been since you ran or set a PR at each distance.
+- Under the chart card, the shared window block (range, hint, presets: §4.3; the default window is the last 12 months) sits above the chart, and a timeline of runs per day with a brush below it. Selecting a window draws a second line: the best performance at each benchmark among runs in that window. Dragging scrubs through history, showing how long it has been since you ran or set a PR at each distance. The table card, titled "Best in window", compares the window with the all-time PRs.
+- `from`, `to`, `mode` and `days` are URL params, updated in place on a brush end, a preset and a mode or reference-period change, and read back by `PrProgressesController` (invalid values fall back to the defaults), so a reload or a sync's page refresh keeps the mode and window.
 
 **"PRs you can beat"**
 
@@ -232,7 +233,7 @@ The stored activity summaries already carry, per run: time in each HR zone, aero
 
 **Wellness page (`/wellness`)**
 
-- A shared window: the Pace Trends presets (default the last year) and a brush on a compact daily resting HR timeline; `from` and `to` in the URL. Every chart follows it. Hovering any chart draws a vertical line at that day on all of them. Each chart overlay is one Tab stop: Left and Right step the cursor by a day, Home and End jump to the window's ends, Escape clears it; the tooltip anchors to the cursor line.
+- A shared window: the shared window block (§4.3; default the last year) and a brush on a compact daily resting HR timeline, which sits above the charts; `from` and `to` in the URL. Every chart follows it. Hovering any chart draws a vertical line at that day on all of them. Each chart overlay is one Tab stop: Left and Right step the cursor by a day, Home and End jump to the window's ends, Escape clears it; the tooltip anchors to the cursor line.
 - Charts, one card each, shown only when their data exists:
   - **Resting HR:** daily dots with the 7-day average line (§5).
   - **HRV:** the nightly average as a thin line, one dot per night coloured by Garmin's status (balanced accent, unbalanced amber, low and poor red, else muted), over the baseline band.
@@ -284,7 +285,7 @@ A full-page view at `/runs/:id/map`, opened from the run page ("Open Pro Map"). 
   - **Category** (button group): Pace, Heart rate, Grade; Heart rate only when some run has HR bands.
   - **View** (button group): Absolute (hours per week) or % (each band's share of the week's total running, so hiding bands leaves the shown share rather than rescaling to 100%).
   - **Band filters:** one toggle button per group, all on by default, with a swatch of the group's colours. Pace groups: Walk (under 5.5 km/h), Easy (slower than 6:00 /km), Steady (6:00 to 5:00), Tempo (5:00 to 4:17), Fast (faster than 4:17), fixed boundaries (`TrainingBands::PACE_GROUPS`). HR groups are the five zones, grade groups the seven buckets. Filters are kept per category for the visit, not in the URL.
-  - **Window:** the Pace Trends presets (default All time) and a brush on a timeline of weekly hours; `from`, `to`, `category` and `view` are URL params, updated in place.
+  - **Window:** the shared window block (§4.3; default All time) and a brush on a timeline of weekly hours under the chart card; `from`, `to`, `category` and `view` are URL params, updated in place.
   - **Colours:** pace bands `--pace-zone-N`, HR bands `--hr-zone-N`, grade `--grade-0` to `--grade-6` (blue for descents through grey to orange and red for climbs).
   - **Tooltip:** hovering a week (or Left, Right, Home, End, Escape on the chart's Tab stop) lists each shown group's time and share of the week, then the total.
   - **ⓘ:** explains the groups and says each run uses its own HR zones (estimated before the watch recorded them).

@@ -6,7 +6,7 @@ import { scaleLinear, scaleUtc } from "d3-scale"
 import { area } from "d3-shape"
 import { utcDay } from "d3-time"
 import { formatDate, formatDuration } from "helpers/formatters"
-import { activePreset, PRESETS, presetWindow } from "helpers/pace_trends_presets"
+import { activePreset, PRESETS, presetWindow } from "helpers/presets"
 import { observeSize } from "helpers/resize"
 import { noMouseFocus } from "helpers/roving"
 import { scrub } from "helpers/scrub"
@@ -44,7 +44,6 @@ export default class extends Controller {
       data: this.#timelineData(),
       domain: this.domain,
       selection: this.payload.window.map(parseTime),
-      height: 72,
       onBrush: range => this.#setRange(range),
       onEnd: range => {
         this.#setRange(range)

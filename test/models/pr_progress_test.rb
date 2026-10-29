@@ -7,6 +7,15 @@ class PrProgressTest < ActiveSupport::TestCase
     assert PrProgress.new([], today: @today).empty?
   end
 
+  test "the window defaults to the last twelve months through today and follows from and to" do
+    create(:activity, local_started_at: Time.utc(2024, 5, 1, 8))
+    ms = ->(date) { date.to_time(:utc).to_i * 1000 }
+
+    assert_equal [ms.(Date.new(2023, 6, 30)), ms.(Date.new(2024, 7, 1))], PrProgress.new(Activity.all, today: @today).data[:window]
+    assert_equal [ms.(Date.new(2024, 2, 1)), ms.(Date.new(2024, 4, 1))], PrProgress.new(Activity.all, today: @today, from: "2024-02-01", to: "2024-03-31").data[:window]
+    assert_equal [ms.(Date.new(2023, 6, 30)), ms.(Date.new(2024, 7, 1))], PrProgress.new(Activity.all, today: @today, from: "nope", to: "2024-02-31").data[:window]
+  end
+
   test "serializes one row per run in time order with its bucket" do
     late = create(:activity, distance_m: 10_400, timer_s: 3120, local_started_at: Time.utc(2024, 6, 1, 8), name: "Late", race: true)
     early = create(:activity, distance_m: 12_000, timer_s: 3600, local_started_at: Time.utc(2024, 5, 1, 8), name: "Early")

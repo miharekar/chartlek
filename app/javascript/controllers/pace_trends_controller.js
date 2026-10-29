@@ -8,7 +8,7 @@ import { curveMonotoneX, line } from "d3-shape"
 import { utcDay } from "d3-time"
 import { formatDate, formatDistance, formatDuration, formatPace } from "helpers/formatters"
 import { formatChange, formatFinishDelta } from "helpers/pace_trends_format"
-import { activePreset, PRESETS, presetWindow } from "helpers/pace_trends_presets"
+import { activePreset, PRESETS, presetWindow } from "helpers/presets"
 import { OVERLAYS, overlayAt, overlaySeries, overlayWithin } from "helpers/pace_trends_overlay"
 import { predictTime } from "helpers/predictions"
 import { linearRegression, weeklyChange } from "helpers/regression"
@@ -48,7 +48,6 @@ export default class extends Controller {
       data: this.runs.map(run => ({ date: parseTime(run.t), value: run.s / 3600 })),
       domain: domain.map(parseTime),
       selection: selection.map(parseTime),
-      height: 88,
       onBrush: range => this.#setRange(range),
       onEnd: range => {
         this.#setRange(range)

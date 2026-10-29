@@ -135,6 +135,21 @@ class PagesTest < ActionDispatch::IntegrationTest
     assert_select "link[rel=manifest][href='/manifest.json']"
   end
 
+  test "the four timeline pages share one window block wired to their own controller" do
+    create(:activity, local_started_at: Time.utc(2024, 3, 5, 7), bands: {"pace" => [100] + [0] * 36, "hr" => [0, 0, 60, 0, 0], "grade" => nil})
+    WellnessDay.create!(date: Date.new(2024, 3, 5), resting_hr: 52)
+
+    {"/pace_trend" => "pace-trends", "/pr_progress" => "pr-progress", "/wellness" => "wellness", "/training_bands" => "training-bands"}.each do |path, controller|
+      get path
+
+      assert_select "[data-#{controller}-target=range].font-semibold", 1, path
+      assert_select "div", {text: "Pick a span or drag the timeline below to change the window.", count: 1}, path
+      assert_select "[role=group][aria-label=Window] button[data-action='#{controller}#preset'][data-#{controller}-target=preset]", 5, path
+      assert_select "[role=group][aria-label=Window] button", {text: "All time", count: 1}, path
+      assert_select "[data-#{controller}-target=timeline]", 1, path
+    end
+  end
+
   test "overview constrains year and month" do
     get "/overview/24"
     assert_response :not_found

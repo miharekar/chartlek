@@ -10,9 +10,7 @@
     <%= training_bands_filters @bands %>
   </div>
   <div class="mt-6">
-    <div class="text-sm font-semibold tabular-nums" data-training-bands-target="range"></div>
-    <div class="<%= WidgetsHelper::HINT %>">Pick a span or drag the timeline below to change the window.</div>
-    <div class="mt-2"><%= training_bands_presets %></div>
+    <%= render "window_block", controller: "training-bands" %>
   </div>
   <section class="mt-4 <%= WidgetsHelper::CARD %>">
     <h2 class="<%= WidgetsHelper::CARD_TITLE %>">Training time per week</h2>

@@ -1,4 +1,5 @@
 module ControlsHelper
+  PRESETS = [["3 mo", "3"], ["6 mo", "6"], ["1 yr", "12"], ["2 yr", "24"], ["All time", "all"]].freeze
   BASE = "inline-flex cursor-pointer items-center justify-center rounded-md text-sm tabular-nums disabled:cursor-default disabled:opacity-50 aria-disabled:cursor-default aria-disabled:opacity-50"
   SELECTED = "aria-pressed:bg-lime-700 aria-pressed:text-white aria-[current=page]:bg-lime-700 aria-[current=page]:text-white dark:aria-pressed:bg-[#6ACD12] dark:aria-pressed:text-zinc-950 dark:aria-[current=page]:bg-[#6ACD12] dark:aria-[current=page]:text-zinc-950"
   OUTLINE = "border border-zinc-300 text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
@@ -29,6 +30,14 @@ module ControlsHelper
       link_to text, href, class: SEGMENT, aria: {current: ("page" if selected)}, **options
     else
       tag.button text, type: "button", class: SEGMENT, aria: {pressed: selected}, **options
+    end
+  end
+
+  def window_presets(controller)
+    button_group "Window" do
+      safe_join(PRESETS.map { |label, key|
+        segment label, data: {action: "#{controller}#preset", "#{controller}-target": "preset", preset: key}
+      })
     end
   end
 

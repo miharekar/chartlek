@@ -1,0 +1,5 @@
+<div>
+  <%= tag.div class: "text-sm font-semibold tabular-nums", data: {"#{controller}-target": "range"} %>
+  <div class="<%= WidgetsHelper::HINT %>">Pick a span or drag the timeline below to change the window.</div>
+  <div class="mt-2"><%= window_presets(controller) %></div>
+</div>
