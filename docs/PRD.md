@@ -58,7 +58,7 @@ Why: Smashrun (smashrun.com/miharekar) is effectively abandonware, but its chart
 
 ### 4.1 Global
 
-- **Nav:** Overview, Runs, Performance (Pace Trends and PR Progress, §4.3 and §4.4), Wellness, Training Bands, Gear, Goals. An item is current, with the accent and `aria-current="page"`, on its own path and the paths it matches (Performance on `/pace_trend` and `/pr_progress`). Items wrap instead of overflowing; no dropdown menus. The Pro Map opens from a run. On the right: a GitHub link (the Octicons mark, "Chartlek on GitHub", opening in a new tab), the sync status, **Sync now**, **Connect Strava** (or **Reconnect Strava** when the stored grant lacks gear access, §6.5) and the theme switch.
+- **Nav:** Overview, Runs, Performance (Pace Trends and PR Progress, §4.3 and §4.4), Wellness, Training Bands, Gear. An item is current, with the accent and `aria-current="page"`, on its own path and the paths it matches (Overview also on `/goals…`, since goals live under it; Performance on `/pace_trend` and `/pr_progress`). Items wrap instead of overflowing; no dropdown menus. The Pro Map opens from a run. On the right: a GitHub link (the Octicons mark, "Chartlek on GitHub", opening in a new tab), the sync status, **Sync now**, **Connect Strava** (or **Reconnect Strava** when the stored grant lacks gear access, §6.5) and the theme switch.
 - **Sync status:**
   - Shows "Synced 12 min ago", "Syncing…" live, and the **Sync now** button.
   - A sync runs every hour in the background (a Solid Queue recurring task in the container) and on the button. Opening a page does not sync.
@@ -85,15 +85,13 @@ The period selector offers **All time**, a pill for every year (newest first), a
 | 3 | Average days run per week | Distinct run days ÷ weeks in the period. For all time, the period runs from the first run to today. |
 | 4 | Time of day | % of runs starting after noon (local time), with a small AM/PM donut. |
 | 5 | Average pace | Total timer time ÷ total distance. |
-| 6 | Yearly goal | A stat tile beside Kilometers run (§4.10). |
+| 6 | Goal tiles | The period's goal or goals as stat tiles beside Kilometers run, and a link to create one when a year or month has none (§4.10). |
 | 7 | Distance per period | Bars: per month (all time), per week (year), per day (month). A button group chooses the metric: **Distance**, Elevation gained, Avg distance, Avg pace, Avg VDOT; the title follows it. Hover shows value and run count. Clicking a bar drills into that period. |
 | 8 | Trailing days | Daily rolling sum of distance: 365 days (all time), 90 (year), 7 (month). |
 | 9 | Runs pace vs distance | Scatter of the period's runs. x = km; y = pace on a speed-linear axis labelled as pace (ticks 4:00, 5:00, 6:00, 7:30, 10:00, 15:00, 30:00). The last run is a plain amber dot, a little larger than the rest; it hides while a linked hover selection is active. The average is a ring marker. A button group chooses the y metric: **Pace**, Avg HR, VDOT. |
 | 10 | Consecutive days run | Longest streak and longest break with dates, plus the current streak or break. |
 | 11 | Weekly stats for each year | All time: heatmap with years as rows and Monday-start weeks as columns; weekly km buckets >1, >20, >40, >50, >60 (ring), >80 (dot). Year and month views: a day calendar coloured by daily km. |
 | 12 | Personal records | Benchmarks 3 km, 5 km, 10 km, 15 km, 20 km, half marathon, 40 km, marathon, 50 km, 100 km; only those with qualifying runs in the period. Each row: date, pace, km/h, time, runs in the bucket, and a race tag. Below `sm` the km/h and Runs columns are hidden. |
-
-The monthly goal is a compact widget in a row between the period selector and the tiles (§4.10).
 
 **Linked hover (Smashrun-style).** Hovering one of the charts below selects a set of the period's runs and highlights them in the others; leaving clears it. The chart under the pointer keeps its own tooltip and click. Hover also works over a chart's axes and margins: the bars and the trailing line treat the bottom axis as the nearest column or day.
 
@@ -297,8 +295,12 @@ A full-page view at `/runs/:id/map`, opened from the run page ("Open Pro Map"). 
 
 - Monthly and yearly distance goals, stored locally (`resources :goals`): an index table (goal, target, done, %, status), new and edit forms (period, any date in the month or year, distance in km) and a show page. A goal is unique per period and start; the start snaps to the first day of the month or year. Distance must be above 0 and under 100,000 km. Delete is a button with a confirm on the show page.
 - The show page has four tiles (done and %, ahead or behind the direct path, needed per day with the days left, the recent average) above the chart.
-- **Yearly tile** (Overview, beside Kilometers run): distance done of the goal, a progress bar with a tick at the direct path, percent, ahead or behind and the required km per day; links to the goal. All time shows the current year's goal, a year view that year's (a past year is final, no requirement). The current year without a goal shows a quiet "Set a yearly goal" tile whatever other goals exist. A past or future year without a goal, and every month view, have no tile: Kilometers run then spans the full row at `lg`, so the grid has no gaps.
-- **Monthly widget** (Overview row above the tiles): all time shows the current month's goal, a month view that month's; year views have none. The subtle "Set a monthly goal" link appears only while neither the current month nor the current year has a goal; a past month without a goal shows nothing. The yearly goal is never also in this row.
+- **Goal tiles** (Overview, beside Kilometers run, in the stats grid): title "2026 goal" or "October 2026 goal" linking to the goal, distance done "of" the target in whole kilometers with thousands separators (months too), a progress bar with a tick at the direct path, "percent · status" (ahead or behind) and the required km per day when there is one. All time shows the current year's goal, then the current month's, each when set. A year page shows that year's goal and a month page that month's; a past period is final, with no requirement.
+- **Grid spans** (4 columns at `lg`, 2 on phones): Kilometers run is `col-span-2`, plus `lg:col-span-4` when there is no goal tile. One goal tile is `col-span-2`. Two goal tiles (all time) are `col-span-2 lg:col-span-1` each, so the first row stays full.
+- **Create link:** a year or month page without its goal ends the Kilometers run tile with "Create a goal for 2025" or "Create a goal for October 2026", to the new goal form for that period (`new_goal_path(period:, starts_on:)`). Past, current and future periods all get it; all time never does.
+- **Empty periods:** a year or month without runs still shows its goal tile above the empty state. Without a goal, the empty state offers the create link beside "Show all time".
+- **Month selector:** the current month on the current year is always enabled, so its goal can be reached before its first run.
+- **Nav:** Goals has no nav item. The goal pages stay as they are and the nav marks Overview on them; the index is one click from a goal's page (All goals).
 
 **Chart**
 

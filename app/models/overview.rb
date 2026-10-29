@@ -1,5 +1,5 @@
 class Overview
-  GoalSlot = Data.define(:kind, :starts_on, :goal, :progress)
+  GoalSlot = Data.define(:goal, :progress)
 
   attr_reader :period, :activities
 
@@ -80,56 +80,35 @@ class Overview
     PersonalRecords.for(activities)
   end
 
-  def month_goal
-    starts_on = month_start
-
-    if starts_on
-      goal = Goal.find_by(period: "month", starts_on:)
-
-      goal_slot("month", starts_on, goal) if goal || (starts_on == @today.beginning_of_month && !current_goal?)
-    end
+  def goal_tiles
+    @goal_tiles ||= goal_periods.filter_map { |kind, starts_on|
+      goal = Goal.find_by(period: kind, starts_on:)
+      GoalSlot.new(goal:, progress: goal.progress(today: @today, activities: @all)) if goal
+    }
   end
 
-  def year_goal
-    starts_on = year_start
-
-    if starts_on
-      goal = Goal.find_by(period: "year", starts_on:)
-
-      goal_slot("year", starts_on, goal) if goal || starts_on == @today.beginning_of_year
-    end
+  def goal_to_create
+    kind, starts_on = goal_periods.first
+    Goal.new(period: kind, starts_on:) if !period.all_time? && goal_tiles.empty?
   end
 
   def years(selected = nil)
     ([@today.year, selected] + @all.map { it.local_started_at.year }).compact.uniq.sort.reverse
   end
 
-  def months_with_runs(year)
-    @all.select { it.local_started_at.year == year }.map { it.local_started_at.month }.uniq
+  def selectable_months(year)
+    months = @all.select { it.local_started_at.year == year }.map { it.local_started_at.month }.uniq
+    months |= [@today.month] if year == @today.year
+    months
   end
 
   private
-  def current_goal?
-    @current_goal = Goal.exists?(period: "month", starts_on: @today.beginning_of_month) || Goal.exists?(period: "year", starts_on: @today.beginning_of_year) if @current_goal.nil?
-    @current_goal
-  end
-
-  def month_start
+  def goal_periods
     case period.kind
-    when :month then Date.new(period.year, period.month, 1)
-    when :all then @today.beginning_of_month
+    when :all then [["year", @today.beginning_of_year], ["month", @today.beginning_of_month]]
+    when :year then [["year", Date.new(period.year, 1, 1)]]
+    when :month then [["month", Date.new(period.year, period.month, 1)]]
     end
-  end
-
-  def year_start
-    case period.kind
-    when :year then Date.new(period.year, 1, 1)
-    when :all then @today.beginning_of_year
-    end
-  end
-
-  def goal_slot(kind, starts_on, goal)
-    GoalSlot.new(kind:, starts_on:, goal:, progress: goal&.progress(today: @today, activities: @all))
   end
 
   def run_dates

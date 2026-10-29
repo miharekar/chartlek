@@ -3,16 +3,19 @@
 <% big = WidgetsHelper::TILE_VALUE %>
 <% unit = WidgetsHelper::TILE_UNIT %>
 <% sub = WidgetsHelper::TILE_SUB %>
-<% year_goal = overview.year_goal %>
+<% goal_to_create = overview.goal_to_create %>
 
-<section class="<%= card %> col-span-2<%= " lg:col-span-4" unless year_goal %>">
+<section class="<%= card %> col-span-2<%= " lg:col-span-4" if overview.goal_tiles.empty? %>">
   <h2 class="<%= label %>">Kilometers run</h2>
   <p class="<%= big %> <%= WidgetsHelper::ACCENT %>"><%= number_with_delimiter(overview.total_km.round) %><span class="<%= unit %>">km</span></p>
   <p class="<%= sub %> first-letter:uppercase"><%= overview.total_km_in_words %></p>
   <p class="<%= sub %>"><%= pluralize(number_with_delimiter(overview.count), "run") %></p>
+  <% if goal_to_create %>
+    <p class="<%= sub %>"><%= link_to "Create a goal for #{goal_to_create.title}", new_goal_path(period: goal_to_create.period, starts_on: goal_to_create.starts_on), class: WidgetsHelper::LINK %></p>
+  <% end %>
 </section>
 
-<%= render "year_goal", slot: year_goal if year_goal %>
+<%= render partial: "goal_tile", collection: overview.goal_tiles, as: :slot, locals: {span: goal_tile_span(overview.goal_tiles)} %>
 
 <section class="<%= card %>">
   <h2 class="<%= label %>">Average run length</h2>

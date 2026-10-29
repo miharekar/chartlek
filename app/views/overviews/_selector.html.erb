@@ -8,7 +8,7 @@
     <% end %>
   <% end %>
   <% if period.year %>
-    <% active_months = overview.months_with_runs(period.year) %>
+    <% active_months = overview.selectable_months(period.year) %>
     <%= button_group "Month", nav: true do %>
       <% (1..12).each do |month| %>
         <%= segment Date::ABBR_MONTHNAMES[month], href: (period.month == month ? overview_period_path(period.year) : overview_period_path(period.year, month)), selected: period.month == month, disabled: !active_months.include?(month) && period.month != month %>

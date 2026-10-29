@@ -1,5 +1,6 @@
 <%= empty_state "No runs in #{overview_period_title(period).downcase.sub("all time", "your history")} yet." do %>
-  <% unless period.all_time? %>
-    <%= link_to "Show all time", overview_path, class: WidgetsHelper::LINK %>
-  <% end %>
+  <%= safe_join([
+    (link_to "Show all time", overview_path, class: WidgetsHelper::LINK unless period.all_time?),
+    (link_to "Create a goal for #{goal.title}", new_goal_path(period: goal.period, starts_on: goal.starts_on), class: WidgetsHelper::LINK if goal)
+  ].compact, " · ") %>
 <% end %>

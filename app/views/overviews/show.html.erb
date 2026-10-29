@@ -7,10 +7,14 @@
 <% end %>
 
 <%= render "selector", overview: @overview %>
-<%= render "goals", slot: @overview.month_goal %>
 
 <% if @overview.empty? %>
-  <%= render "empty", period: period %>
+  <% if @overview.goal_tiles.any? %>
+    <div class="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <%= render partial: "goal_tile", collection: @overview.goal_tiles, as: :slot, locals: {span: goal_tile_span(@overview.goal_tiles)} %>
+    </div>
+  <% end %>
+  <%= render "empty", period: period, goal: @overview.goal_to_create %>
 <% else %>
   <div class="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
     <%= render "stats", overview: @overview %>

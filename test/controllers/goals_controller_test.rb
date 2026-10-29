@@ -121,10 +121,4 @@ class GoalsControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to goals_path
   end
-
-  test "the nav has a Goals item" do
-    get goals_path
-
-    assert_select "nav a[href=?]", goals_path, text: "Goals"
-  end
 end

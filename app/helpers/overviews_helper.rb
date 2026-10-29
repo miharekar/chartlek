@@ -33,6 +33,10 @@ module OverviewsHelper
     end
   end
 
+  def goal_tile_span(tiles)
+    tiles.size > 1 ? "col-span-2 lg:col-span-1" : "col-span-2"
+  end
+
   def overview_period_title(period)
     case period.kind
     when :month then Date.new(period.year, period.month, 1).strftime("%B %Y")

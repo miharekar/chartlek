@@ -1,0 +1,10 @@
+<% progress = slot.progress %>
+<section class="<%= WidgetsHelper::CARD %> <%= span %>">
+  <h2 class="<%= WidgetsHelper::TILE_LABEL %>"><%= link_to "#{slot.goal.title} goal", goal_path(slot.goal), class: WidgetsHelper::LINK %></h2>
+  <p class="<%= WidgetsHelper::TILE_VALUE %> <%= WidgetsHelper::ACCENT %>"><%= number_with_delimiter(progress.done_km.round) %><span class="<%= WidgetsHelper::TILE_UNIT %>">of <%= number_with_delimiter(slot.goal.distance_km.round) %> km</span></p>
+  <%= render "goal_bar", goal: slot.goal, progress: progress %>
+  <p class="<%= WidgetsHelper::TILE_SUB %>"><%= progress.percent %>% · <span class="<%= goal_status_class(progress) %>"><%= goal_status(progress) %></span></p>
+  <% if goal_required(progress) %>
+    <p class="<%= WidgetsHelper::TILE_SUB %>"><%= goal_required(progress) %> needed</p>
+  <% end %>
+</section>

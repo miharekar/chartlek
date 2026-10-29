@@ -146,80 +146,113 @@ class OverviewsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "the monthly goal widget sits above the grid and the yearly slot nudges" do
+  test "all time shows the current year's goal and the current month's, side by side" do
     with_march_run do
-      goal = Goal.create!(period: "month", starts_on: Date.new(2024, 3, 1), distance_km: 93)
+      year = Goal.create!(period: "year", starts_on: Date.new(2024, 1, 1), distance_km: 900)
+      month = Goal.create!(period: "month", starts_on: Date.new(2024, 3, 1), distance_km: 93)
 
       get "/overview"
 
-      assert_select "div.mt-6.flex section a[href=?]", goal_path(goal), text: "March 2024 goal"
+      assert_select ".grid section.col-span-2.lg\\:col-span-1 a[href=?]", goal_path(year), text: "2024 goal"
+      assert_select ".grid section.col-span-2.lg\\:col-span-1 a[href=?]", goal_path(month), text: "March 2024 goal"
+      assert_select "section.col-span-2.lg\\:col-span-4", false
       assert_select "[role=progressbar][aria-valuenow='33']", count: 1
-      assert_select "section", text: /31\.0of 93\.0 km/
+      assert_select "section", text: /31of 93 km/
       assert_select "section", text: /km behind/
       assert_select "section", text: /needed/
-      assert_select ".grid section a[href=?]", new_goal_path(period: "year", starts_on: "2024-01-01"), text: "Set a yearly goal"
-      assert_select "a", text: "Set a monthly goal", count: 0
+      assert_select "a", text: /Create a goal/, count: 0
     end
   end
 
-  test "the yearly goal is a tile in the stats grid and not in the row above it" do
+  test "one goal tile is two columns wide and Kilometers run keeps its two" do
     with_march_run do
       goal = Goal.create!(period: "year", starts_on: Date.new(2024, 1, 1), distance_km: 900)
 
       get "/overview"
 
       assert_select ".grid section.col-span-2 a[href=?]", goal_path(goal), text: "2024 goal"
-      assert_select "div.mt-6.flex", false
-      assert_select "[role=progressbar]", count: 1
       assert_select "section.col-span-2.lg\\:col-span-4", false
-      assert_select "a", text: /Set a/, count: 0
-      assert_select "h2", text: "Longest run", count: 0
-
-      get "/overview/2024"
-
-      assert_select ".grid section a[href=?]", goal_path(goal)
+      assert_select "a", text: /Create a goal/, count: 0
     end
   end
 
-  test "a month view has no yearly tile and the kilometers tile fills the row" do
+  test "all time without goals never offers to create one and Kilometers run fills the row" do
     with_march_run do
-      Goal.create!(period: "year", starts_on: Date.new(2024, 1, 1), distance_km: 900)
+      get "/overview"
+
+      assert_select "section.col-span-2.lg\\:col-span-4 h2", text: "Kilometers run"
+      assert_select "a", text: /Create a goal/, count: 0
+      assert_select "[role=progressbar]", false
+    end
+  end
+
+  test "a year and a month without a goal end the Kilometers run tile with a create link" do
+    with_march_run do
+      get "/overview/2024"
+
+      assert_select "section.col-span-2.lg\\:col-span-4 a[href=?]", new_goal_path(period: "year", starts_on: "2024-01-01"), text: "Create a goal for 2024"
 
       get "/overview/2024/3"
 
-      assert_select "[role=progressbar]", false
-      assert_select "section.col-span-2.lg\\:col-span-4 h2", text: "Kilometers run"
-      assert_select "a", text: /Set a yearly/, count: 0
+      assert_select "section.col-span-2.lg\\:col-span-4 a[href=?]", new_goal_path(period: "month", starts_on: "2024-03-01"), text: "Create a goal for March 2024"
     end
   end
 
-  test "a past year without a goal drops the slot, the current year without one shows a quiet tile" do
+  test "a year or month with its goal shows the tile and no create link" do
+    with_march_run do
+      year = Goal.create!(period: "year", starts_on: Date.new(2024, 1, 1), distance_km: 900)
+      month = Goal.create!(period: "month", starts_on: Date.new(2024, 3, 1), distance_km: 93)
+
+      get "/overview/2024"
+
+      assert_select ".grid section a[href=?]", goal_path(year), text: "2024 goal"
+      assert_select "a", text: /Create a goal/, count: 0
+
+      get "/overview/2024/3"
+
+      assert_select ".grid section a[href=?]", goal_path(month), text: "March 2024 goal"
+      assert_select "a", text: /Create a goal/, count: 0
+    end
+  end
+
+  test "a past year without a goal still offers to create one" do
     with_march_run do
       create(:activity, local_started_at: Time.utc(2023, 5, 6, 7), started_at: Time.utc(2023, 5, 6, 7))
 
       get "/overview/2023"
 
-      assert_select "section.col-span-2.lg\\:col-span-4 h2", text: "Kilometers run"
-      assert_select "a", text: /Set a/, count: 0
-
-      get "/overview/2024"
-
-      assert_select ".grid section.col-span-2 p", text: /No goal for 2024/
-      assert_select ".grid a[href=?]", new_goal_path(period: "year", starts_on: "2024-01-01"), text: "Set a yearly goal"
+      assert_select "a[href=?]", new_goal_path(period: "year", starts_on: "2023-01-01"), text: "Create a goal for 2023"
     end
   end
 
-  test "the monthly set-a-goal link shows only while neither the current month nor the current year has a goal" do
-    with_march_run do
-      get "/overview"
+  test "an empty current month shows its goal tile, or the create link, and its selector segment is enabled" do
+    travel_to Time.utc(2024, 3, 20, 12) do
+      create(:activity, local_started_at: Time.utc(2024, 1, 5, 7), started_at: Time.utc(2024, 1, 5, 7))
 
-      assert_select "div.mt-6.flex a[href=?]", new_goal_path(period: "month", starts_on: "2024-03-01"), text: "Set a monthly goal"
+      get "/overview/2024/3"
 
-      Goal.create!(period: "year", starts_on: Date.new(2024, 1, 1), distance_km: 900)
-      get "/overview"
+      assert_select "a[href=?]", new_goal_path(period: "month", starts_on: "2024-03-01"), text: "Create a goal for March 2024"
+      assert_select "nav[aria-label=Month] a[aria-current=page]", text: "Mar"
+      assert_select "nav[aria-label=Month] span[aria-disabled]", text: "Feb"
 
-      assert_select "a", text: "Set a monthly goal", count: 0
+      get "/overview/2024"
+
+      assert_select "nav[aria-label=Month] a", text: "Mar"
+      assert_select "nav[aria-label=Month] a", text: "Feb", count: 0
+
+      goal = Goal.create!(period: "month", starts_on: Date.new(2024, 3, 1), distance_km: 93)
+      get "/overview/2024/3"
+
+      assert_select "a[href=?]", goal_path(goal), text: "March 2024 goal"
+      assert_select "a", text: /Create a goal/, count: 0
     end
+  end
+
+  test "an empty period without runs or goal offers the create link beside Show all time" do
+    get "/overview/2022/5"
+
+    assert_select "div p a", text: "Show all time"
+    assert_select "div p a[href=?]", new_goal_path(period: "month", starts_on: "2022-05-01"), text: "Create a goal for May 2022"
   end
 
   test "the overview works with no goals at all" do

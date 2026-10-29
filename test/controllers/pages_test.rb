@@ -23,6 +23,17 @@ class PagesTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "the main nav marks Overview current on the goal pages and has no Goals link" do
+    goal = Goal.create!(period: "month", starts_on: Date.new(2024, 3, 1), distance_km: 100)
+
+    [goal_path(goal), new_goal_path, goals_path].each do |path|
+      get path
+
+      assert_select "nav[aria-label=Main] a[aria-current=page]", count: 1, text: "Overview"
+    end
+    assert_select "nav[aria-label=Main] a", text: "Goals", count: 0
+  end
+
   test "the main nav marks Runs current on a run page" do
     run = create(:activity)
 
