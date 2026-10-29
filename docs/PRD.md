@@ -3,13 +3,13 @@
 - **Status:** all planned work is built and deployed.
 - **Owner:** Miha Rekar
 - **Repo:** `~/Projects/Personal/chartlek`
-- **Production:** https://run.rekar.eu (a Docker container, §8)
+- **Production:** https://chartlek.rekar.eu (a Docker container, §8)
 
 This document specifies the product as built. Coding conventions are in `AGENTS.md` and `STYLE.md`; `README.md` describes the features for humans.
 
 ## 1. Summary
 
-Chartlek is a local, single-user Rails app. It caches your Garmin Connect running history in SQLite and rebuilds Smashrun's charts, free and Pro, with a Tailwind UI and charts built directly on D3. It adds per-run HR zones, Garmin wellness data (resting HR, HRV, sleep, Body Battery, stress, weight), Strava gear, weather, terrain maps, Training Bands, goals and a Pro Map. It runs as a container at run.rekar.eu.
+Chartlek is a local, single-user Rails app. It caches your Garmin Connect running history in SQLite and rebuilds Smashrun's charts, free and Pro, with a Tailwind UI and charts built directly on D3. It adds per-run HR zones, Garmin wellness data (resting HR, HRV, sleep, Body Battery, stress, weight), Strava gear, weather, terrain maps, Training Bands, goals and a Pro Map. It runs as a container at chartlek.rekar.eu.
 
 Why: Smashrun (smashrun.com/miharekar) is effectively abandonware, but its charts are still the best way to look at a long running history. The ask in [dreeveapp/dreeve#2880](https://github.com/dreeveapp/dreeve/issues/2880) was turned down because most of these charts are too runner-specific for a general-purpose app. Chartlek is only about running, so it can include all of them.
 
@@ -474,7 +474,7 @@ Summary field notes: `startTimeGMT` and `startTimeLocal` are `"YYYY-MM-DD HH:MM:
 
 ### Deployment
 
-- One Docker container (`docker compose up -d --build`, Dockerfile on `ruby:4.0.9-slim`, Puma without Thruster) on port 9295, served at `https://run.rekar.eu` by Caddy on the Pi over Tailscale. On the LAN it speaks plain http, so `force_ssl` and `assume_ssl` are off. Rails honours the forwarded scheme and host from any sender, so the Strava OAuth callback is `https://run.rekar.eu/strava/callback`; the tailnet range is a trusted proxy only so that `request.remote_ip` is the real client.
+- One Docker container (`docker compose up -d --build`, Dockerfile on `ruby:4.0.9-slim`, Puma without Thruster) on port 9295, served at `https://chartlek.rekar.eu` by Caddy on the Pi over Tailscale. On the LAN it speaks plain http, so `force_ssl` and `assume_ssl` are off. Rails honours the forwarded scheme and host from any sender, so the Strava OAuth callback is `https://chartlek.rekar.eu/strava/callback`; the tailnet range is a trusted proxy only so that `request.remote_ip` is the real client.
 - The production primary database is the same `storage/development.sqlite3` that `bin/dev` uses (SQLite in WAL mode), so there is one dataset; cache, queue and cable have their own `storage/production_*.sqlite3`. `./storage` is mounted, and `.env` (from `.env.example`) supplies the Garmin, Strava, Smashrun and Mapbox settings plus `SECRET_KEY_BASE` and the three Active Record encryption keys; there is no credentials file. The entrypoint runs `db:prepare` only. A migration run by the container marks the shared primary's environment as `production`; `bin/rails db:environment:set RAILS_ENV=development` undoes that for dev's protected tasks.
 - Solid Queue runs inside Puma and runs the hourly Garmin sync (§6.2) and wellness refresh. There is no auth: the machine is only reachable through the LAN and the tailnet (§10).
 - Rebuild the container after code or migration changes.
@@ -501,7 +501,7 @@ One design system, defined once in helpers (`WidgetsHelper` for cards and type, 
 ## 10. Privacy and security
 
 - **Data sensitivity:** the app stores GPS tracks (which reveal home and routines), heart-rate data and health data (HRV, weight, Body Battery, stress, sleep). It is your own data, kept on your machine. Health values are never logged or printed, and test fixtures are synthetic.
-- **Network exposure:** the container (port 9295) and the dev server (0.0.0.0:3000) are reachable on the LAN, and run.rekar.eu is served by Caddy on the Pi over Tailscale. There is no auth, so the tailnet and LAN are the boundary; run.rekar.eu is confirmed tailnet-only. HTTP basic auth at Caddy would be optional hardening.
+- **Network exposure:** the container (port 9295) and the dev server (0.0.0.0:3000) are reachable on the LAN, and chartlek.rekar.eu is served by Caddy on the Pi over Tailscale. There is no auth, so the tailnet and LAN are the boundary; chartlek.rekar.eu is confirmed tailnet-only. HTTP basic auth at Caddy would be optional hardening.
 - **Secrets:** `.env` is git-ignored (`/.env*`, except the committed `.env.example`) and mode 600.
   - Smashrun credentials grant full access to the Smashrun account; never log them. The 12-week token is held only in memory.
   - The Garmin key gives read access to all your Garmin health data; filter it and the bearer token out of logs and error output. Rotate at `connect.garmin.com/app/settings/personalApiToken`, update `.env`, restart.

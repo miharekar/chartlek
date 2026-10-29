@@ -1,7 +1,7 @@
 require "test_helper"
 
 class TrustedProxyTest < ActionDispatch::IntegrationTest
-  CADDY = {"REMOTE_ADDR" => "100.101.102.103", "HTTP_HOST" => "run.rekar.eu", "HTTP_X_FORWARDED_PROTO" => "https", "HTTP_X_FORWARDED_FOR" => "192.168.1.20"}
+  CADDY = {"REMOTE_ADDR" => "100.101.102.103", "HTTP_HOST" => "chartlek.rekar.eu", "HTTP_X_FORWARDED_PROTO" => "https", "HTTP_X_FORWARDED_FOR" => "192.168.1.20"}
 
   def redirect_uri(headers)
     post(strava_connection_path, headers:)
@@ -10,7 +10,7 @@ class TrustedProxyTest < ActionDispatch::IntegrationTest
   end
 
   test "the Strava callback is https at the public host behind the tailnet proxy" do
-    assert_equal "https://run.rekar.eu/strava/callback", redirect_uri(CADDY)
+    assert_equal "https://chartlek.rekar.eu/strava/callback", redirect_uri(CADDY)
   end
 
   test "the client address comes from the forwarded header when the proxy is on the tailnet" do
@@ -26,7 +26,7 @@ class TrustedProxyTest < ActionDispatch::IntegrationTest
   end
 
   test "the default private ranges stay trusted" do
-    assert_equal "https://run.rekar.eu/strava/callback", redirect_uri(CADDY.merge("REMOTE_ADDR" => "172.18.0.1"))
+    assert_equal "https://chartlek.rekar.eu/strava/callback", redirect_uri(CADDY.merge("REMOTE_ADDR" => "172.18.0.1"))
   end
 
   test "a direct LAN request stays plain http" do
