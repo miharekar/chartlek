@@ -544,6 +544,20 @@ One design system, defined once in helpers (`WidgetsHelper` for cards and type, 
 
 **Performance targets:** the Overview all-time view and the Wellness page render in under 300 ms server time on the full history; brushing Pace Trends, PR Progress and Wellness, and hovering the Overview charts, keeps every handler under about 16 ms on about 2,900 runs.
 
+**Reload speed targets,** measured on 29 Oct 2026 with Chromium (headless, 1300 px wide) through chartlek.rekar.eu on the container at `143f673`, median of 5 runs (min–max), warm cache for reloads, about 2,870 runs. "Charts drawn" is the time from navigation start until the four Overview chart containers (`period-bars`, `trailing-line`, `pace-scatter`, `heatmap`) each hold an `<svg width=…>` with children.
+
+| Metric | Target | Measured |
+|---|---|---|
+| `/overview` on the wire | ≤ 150 KB | 133,255 B |
+| `/pace_trend` on the wire | ≤ 150 KB | 112,740 B |
+| Reload, DOMContentLoaded, 1× CPU | ≤ 300 ms | 181 ms (175–204) |
+| Reload, charts drawn, 1× CPU | ≤ 500 ms | 274 ms (266–298) |
+| Reload, charts drawn, 4× CPU | ≤ 800 ms | 703 ms (621–1,489) |
+| Cold load, charts drawn, 1× CPU | ≤ 1,000 ms | 807 ms (522–863) |
+| Server time, `/overview` | ≤ 100 ms | 79 ms (70–182, 27 requests, the first one after a restart excluded) |
+
+The live sync refresh connected over Action Cable in all 5 runs.
+
 **Definition of done for a change:**
 
 - `bin/rails test`, `node --test test/javascript/*_test.mjs`, `bin/rubocop`, `bin/brakeman --quiet --no-pager --exit-on-warn --exit-on-error`, `herb analyze .` and the Herb linter (`npx @herb-tools/linter app/views --simple --no-color`) pass.
