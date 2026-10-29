@@ -205,7 +205,7 @@ cp .env.example .env         # fill it in: the comments say what each variable i
 docker compose up -d
 ```
 
-Open <http://localhost:9295>. The first start builds the image, which takes a few minutes. `./storage` holds the database and your runs' originals; keep it, and keep the secrets in `.env`, because the `ACTIVE_RECORD_ENCRYPTION_*` keys encrypt the stored Strava tokens (lose them and you reconnect Strava).
+Open <http://localhost:9295>. The first start builds the image, which takes a few minutes. `./storage` holds the database and your runs' originals; keep it, and keep `.env`: `SECRET_KEY_BASE` also encrypts the stored Strava tokens (lose it and you connect Strava again).
 
 Strava is optional. Create an API app at strava.com/settings/api, set `STRAVA_CLIENT_ID` and `STRAVA_SECRET` in `.env`, and allow your callback domain: `localhost` for `http://localhost:9295/strava/callback`, or your own host if you serve it elsewhere. Then click Connect Strava in the nav once.
 

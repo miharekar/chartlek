@@ -20,6 +20,17 @@ Bundler.require(*Rails.groups)
 
 module Chartlek
   class Application < Rails::Application
+    def self.encryption_key(name, env = ENV)
+      explicit = env["ACTIVE_RECORD_ENCRYPTION_#{name.upcase}"]
+      secret = env["SECRET_KEY_BASE"]
+
+      if explicit.present?
+        explicit
+      elsif secret.present?
+        ActiveSupport::KeyGenerator.new(secret, iterations: 1000, hash_digest_class: OpenSSL::Digest::SHA256).generate_key("active_record_encryption.#{name}", 32).unpack1("H*")
+      end
+    end
+
     # Initialize configuration defaults for originally generated Rails version.
     config.load_defaults 8.1
 
@@ -40,9 +51,9 @@ module Chartlek
 
     # Don't generate system test files.
     config.generators.system_tests = nil
-    config.active_record.encryption.primary_key = ENV["ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY"]
-    config.active_record.encryption.deterministic_key = ENV["ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY"]
-    config.active_record.encryption.key_derivation_salt = ENV["ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT"]
+    config.active_record.encryption.primary_key = encryption_key("primary_key")
+    config.active_record.encryption.deterministic_key = encryption_key("deterministic_key")
+    config.active_record.encryption.key_derivation_salt = encryption_key("key_derivation_salt")
     config.action_dispatch.trusted_proxies = ActionDispatch::RemoteIp::TRUSTED_PROXIES + [IPAddr.new("100.64.0.0/10")]
   end
 end
