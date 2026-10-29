@@ -38,9 +38,10 @@ module WidgetsHelper
     no_gear: "bg-amber-100 text-amber-800 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:hover:bg-amber-900/70"
   }.freeze
 
-  def page_header(title, info: nil, &block)
+  def page_header(heading, title: heading, info: nil, &block)
+    content_for :title, "#{title} · Chartlek", flush: true
     tag.div class: PAGE_HEADER do
-      safe_join([tag.h1(safe_join([title, info].compact), class: PAGE_TITLE), (capture(&block) if block)].compact)
+      safe_join([tag.h1(safe_join([heading, info].compact), class: PAGE_TITLE), (capture(&block) if block)].compact)
     end
   end
 

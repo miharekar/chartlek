@@ -1,3 +1,4 @@
+<% content_for :title, "#{run.name.presence || "Run"} · Chartlek", flush: true %>
 <% previous = run.previous_run %>
 <% following = run.next_run %>
 <% same_day = run.same_day_runs.to_a %>

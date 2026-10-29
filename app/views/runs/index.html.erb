@@ -1,4 +1,4 @@
-<%= page_header runs_period_title(@year, @month) do %>
+<%= page_header runs_period_title(@year, @month), title: "Runs · #{runs_period_title(@year, @month)}" do %>
   <p class="text-sm tabular-nums <%= WidgetsHelper::MUTED %>"><%= pluralize(number_with_delimiter(@runs.size), "run") %></p>
 <% end %>
 

@@ -64,6 +64,7 @@ Why: Smashrun (smashrun.com/miharekar) is effectively abandonware, but its chart
   - A sync runs every hour in the background (a Solid Queue recurring task in the container) and on the button. Opening a page does not sync.
   - A sync that created, changed or deleted runs, or changed the error state, refreshes the page with a Turbo `:replace` refresh (`turbo_refreshes_with method: :replace`). Morphing would wipe the D3-drawn SVGs; a replace makes chart controllers reconnect and redraw. Any other sync only replaces the nav status in place, so no page state (modes, selections, brushed windows) is lost.
   - If the Garmin key has expired, a banner explains how to rotate it (§10).
+- **Titles:** every page's `<title>` is its header followed by "· Chartlek" (a run page uses the run's name).
 - **Theme:** a switch is a full page load, because Turbo doesn't update `<html>` attributes.
 - **Controls:** a choice among options is a button group with `aria-pressed`; independent filters are toggle buttons; actions are buttons (§9).
 - **Formatting:** pace `m:ss /km`; durations `h:mm:ss`; distances one decimal in km everywhere (tooltips included); dates `21 Apr 2020`; numbers `tabular-nums`.

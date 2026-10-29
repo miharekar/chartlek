@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html data-theme="<%= current_theme %>">
+<html lang="en" data-theme="<%= current_theme %>">
   <head>
     <title><%= content_for(:title) || "Chartlek" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -51,7 +51,7 @@
     </nav>
     <%= render "syncs/invalid_key_banner" if sync_profile.invalid_key? %>
     <% flash.each do |type, message| %>
-      <p class="max-w-7xl mx-auto px-5 pt-4 text-sm <%= (type == "alert") ? "text-red-700 dark:text-red-400" : "text-lime-700 dark:text-[#9CFF44]" %>" role="status"><%= message %></p>
+      <p class="max-w-7xl mx-auto px-5 pt-4 text-sm <%= (type == "alert") ? "text-red-700 dark:text-red-400" : "text-lime-700 dark:text-[#9CFF44]" %>" role="<%= (type == "alert") ? "alert" : "status" %>"><%= message %></p>
     <% end %>
     <main class="max-w-7xl mx-auto px-5 py-8">
       <%= yield %>
