@@ -9,10 +9,12 @@
 #     priority: 2
 #     schedule: at 5am every day
 
+<% sync_hours = Integer(ENV["GARMIN_SYNC_HOURS"].presence || 3) %>
+<% raise ArgumentError, "GARMIN_SYNC_HOURS must be a whole number from 1 to 24, got #{sync_hours}" unless (1..24).cover?(sync_hours) %>
 production:
   garmin_sync:
     class: Activity::SyncJob
-    schedule: "<%= ENV["GARMIN_SYNC_SCHEDULE"].presence || "every 3 hours" %>"
+    schedule: every <%= sync_hours %> hours
   wellness_sync:
     class: Wellness::SyncJob
     schedule: every hour at minute 30

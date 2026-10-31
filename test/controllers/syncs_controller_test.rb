@@ -42,15 +42,22 @@ class SyncsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "the Garmin sync is scheduled in production every 3 hours by default" do
-    task = recurring_tasks("GARMIN_SYNC_SCHEDULE" => nil).fetch("garmin_sync")
+    task = recurring_tasks("GARMIN_SYNC_HOURS" => nil).fetch("garmin_sync")
 
     assert_equal "Activity::SyncJob", task["class"]
     assert_equal "every 3 hours", task["schedule"]
   end
 
-  test "GARMIN_SYNC_SCHEDULE overrides the Garmin sync schedule, and a blank value keeps the default" do
-    assert_equal "every 2 hours", recurring_tasks("GARMIN_SYNC_SCHEDULE" => "every 2 hours").dig("garmin_sync", "schedule")
-    assert_equal "every 3 hours", recurring_tasks("GARMIN_SYNC_SCHEDULE" => "").dig("garmin_sync", "schedule")
+  test "GARMIN_SYNC_HOURS overrides the Garmin sync schedule, and a blank value keeps the default" do
+    assert_equal "every 2 hours", recurring_tasks("GARMIN_SYNC_HOURS" => "2").dig("garmin_sync", "schedule")
+    assert_equal "every 24 hours", recurring_tasks("GARMIN_SYNC_HOURS" => "24").dig("garmin_sync", "schedule")
+    assert_equal "every 3 hours", recurring_tasks("GARMIN_SYNC_HOURS" => "").dig("garmin_sync", "schedule")
+  end
+
+  test "an invalid GARMIN_SYNC_HOURS raises instead of disabling the sync" do
+    ["abc", "1.5", "0", "-1", "25"].each do |value|
+      assert_raises(ArgumentError, value) { recurring_tasks("GARMIN_SYNC_HOURS" => value) }
+    end
   end
 
   test "nav shows sync status" do
