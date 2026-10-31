@@ -4,8 +4,8 @@ export function distribution(values, current) {
   if (!values.length) return []
   const sorted = [...values].sort((a, b) => a - b)
   const cut = Math.round(TRIM * (sorted.length - 1))
-  const low = sorted[cut]
-  const high = sorted[sorted.length - 1 - cut]
+  const low = current < sorted[cut] ? sorted[0] : sorted[cut]
+  const high = current > sorted.at(-1 - cut) ? sorted.at(-1) : sorted.at(-1 - cut)
   const flat = sorted[0] === sorted.at(-1)
   const count = flat ? 1 : Math.min(12, Math.ceil(Math.sqrt(values.length)))
   const padding = high === low ? Math.max(0.1, Math.abs(low) * 0.01) : 0

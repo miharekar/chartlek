@@ -97,3 +97,28 @@ test("a collapsed trimmed range still flags the folded outliers", () => {
   assert.equal(bins.reduce((sum, bin) => sum + bin.count, 0), 42)
   assert.equal(bins.find(bin => bin.current).count, 40)
 })
+
+test("a current run inside the trimmed tail extends the domain to the real maximum", () => {
+  const bins = distribution(cohort(), 1200)
+
+  assert.equal(bins.at(-1).to, 1500)
+  assert.equal(bins.at(-1).open, undefined)
+  assert.equal(bins[0].open, "below")
+  assert.equal(bins.filter(bin => bin.current).length, 1)
+  assert.equal(bins.find(bin => bin.current).to > 1200, true)
+  assert.equal(bins.find(bin => bin.current).from <= 1200, true)
+  assert.equal(bins.at(-1).current, false)
+  assert.equal(bins.reduce((sum, bin) => sum + bin.count, 0), cohort().length)
+})
+
+test("a current run inside the low trimmed tail extends the domain to the real minimum", () => {
+  const bins = distribution(cohort(), 205)
+
+  assert.equal(bins[0].from, 200)
+  assert.equal(bins[0].open, undefined)
+  assert.equal(bins.at(-1).open, "above")
+  assert.equal(bins.filter(bin => bin.current).length, 1)
+  assert.equal(bins.find(bin => bin.current).from <= 205, true)
+  assert.equal(bins.find(bin => bin.current).to > 205, true)
+  assert.equal(bins[0].current, true)
+})
