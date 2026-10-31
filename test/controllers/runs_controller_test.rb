@@ -492,7 +492,7 @@ class RunsControllerTest < ActionDispatch::IntegrationTest
   test "the gear none explanation sits in an info tooltip, not a hint" do
     get "/runs", params: {gear: "none"}
 
-    assert_select "button[data-controller=info][aria-label*='a recent run leaves this list after the next hourly scan, an older one after Refresh from Strava']"
+    assert_select "button[data-controller=info][aria-label*='a recent run leaves this list after the next sync, an older one after Refresh from Strava']"
     assert_select "p", text: /Runs linked to Strava with no gear set/
   end
 

@@ -186,7 +186,7 @@ Monthly and yearly distance goals, set from the Overview. Goal tiles sit beside 
 
 | Source | What it supplies |
 |---|---|
-| [Garmin Connect Personal API](https://developer.garmin.com/gc-developer-program/personal/personal-api/) | The primary source: run summaries, the FIT (or TCX) originals for tracks, and wellness (daily summary, HRV, weight, sleep, HR zones). Synced hourly. |
+| [Garmin Connect Personal API](https://developer.garmin.com/gc-developer-program/personal/personal-api/) | The primary source: run summaries, the FIT (or TCX) originals for tracks, and wellness (daily summary, HRV, weight, sleep, HR zones). Synced every 3 hours by default (`GARMIN_SYNC_SCHEDULE`). |
 | Strava API | Fills the years before Garmin, links runs to Strava, and reads gear (read-only: nothing is written back). |
 | Smashrun API | Recordings for the pre-Garmin runs, and calories and races. |
 | [Open-Meteo](https://open-meteo.com) | Weather at each run's start, with sunrise and sunset. |
@@ -210,15 +210,15 @@ Open <http://localhost:9295>. The first start builds the image, which takes a fe
 
 Strava is optional. Create an API app at strava.com/settings/api, copy its Client ID and Client Secret into `STRAVA_CLIENT_ID` and `STRAVA_SECRET` in `.env`, and allow your callback domain: `localhost` for `http://localhost:9295/strava/callback`, or your own host if you serve it elsewhere. Then click Connect Strava in the nav once.
 
-**Strava webhooks (optional).** Without them a new run shows up on the hourly sync. With them Strava tells Chartlek the moment a run lands, and it syncs Garmin a minute later. This needs a public URL, so it uses a [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/) that exposes one secret path and nothing else:
+**Strava webhooks (optional).** Without them a new run shows up on the next periodic sync (every 3 hours by default). With them Strava tells Chartlek the moment a run lands, and it syncs Garmin a minute later. This needs a public URL, so it uses a [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/) that exposes one secret path and nothing else:
 
 1. In the Cloudflare dashboard (Zero Trust, Networks, Tunnels) create a tunnel, copy its token into `TUNNEL_TOKEN` in `.env` and add `COMPOSE_PROFILES=tunnel` to start the connector with `docker compose up -d`.
 2. Add a published application route: a hostname on a domain in your account (for example `hooks.example.com`), path `^/strava/webhook/[0-9a-f]+$`, service `http://chartlek:3000`. The path pattern is only a first filter: Chartlek itself answers 404 to anything arriving through the tunnel except the exact secret URL, which it derives from `SECRET_KEY_BASE` (a new secret means resubscribing).
 3. `docker compose exec chartlek bin/rails "strava:subscribe[https://hooks.example.com]"` replaces a different existing subscription (keeps one that already matches) and prints its id, so the tunnel must be up when you run it; `strava:unsubscribe` deletes it. Both use `STRAVA_CLIENT_ID` and `STRAVA_SECRET`. Requests carrying Cloudflare's `Cf-Ray` header count as public, so any hostname works.
 
-Chartlek reacts to created runs (a sync), deleted activities (the run is unlinked from Strava) and revoked access (Strava disconnects). The hourly sync stays on as the safety net.
+Chartlek reacts to created runs (a sync), deleted activities (the run is unlinked from Strava) and revoked access (Strava disconnects). The periodic sync (every 3 hours by default, `GARMIN_SYNC_SCHEDULE` in `.env`) stays on as the safety net.
 
-**First run.** The hourly sync and Sync now already run inside the container. For the backfills use `docker compose exec chartlek bin/rails …`, in order:
+**First run.** The periodic sync (every 3 hours by default, `GARMIN_SYNC_SCHEDULE` in `.env`) and Sync now already run inside the container. For the backfills use `docker compose exec chartlek bin/rails …`, in order:
 
 1. Sync Garmin: press Sync now in the nav, or `docker compose exec chartlek bin/rails activities:sync`. It imports your runs, downloads each run's original and builds the tracks.
 2. `activities:download` only if some runs still lack an original (a failed download is also retried by the next sync). It is bounded by Garmin's 1 request/s, about 45 minutes for 2,500 runs.

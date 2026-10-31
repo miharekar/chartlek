@@ -10,7 +10,7 @@
   <% end %>
 <% elsif @profile.strava_gear_scan_failed? %>
   <%= empty_state "The first gear scan failed." do %>
-    Strava did not answer it twice, so it is not retried every hour. Start it again with Refresh from Strava.
+    Strava did not answer it twice, so it is not retried on every sync. Start it again with Refresh from Strava.
   <% end %>
 <% elsif !@ready %>
   <%= empty_state "The first gear scan is pending." do %>

@@ -41,11 +41,16 @@ class SyncsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "the hourly Garmin sync is scheduled in production" do
-    task = YAML.load_file(Rails.root.join("config/recurring.yml")).dig("production", "garmin_sync")
+  test "the Garmin sync is scheduled in production every 3 hours by default" do
+    task = recurring_tasks("GARMIN_SYNC_SCHEDULE" => nil).fetch("garmin_sync")
 
     assert_equal "Activity::SyncJob", task["class"]
-    assert_equal "every hour", task["schedule"]
+    assert_equal "every 3 hours", task["schedule"]
+  end
+
+  test "GARMIN_SYNC_SCHEDULE overrides the Garmin sync schedule, and a blank value keeps the default" do
+    assert_equal "every 2 hours", recurring_tasks("GARMIN_SYNC_SCHEDULE" => "every 2 hours").dig("garmin_sync", "schedule")
+    assert_equal "every 3 hours", recurring_tasks("GARMIN_SYNC_SCHEDULE" => "").dig("garmin_sync", "schedule")
   end
 
   test "nav shows sync status" do
@@ -89,5 +94,14 @@ class SyncsControllerTest < ActionDispatch::IntegrationTest
 
     assert_select "a[href='https://connect.garmin.com/app/settings/personalApiToken']", false
     assert_select "nav", /Sync failed/
+  end
+
+  private
+  def recurring_tasks(env)
+    previous = env.keys.index_with { ENV[it] }
+    env.each { |key, value| ENV[key] = value }
+    ActiveSupport::ConfigurationFile.parse(Rails.root.join("config/recurring.yml")).fetch("production")
+  ensure
+    previous.each { |key, value| ENV[key] = value }
   end
 end

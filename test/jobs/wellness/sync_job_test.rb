@@ -21,7 +21,7 @@ class Wellness::SyncJobTest < ActiveJob::TestCase
   end
 
   test "is scheduled hourly in production, apart from the run sync" do
-    tasks = YAML.load_file(Rails.root.join("config/recurring.yml")).fetch("production")
+    tasks = ActiveSupport::ConfigurationFile.parse(Rails.root.join("config/recurring.yml")).fetch("production")
 
     assert_equal "Wellness::SyncJob", tasks.dig("wellness_sync", "class")
     assert_equal "every hour at minute 30", tasks.dig("wellness_sync", "schedule")

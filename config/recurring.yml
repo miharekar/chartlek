@@ -12,7 +12,7 @@
 production:
   garmin_sync:
     class: Activity::SyncJob
-    schedule: every hour
+    schedule: "<%= ENV["GARMIN_SYNC_SCHEDULE"].presence || "every 3 hours" %>"
   wellness_sync:
     class: Wellness::SyncJob
     schedule: every hour at minute 30
