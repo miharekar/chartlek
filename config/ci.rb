@@ -1,7 +1,7 @@
 # Run using bin/ci
 
 CI.run do
-  step "Setup", "bin/setup --skip-server"
+  step "Setup", "env RAILS_ENV=test LOGS=test bin/setup --skip-server"
 
   step "Style: Ruby", "bin/rubocop"
 

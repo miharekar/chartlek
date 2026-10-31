@@ -45,7 +45,7 @@ bin/rails test test/models/activity_test.rb:12  # single test by line number
 node --test test/javascript/*_test.mjs   # JS helper tests
 bin/rubocop            # rubocop-rails-omakase baseline
 bin/brakeman --quiet --no-pager --exit-on-warn --exit-on-error
-bin/ci                 # CI pipeline (setup, style, security audits, tests, seeds)
+bin/ci                 # CI pipeline (setup in the test env so the shared dev/prod DB and dev log are untouched, style, security audits, tests, seeds)
 ```
 
 Development URL: <http://localhost:3000>
