@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # check=error=true
 
-# docker compose up -d --build
+# bin/up passes the version from .ruby-version.
 ARG RUBY_VERSION
 FROM docker.io/rubylang/ruby:${RUBY_VERSION:?}-resolute AS base
 

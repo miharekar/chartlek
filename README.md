@@ -203,7 +203,7 @@ Requirements: Docker with Compose and a Garmin Personal API key.
 ```bash
 git clone https://github.com/miharekar/chartlek && cd chartlek
 bin/configure                # writes .env with a generated secret; add your Garmin key to it
-docker compose up -d
+bin/up                       # builds the image on the Ruby in .ruby-version and starts it
 ```
 
 Open <http://localhost:9295>. The first start builds the image, which takes a few minutes. `./storage` holds the database and your runs' originals; keep it, and keep `.env`: `SECRET_KEY_BASE` also encrypts the stored Strava tokens (lose it and you connect Strava again).
@@ -212,7 +212,7 @@ Strava is optional. Create an API app at strava.com/settings/api, copy its Clien
 
 **Strava webhooks (optional).** Without them a new run shows up on the next periodic sync (every 3 hours by default). With them Strava tells Chartlek the moment a run lands, and it syncs Garmin a minute later. This needs a public URL, so it uses a [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/) that exposes one secret path and nothing else:
 
-1. In the Cloudflare dashboard (Zero Trust, Networks, Tunnels) create a tunnel, copy its token into `TUNNEL_TOKEN` in `.env` and add `COMPOSE_PROFILES=tunnel` to start the connector with `docker compose up -d`.
+1. In the Cloudflare dashboard (Zero Trust, Networks, Tunnels) create a tunnel, copy its token into `TUNNEL_TOKEN` in `.env` and add `COMPOSE_PROFILES=tunnel` to start the connector with `bin/up`.
 2. Add a published application route: a hostname on a domain in your account (for example `hooks.example.com`), path `^/strava/webhook/[0-9a-f]+$`, service `http://chartlek:3000`. The path pattern is only a first filter: Chartlek itself answers 404 to anything arriving through the tunnel except the exact secret URL, which it derives from `SECRET_KEY_BASE` (a new secret means resubscribing).
 3. `docker compose exec chartlek bin/rails "strava:subscribe[https://hooks.example.com]"` replaces a different existing subscription (keeps one that already matches) and prints its id, so the tunnel must be up when you run it; `strava:unsubscribe` deletes it. Both use `STRAVA_CLIENT_ID` and `STRAVA_SECRET`. Requests carrying Cloudflare's `Cf-Ray` header count as public, so any hostname works.
 
@@ -234,7 +234,7 @@ docker compose exec chartlek bin/rails activities:resync      # full resync, del
 docker compose exec chartlek bin/rails activities:reprocess   # rebuild tracks and metrics from stored originals
 ```
 
-See `AGENTS.md` for every task and its options. After pulling new code, run `docker compose up -d --build`. Put it behind your own TLS proxy if you expose it; there is no authentication, so keep it on a private network.
+See `AGENTS.md` for every task and its options. After pulling new code, run `bin/up`. Put it behind your own TLS proxy if you expose it; there is no authentication, so keep it on a private network.
 
 ### Development
 

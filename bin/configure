@@ -35,4 +35,4 @@ if ! docker compose version >/dev/null 2>&1; then
   echo "Docker Compose isn't available yet: install Docker Desktop and start it once, or Docker Engine with the Compose plugin."
 fi
 
-echo "Then run: docker compose up -d, and open http://localhost:9295"
+echo "Then run: bin/up, and open http://localhost:9295"

@@ -4,7 +4,7 @@ services:
     build:
       context: .
       args:
-        RUBY_VERSION: 4.0.9
+        RUBY_VERSION: ${RUBY_VERSION:-}
     pull_policy: never
     # Rootless Docker maps container root to the host user that owns the bind mounts.
     user: "0:0"
