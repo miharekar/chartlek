@@ -47,3 +47,28 @@ export function zoom(months, gears, lead = 0) {
   const to = lead > 0 ? Math.min(months.length, Math.max(span[1] + 1, from + 2)) : span[1] + 1
   return { months: months.slice(from, to), gears: gears.map(gear => ({ ...gear, km: gear.km.slice(from, to) })) }
 }
+
+const TICK_STEPS = [1, 2, 3, 4, 6, 12, 24, 60, 120]
+const LABEL_HALF_WIDTH = 14
+
+export function monthTicks(months, width) {
+  const first = months[0].getTime()
+  const span = months.at(-1).getTime() - first
+  const budget = Math.max(2, Math.floor(width / 80))
+  const fits = date => span === 0 || ((date.getTime() - first) / span) * width <= width - LABEL_HALF_WIDTH
+  const aligned = step => months.filter(date => date.getUTCMonth() % Math.min(step, 12) === 0 && (step <= 12 || date.getUTCFullYear() % (step / 12) === 0) && fits(date))
+  const candidates = TICK_STEPS.map(aligned)
+
+  return candidates.find(ticks => ticks.length > 0 && ticks.length <= budget) ?? [months[0]]
+}
+
+export const MAX_MONTH_TICKS = 18
+const YEAR_LABEL_GAP = 48
+
+export function barTicks(months, step) {
+  const indexes = months.map((_, index) => index)
+  if (months.length <= MAX_MONTH_TICKS) return indexes
+
+  const keepFirst = (12 - months[0].getUTCMonth()) * step >= YEAR_LABEL_GAP
+  return indexes.filter(index => months[index].getUTCMonth() === 0 || (index === 0 && keepFirst))
+}

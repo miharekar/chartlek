@@ -12,7 +12,7 @@ registerHooks({
   }
 })
 
-const { seriesColor, initialHidden, toggled, cumulative, stackRows, monthRows, visibleSpan, zoom } = await import("helpers/gear_charts")
+const { seriesColor, initialHidden, toggled, cumulative, stackRows, monthRows, visibleSpan, zoom, monthTicks, barTicks } = await import("helpers/gear_charts")
 
 const gears = [
   { id: "g1", retired: false, km: [10, 0, 5] },
@@ -89,4 +89,37 @@ test("a lead zoom spans at least two months even when use is only in the first m
 
 test("with nothing visible the full range stays", () => {
   assert.deepEqual(zoom(months, []), { months, gears: [] })
+})
+
+test("monthTicks lands on month starts, one per 80 px, clear of the right edge", () => {
+  const label = date => (date.getUTCMonth() === 0 ? String(date.getUTCFullYear()) : date.toLocaleString("en", { month: "short", timeZone: "UTC" }))
+  const run = (from, count) => Array.from({ length: count }, (_, index) => new Date(Date.UTC(2020, from + index, 1)))
+
+  for (const [from, count] of [[9, 2], [9, 3], [3, 6], [0, 72], [11, 70]]) {
+    for (const width of [280, 1236]) {
+      const months = run(from, count)
+      const ticks = monthTicks(months, width)
+      const labels = ticks.map(label)
+      const x = date => ((date - months[0]) / (months.at(-1) - months[0])) * width
+
+      assert.ok(ticks.length >= 1 && ticks.length <= Math.max(2, Math.floor(width / 80)), `${count} months at ${width}: ${labels}`)
+      assert.ok(ticks.every(date => date.getUTCDate() === 1))
+      assert.equal(new Set(ticks.map(date => date.getUTCFullYear() * 12 + date.getUTCMonth())).size, ticks.length)
+      assert.ok(ticks.every(date => x(date) <= width - 14), `${count} months at ${width}: ${labels}`)
+      labels.forEach((name, index) => assert.notEqual(name, labels[index - 1]))
+    }
+  }
+  assert.deepEqual(monthTicks(run(9, 2), 1236).map(label), ["Oct"])
+})
+
+test("barTicks labels each January and the first month only when a year label fits before the next January", () => {
+  const run = (from, count) => Array.from({ length: count }, (_, index) => new Date(Date.UTC(2020, from + index, 1)))
+  const step = (width, count) => width / count
+
+  assert.deepEqual(barTicks(run(8, 52), step(294, 52)), [4, 16, 28, 40])
+  assert.equal(barTicks(run(8, 52), step(1236, 52))[0], 0)
+  assert.equal(barTicks(run(0, 52), step(294, 52))[0], 0)
+  assert.equal(barTicks(run(2, 52), step(294, 52))[0], 0)
+  assert.deepEqual(barTicks(run(11, 64), step(1236, 64)).slice(0, 2), [1, 13])
+  assert.deepEqual(barTicks(run(8, 10), 20), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 })

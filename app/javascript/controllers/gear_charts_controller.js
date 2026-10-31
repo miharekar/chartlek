@@ -6,7 +6,7 @@ import { select } from "d3-selection"
 import { line, stack } from "d3-shape"
 import { utcFormat } from "d3-time-format"
 import { formatDistance } from "helpers/formatters"
-import { cumulative, initialHidden, monthRows, seriesColor, stackRows, toggled, zoom } from "helpers/gear_charts"
+import { MAX_MONTH_TICKS, barTicks, cumulative, initialHidden, monthRows, monthTicks, seriesColor, stackRows, toggled, zoom } from "helpers/gear_charts"
 import { observeSize } from "helpers/resize"
 import { scrub } from "helpers/scrub"
 import { parseTime } from "helpers/time"
@@ -15,7 +15,8 @@ import { hideTooltip, moveTooltip, showTooltip, tooltipHtml } from "helpers/tool
 const MARGIN = { top: 8, right: 12, bottom: 24, left: 52 }
 const monthYear = utcFormat("%b %Y")
 const monthShort = utcFormat("%b %y")
-const MAX_MONTH_TICKS = 18
+const monthName = utcFormat("%b")
+const yearName = utcFormat("%Y")
 
 export default class extends Controller {
   static targets = ["bars", "lines", "toggle"]
@@ -86,11 +87,6 @@ export default class extends Controller {
     }
   }
 
-  #xTicks(months) {
-    const indexes = months.map((_, index) => index)
-    return months.length <= MAX_MONTH_TICKS ? indexes : indexes.filter(index => months[index].getUTCMonth() === 0 || index === 0)
-  }
-
   #drawBars() {
     const { months, gears: visible } = zoom(this.months, this.visible)
     const rows = stackRows(months, visible)
@@ -99,7 +95,7 @@ export default class extends Controller {
     const indexes = months.map((_, index) => index)
     const x = scaleBand().domain(indexes).range([0, innerWidth]).padding(0.15)
     const xAxis = chart.append("g").attr("transform", `translate(0,${innerHeight})`).call(
-      axisBottom(x).tickValues(this.#xTicks(months).filter((_, position, all) => all.length <= Math.ceil(innerWidth / 48) || position % Math.ceil(all.length / Math.ceil(innerWidth / 48)) === 0)).tickFormat(index => (months.length <= MAX_MONTH_TICKS ? monthShort(months[index]) : months[index].getUTCFullYear())).tickSize(4)
+      axisBottom(x).tickValues(barTicks(months, x.step()).filter((_, position, all) => all.length <= Math.ceil(innerWidth / 48) || position % Math.ceil(all.length / Math.ceil(innerWidth / 48)) === 0)).tickFormat(index => (months.length <= MAX_MONTH_TICKS ? monthShort(months[index]) : months[index].getUTCFullYear())).tickSize(4)
     )
     this.#style(xAxis, yAxis)
     xAxis.selectAll("line").attr("stroke", "var(--chart-axis)")
@@ -120,7 +116,7 @@ export default class extends Controller {
     const { chart, y, innerWidth, innerHeight, yAxis } = this.#frame("lines", max(series, entry => max(entry.totals, value => value)))
     const x = scaleUtc().domain([months[0], months.at(-1)]).range([0, innerWidth])
     const indexes = months.map((_, index) => index)
-    const xAxis = chart.append("g").attr("transform", `translate(0,${innerHeight})`).call(axisBottom(x).ticks(Math.max(2, Math.floor(innerWidth / 80))).tickSizeOuter(0))
+    const xAxis = chart.append("g").attr("transform", `translate(0,${innerHeight})`).call(axisBottom(x).tickValues(monthTicks(months, innerWidth)).tickFormat(date => (date.getUTCMonth() === 0 ? yearName(date) : monthName(date))).tickSizeOuter(0))
     this.#style(xAxis, yAxis)
 
     const path = line().defined(value => value != null).x((_, index) => x(months[index])).y(value => y(value ?? 0))
