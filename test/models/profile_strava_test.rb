@@ -7,10 +7,13 @@ class ProfileStravaTest < ActiveSupport::TestCase
 
     profile.store_strava_tokens(access_token: "a", refresh_token: "r", expires_at: 1.hour.from_now.to_i)
     assert profile.strava_connected?
+    profile.update!(strava_gear_synced_at: Time.current, strava_gear_attempts: 1)
 
     profile.disconnect_strava
     assert_not profile.strava_connected?
     assert_nil profile.strava_token_expires_at
+    assert_nil profile.strava_gear_synced_at
+    assert_equal 0, profile.strava_gear_attempts
   end
 
   test "tokens the current keys can't decrypt are cleared on load" do

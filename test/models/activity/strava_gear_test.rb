@@ -39,6 +39,27 @@ class Activity::StravaGearTest < ActiveSupport::TestCase
     assert_not_nil @profile.reload.strava_gear_synced_at
   end
 
+  test "a disconnect during a full pass is not written back" do
+    summaries({"id" => 555, "gear_id" => "g1"})
+    stub_request(:get, ATHLETE_URL).to_return(body: "{}")
+    stub_request(:get, GEAR_URL).to_return { Profile.instance.disconnect_strava && {body: {id: "g1", name: "Synthetic Shoe"}.to_json} }
+
+    Activity.sync_strava_gear_now(full: true)
+
+    assert_nil @profile.reload.strava_gear_synced_at
+    assert_not @profile.strava_connected?
+  end
+
+  test "a disconnect during a failing full pass does not count the failure" do
+    summaries({"id" => 555, "gear_id" => "g1"})
+    stub_request(:get, ATHLETE_URL).to_return(body: "{}")
+    stub_request(:get, GEAR_URL).to_return { Profile.instance.disconnect_strava && {status: 500, body: "{}"} }
+
+    assert_raises(Strava::Client::Error) { Activity.sync_strava_gear_now(full: true) }
+
+    assert_equal 0, @profile.reload.strava_gear_attempts
+  end
+
   test "an activity can carry a gear id before its gear row exists" do
     Activity.read_strava_gear_ids([{"id" => 555, "gear_id" => "g9"}])
 

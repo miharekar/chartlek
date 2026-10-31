@@ -72,7 +72,7 @@ class Profile < ApplicationRecord
   end
 
   def disconnect_strava
-    update_columns(strava_access_token: nil, strava_refresh_token: nil, strava_token_expires_at: nil, strava_scope: nil)
+    update_columns(strava_access_token: nil, strava_refresh_token: nil, strava_token_expires_at: nil, strava_scope: nil, strava_gear_synced_at: nil, strava_gear_attempts: 0)
   end
 
   def disconnect_unreadable_strava
