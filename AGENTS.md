@@ -36,6 +36,8 @@ bin/rails smashrun:fetch     # pre-Garmin runs: match, fill calories and races, 
 bin/rails weather:fetch      # Open-Meteo weather backfill
 bin/rails garmin:probe       # read-only Garmin endpoint probe: statuses and JSON shapes, never values; writes OUTPUT= (default under the system tmpdir, mode 600); SCOPE=all adds the first round's candidates
 bin/rails strava:fetch       # gap fill from the Strava API (needs the Connect Strava nav button clicked once)
+bin/rails "strava:subscribe[https://chartlek-hooks.rekar.eu]"  # replace the Strava webhook subscription (tunnel must be up; an existing one with the same callback URL is kept); prints its id and host only
+bin/rails strava:unsubscribe # delete the Strava webhook subscription
 bin/rails "strava:import[/path/to/unzipped/strava/archive]"  # gap fill from a Strava archive
 bin/rails test         # full Minitest suite
 bin/rails test test/models/activity_test.rb     # single file
@@ -168,7 +170,7 @@ Development URL: <http://localhost:3000>
 
 ## Privacy
 
-- Never print or log the Garmin key (`GARMIN_API_TOKEN`), the Strava secret (`STRAVA_SECRET`), the Strava access and refresh tokens (stored encrypted on `profiles`), `SECRET_KEY_BASE`, the Active Record encryption keys (`ACTIVE_RECORD_ENCRYPTION_*`), the Smashrun credentials (`SMASHRUN_USERNAME`, `SMASHRUN_PASSWORD`) or any access token, including the Smashrun token.
+- Never print or log the Garmin key (`GARMIN_API_TOKEN`), the Strava secret (`STRAVA_SECRET`), the Cloudflare Tunnel token (`TUNNEL_TOKEN`), the Strava webhook token and verify token (`Strava::Webhook`) or the callback URL that contains it, the Strava access and refresh tokens (stored encrypted on `profiles`), `SECRET_KEY_BASE`, the Active Record encryption keys (`ACTIVE_RECORD_ENCRYPTION_*`), the Smashrun credentials (`SMASHRUN_USERNAME`, `SMASHRUN_PASSWORD`) or any access token, including the Smashrun token.
 - Test fixtures must be synthetic: no real coordinates, activity names, IDs or health data from the owner's account. Never copy a downloaded original into `test/`.
 - `MAPBOX_TOKEN` is a public (`pk.`) token rendered into run pages because the browser needs it for tiles. Still never print or log it, and never use a secret (`sk.`) token.
 - `.env` and `storage/` stay git-ignored.
@@ -200,7 +202,7 @@ Verified against the real API (Oct 2026); the endpoint table is in PRD §6.1.
 - The optional `tunnel` service (`cloudflare/cloudflared` pinned to 2026.10.2, Compose profile `tunnel`) gets only `TUNNEL_TOKEN`, interpolated from `.env`, never the whole `env_file`. `COMPOSE_PROFILES=tunnel` in `.env` starts it with `docker compose up -d`; `docker compose --profile tunnel up -d tunnel` starts it alone without touching `chartlek`.
 - Config comes from `.env` (`env_file`, written by `bin/configure` from `.env.example`), including `SECRET_KEY_BASE`, from which the Strava token encryption keys derive (non-empty `ACTIVE_RECORD_ENCRYPTION_*` values take priority); there is no credentials file or `master.key`. Solid Queue runs inside Puma (`SOLID_QUEUE_IN_PUMA=1`), including the hourly Garmin and wellness syncs.
 - `force_ssl` and `assume_ssl` are off (the LAN speaks plain http). Rails honours `X-Forwarded-Proto` and `X-Forwarded-Host` from any sender, so the Strava OAuth callback is `https://chartlek.rekar.eu/strava/callback` whatever the proxy's address; the tailnet range `100.64.0.0/10` is a trusted proxy (`config/application.rb`) only so that `request.remote_ip` is the real client. Add that URL as the Strava app's callback domain.
-- The hourly sync is the only automatic Garmin call.
+- The hourly sync and the Strava webhook for a new activity (a sync queued a minute after it, see Strava webhooks) are the only automatic Garmin calls.
 
 ## Strava API
 
@@ -224,6 +226,13 @@ Smashrun supplies only the years before Garmin; Garmin-era runs are ignored.
 - `GET /my/activities/{id}` adds series-major `recordingKeys`/`recordingValues` (one array per key, equal lengths): `distance` (km, cumulative), `latitude`, `longitude`, `elevation` (m), `heartRate`, `cadence` (per leg), `clock` (s since start, including pauses), plus `pauseIndexes`, `laps`. Details are stored gzipped as `smashrun-<id>.json.gz`.
 - The one Smashrun-only run before Garmin (3 Mar 2015, 8.00 km treadmill) has a distance series ending at 0.18 km, so its distance comes from the summary.
 - `bin/rails smashrun:fetch` matches pre-Garmin runs to Strava rows by local wall clock (`local_started_at` against the summary's `startDateTimeLocal` with the offset ignored, within ±10 min, nearest first), because Smashrun's UTC offset is wrong on some runs (`6528653` is 59 min off its Strava twin, which made a UTC match create a duplicate). The Garmin-era cutoff still compares UTC. It fills nil calories, ORs the race flag, creates the Smashrun-only run and attaches the details.
+
+## Strava webhooks
+
+- Strava pushes events to `POST /strava/webhook/<token>` through the Cloudflare Tunnel `chartlek` (one route: `chartlek-hooks.rekar.eu`, path `^/strava/webhook/[0-9a-f]+$`, to `http://chartlek:3000`). `Activity.handle_strava_event` (`Activity::StravaWebhook`): `activity` `create` queues `Activity::SyncJob` after 1 minute, `delete` clears `strava_id` and `strava_gear_id` on non-Strava-sourced runs (and broadcasts a refresh when one changed), `athlete` `update` with `updates.authorized` `"false"` runs `Profile#disconnect_strava` and broadcasts; anything else (including activity updates) does nothing. `StravaWebhooksController` always answers 200 with an empty body, so keep the handler to one enqueue or one `update_all`.
+- Token: `Strava::Webhook.token` is the HMAC-SHA256 hex of `ENV["SECRET_KEY_BASE"]` with a fixed label (environment only, like `Chartlek::Application.encryption_key`), `Strava::Webhook.verify_token` a second digest with another label; both are nil without a secret. Rotating `SECRET_KEY_BASE` changes the URL: run `strava:subscribe` again. Tests set `ENV["SECRET_KEY_BASE"]` themselves because dotenv may load a real one.
+- `StravaWebhookGate` (`lib/middleware`, ignored by `autoload_lib` and required in `config/application.rb`, because middleware can't use autoloaded constants) is inserted at index 0, before `Rack::Deflater`, `ActionDispatch::Static`, host authorization and the logger. Public means a `Cf-Ray` header or host `chartlek-hooks.rekar.eu`. A public request whose raw `PATH_INFO` isn't exactly `/strava/webhook/<token>` (`secure_compare`; no decoding, so `..`, `%2f` and a trailing slash don't match, and the query string isn't part of `PATH_INFO`) gets a bare 404. An exact match, public or not, gets `PATH_INFO`, `ORIGINAL_FULLPATH`, `REQUEST_URI` and `REQUEST_PATH` (the last two when the server sets them, as Puma does) rewritten to `/strava/webhook` plus the `chartlek.strava_webhook` env flag, so the token never reaches the logger; the controller answers 404 without the flag. Everything else is untouched. Never add a route that works without the flag, and never loosen the exact match.
+- `Strava::Client#subscriptions`, `#subscribe(callback_url:, verify_token:)` and `#unsubscribe(id)` use `/push_subscriptions` with `client_id` and `client_secret` (no user tokens); a failure raises `Strava::Client::Error` with the callback URL and verify token filtered out of the message.
 
 ## Open-Meteo
 

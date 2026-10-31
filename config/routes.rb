@@ -20,4 +20,5 @@ Rails.application.routes.draw do
   resource :theme, only: :update
   resource :strava_connection, only: %i[show create]
   get "strava/callback", to: "strava_connections#show", as: :strava_callback
+  resource :strava_webhook, only: %i[show create], path: "strava/webhook"
 end

@@ -3,6 +3,7 @@ require "test_helper"
 class Strava::ClientTest < ActiveSupport::TestCase
   TOKEN_URL = "https://www.strava.com/oauth/token"
   ACTIVITIES_URL = "https://www.strava.com/api/v3/athlete/activities"
+  PUSH_URL = "https://www.strava.com/api/v3/push_subscriptions"
   REDIRECT_URI = "https://run.example.test/strava/callback"
 
   setup do
@@ -198,6 +199,38 @@ class Strava::ClientTest < ActiveSupport::TestCase
 
     assert_match "400", error.message
     assert_no_match "test-secret", error.message
+  end
+
+  test "lists, creates and deletes push subscriptions with the app credentials" do
+    stub_request(:get, PUSH_URL).with(query: {client_id: "123", client_secret: "test-secret"}).to_return(body: [{id: 7}].to_json)
+    stub_request(:post, PUSH_URL).with(body: {client_id: "123", client_secret: "test-secret", callback_url: "https://hooks.example.test/strava/webhook/abc", verify_token: "verify"}).to_return(body: {id: 8}.to_json)
+    stub_request(:delete, "#{PUSH_URL}/7").with(query: {client_id: "123", client_secret: "test-secret"}).to_return(status: 204)
+
+    assert_equal [{"id" => 7}], @client.subscriptions
+    assert_equal({"id" => 8}, @client.subscribe(callback_url: "https://hooks.example.test/strava/webhook/abc", verify_token: "verify"))
+    @client.unsubscribe(7)
+
+    assert_requested :delete, "#{PUSH_URL}/7", query: {client_id: "123", client_secret: "test-secret"}
+    assert_not_requested :any, /strava\.com\/oauth/
+  end
+
+  test "a rejected subscription raises without the callback URL or the verify token" do
+    stub_request(:post, PUSH_URL).to_return(status: 400, body: "cannot reach https://hooks.example.test/strava/webhook/abc with verify")
+
+    error = assert_raises(Strava::Client::Error) { @client.subscribe(callback_url: "https://hooks.example.test/strava/webhook/abc", verify_token: "verify") }
+
+    assert_match "400", error.message
+    assert_no_match "hooks.example.test", error.message
+    assert_no_match "verify ", error.message
+    assert_no_match "test-secret", error.message
+  end
+
+  test "a failing subscription list raises Error and keeps the connection" do
+    connect
+    stub_request(:get, PUSH_URL).with(query: hash_including({})).to_return(status: 500, body: "down")
+
+    assert_raises(Strava::Client::Error) { @client.subscriptions }
+    assert Profile.find(@profile.id).strava_connected?
   end
 
   test "inspect hides credentials" do

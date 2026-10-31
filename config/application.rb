@@ -18,6 +18,8 @@ require "rails/test_unit/railtie"
 # you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)
 
+require_relative "../lib/middleware/strava_webhook_gate"
+
 module Chartlek
   class Application < Rails::Application
     def self.encryption_key(name, env = ENV)
@@ -37,8 +39,9 @@ module Chartlek
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
     # Common ones are `templates`, `generators`, or `middleware`, for example.
-    config.autoload_lib(ignore: %w[assets tasks])
+    config.autoload_lib(ignore: %w[assets middleware tasks])
 
+    config.middleware.insert_before 0, StravaWebhookGate
     config.middleware.insert_before ActionDispatch::Static, Rack::Deflater
 
     # Configuration for the application, engines, and railties goes here.

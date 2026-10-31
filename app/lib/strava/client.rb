@@ -8,6 +8,7 @@ class Strava::Client
   TOKEN_URL = "https://www.strava.com/oauth/token"
   API_URL = "https://www.strava.com/api/v3"
   ACTIVITIES_URL = "#{API_URL}/athlete/activities"
+  PUSH_URL = "#{API_URL}/push_subscriptions"
   PRIVATE_SCOPE = "activity:read_all"
   GEAR_SCOPE = "profile:read_all"
   SCOPE = "#{PRIVATE_SCOPE},#{GEAR_SCOPE}"
@@ -43,6 +44,20 @@ class Strava::Client
     response = get(URI("#{API_URL}/gear/#{ERB::Util.url_encode(id)}"))
 
     JSON.parse(checked(response, "gear").body) unless response.code == "404"
+  end
+
+  def subscriptions
+    JSON.parse(checked(push_request(:get), "push subscriptions").body)
+  end
+
+  def subscribe(callback_url:, verify_token:)
+    response = push_request(:post, callback_url:, verify_token:)
+
+    JSON.parse(checked(response, "push subscription", redact: [callback_url, verify_token]).body)
+  end
+
+  def unsubscribe(id)
+    checked(push_request(:delete, id:), "push subscription removal")
   end
 
   def inspect
@@ -113,6 +128,19 @@ class Strava::Client
     JSON.parse(checked(response, label).body)
   end
 
+  def push_request(verb, id: nil, **params)
+    uri = URI([PUSH_URL, id && Integer(id)].compact.join("/"))
+    credentials = {client_id: @client_id, client_secret: @client_secret}
+
+    case verb
+    when :post
+      start(uri) { it.post(uri.path, URI.encode_www_form(credentials.merge(params)), "Content-Type" => "application/x-www-form-urlencoded") }
+    else
+      uri.query = URI.encode_www_form(credentials)
+      start(uri) { it.public_send(verb, uri.request_uri) }
+    end
+  end
+
   def start(uri, &)
     Net::HTTP.start(uri.host, uri.port, use_ssl: true, open_timeout: TIMEOUT, read_timeout: TIMEOUT, &)
   end
@@ -121,8 +149,11 @@ class Strava::Client
     @profile.store_strava_tokens(access_token: token.fetch("access_token"), refresh_token: token.fetch("refresh_token"), expires_at: token.fetch("expires_at"))
   end
 
-  def checked(response, label)
-    raise Error, "Strava #{label} responded #{response.code}: #{response.body.to_s.truncate(200)}" unless response.is_a?(Net::HTTPSuccess)
+  def checked(response, label, redact: [])
+    unless response.is_a?(Net::HTTPSuccess)
+      body = redact.reduce(response.body.to_s) { |text, secret| text.gsub(secret, "[filtered]") }
+      raise Error, "Strava #{label} responded #{response.code}: #{body.truncate(200)}"
+    end
 
     response
   end
