@@ -17,3 +17,11 @@ services:
     volumes:
       - ./storage:/rails/storage
     restart: unless-stopped
+
+  tunnel:
+    image: cloudflare/cloudflared:2026.10.2
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN}
+    profiles: [tunnel]
+    restart: unless-stopped
