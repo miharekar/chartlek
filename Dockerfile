@@ -2,12 +2,13 @@
 # check=error=true
 
 # docker compose up -d --build
-ARG RUBY_VERSION=4.0.9
-FROM docker.io/library/ruby:$RUBY_VERSION-slim AS base
+ARG RUBY_VERSION
+FROM docker.io/rubylang/ruby:${RUBY_VERSION:?}-resolute AS base
 
 WORKDIR /rails
 
 RUN apt-get update -qq && \
+    apt-get upgrade -y --no-install-recommends && \
     apt-get install --no-install-recommends -y curl libjemalloc2 libyaml-0-2 sqlite3 && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
